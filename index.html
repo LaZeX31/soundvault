@@ -1969,12 +1969,11 @@ function renderQueue() {
 function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
 
 // ── COMPTE & SYNCHRO CLOUD (Supabase) ──
-// https://tlynuqffolzetigzkbzs.supabase.co/rest/v1/
-// sb_publishable_oMmOvCWWvN3EiT71g_YG1A_SXcW1NTB
+// ⚠️ Colle ici l'URL et la clé "anon public" de TON projet Supabase
 // (Dashboard Supabase > Project Settings > API). Gratuit, sans carte bancaire.
 // Tant que ce n'est pas rempli, l'app fonctionne normalement mais en local uniquement.
-const SUPABASE_URL = "COLLE_TON_URL_ICI";       // ex: https://abcdefgh.supabase.co
-const SUPABASE_ANON_KEY = "COLLE_TA_CLE_ICI";   // la clé "anon public"
+const SUPABASE_URL = "https://tlynuqffolzetigzkbzs.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_oMmOvCWWvN3EiT71g_YG1A_SXcW1NTB";
 
 let sb = null, cloudReady = false;
 let currentUser = null, accountTab = 'login';
