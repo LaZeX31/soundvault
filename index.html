@@ -1985,11 +1985,8 @@ try {
   if (SUPABASE_URL !== "COLLE_TON_URL_ICI" && SUPABASE_ANON_KEY !== "COLLE_TA_CLE_ICI" && typeof supabase !== 'undefined') {
     sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     cloudReady = true;
-    sb.auth.getSession().then(({ data }) => {
-      currentUser = data.session ? data.session.user : null;
-      updateAccountUI();
-      if (currentUser) syncFromCloud();
-    });
+    // onAuthStateChange se déclenche automatiquement une fois au chargement avec la session existante
+    // (événement INITIAL_SESSION) : pas besoin d'un getSession() séparé, ça créerait un double appel.
     sb.auth.onAuthStateChange((event, session) => {
       currentUser = session ? session.user : null;
       updateAccountUI();
@@ -2117,9 +2114,10 @@ async function pushSongToCloud(song, rethrow) {
 async function pushPlaylistsToCloud() {
   if (!cloudReady || !currentUser) return;
   try {
-    await sb.from('user_data').upsert({
+    const { error } = await sb.from('user_data').upsert({
       user_id: currentUser.id, playlists, updated_at: new Date().toISOString()
-    });
+    }, { onConflict: 'user_id' });
+    if (error) console.warn('Push playlists échoué :', error);
   } catch (err) { console.warn('Push playlists échoué :', err); }
 }
 
@@ -2132,8 +2130,11 @@ async function deleteSongFromCloud(id) {
 }
 
 // Récupère depuis le cloud les musiques/playlists manquantes en local (ex: sur un nouvel appareil)
+let syncInProgress = false;
 async function syncFromCloud() {
   if (!cloudReady || !currentUser) return;
+  if (syncInProgress) { toast('⏳ Synchro déjà en cours...'); return; }
+  syncInProgress = true;
   const statusEl = document.getElementById('account-sync-status');
   if (statusEl) statusEl.textContent = 'Synchronisation...';
   const failedDownloads = [], failedUploads = [];
@@ -2191,6 +2192,8 @@ async function syncFromCloud() {
   } catch (err) {
     console.warn('Sync cloud échouée :', err);
     if (statusEl) statusEl.textContent = 'Erreur de synchro';
+  } finally {
+    syncInProgress = false;
   }
 }
 
