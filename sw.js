@@ -1,4 +1,4 @@
-const CACHE = 'soundvault-v3';
+const CACHE = 'soundvault-v4';
 const ASSETS = [
   '/soundvault/',
   '/soundvault/index.html',
@@ -22,6 +22,16 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const req = e.request;
+
+  // Seules les requêtes GET peuvent être mises en cache (le Cache API ne supporte pas
+  // POST/PUT/DELETE). On laisse ces requêtes (ex: envois vers Supabase) passer
+  // directement au réseau, sans interception.
+  if (req.method !== 'GET') return;
+
+  // On ne gère que les fichiers de l'app elle-même : les requêtes vers un autre domaine
+  // (Supabase, CDN Supabase-js, fonts Google...) partent directement au réseau, sans cache,
+  // pour éviter de servir des données obsolètes (musiques, playlists, session...).
+  if (new URL(req.url).origin !== self.location.origin) return;
 
   // Pages HTML : toujours essayer le réseau en premier pour avoir la dernière
   // version déployée. Le cache ne sert que de secours si hors-ligne.
