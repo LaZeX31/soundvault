@@ -13,6 +13,8 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<!-- Supabase (compte + synchro cloud) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 :root {
   --green: #1db954;
@@ -967,7 +969,10 @@ body:not(.queue-open) header {
 
 <header>
   <div class="logo">🎵 <span>Sound</span>Vault</div>
-  <button class="btn-add" onclick="openCreatePlaylist()">+</button>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <button class="btn-add" id="btnAccount" style="width:42px;height:42px;font-size:16px;background:var(--bg4);box-shadow:none;" onclick="openAccountModal()" title="Compte">👤</button>
+    <button class="btn-add" onclick="openCreatePlaylist()">+</button>
+  </div>
 </header>
 
 <div class="nav">
@@ -1118,6 +1123,43 @@ body:not(.queue-open) header {
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('modal-rename-song')">Annuler</button>
       <button class="btn-primary" onclick="confirmRenameSong()">Renommer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL COMPTE / SYNCHRO -->
+<div class="modal-overlay" id="modal-account">
+  <div class="modal-box">
+    <div class="modal-title" id="account-title">👤 Mon compte</div>
+
+    <!-- Vue non connecté -->
+    <div id="account-logged-out">
+      <div id="account-sub-tabs" style="display:flex;gap:6px;margin-bottom:14px;">
+        <button id="tab-login" class="nav-btn active" style="flex:1;padding:8px;font-size:13px;" onclick="switchAccountTab('login')">Connexion</button>
+        <button id="tab-signup" class="nav-btn" style="flex:1;padding:8px;font-size:13px;" onclick="switchAccountTab('signup')">Inscription</button>
+      </div>
+      <input class="modal-input" id="accountPseudo" placeholder="Pseudo" maxlength="30" autocomplete="username">
+      <input class="modal-input" id="accountPassword" type="password" placeholder="Mot de passe (6 caractères min.)" maxlength="60" autocomplete="current-password">
+      <div id="account-error" style="color:#ff6b6b;font-size:13px;margin:-4px 0 12px;display:none;"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('modal-account')">Annuler</button>
+        <button class="btn-primary" id="account-submit-btn" onclick="submitAccountForm()">Se connecter</button>
+      </div>
+    </div>
+
+    <!-- Vue connecté -->
+    <div id="account-logged-in" style="display:none;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;font-family:'Syne',sans-serif;color:white;">👤</div>
+        <div>
+          <div style="font-weight:600;font-size:15px;" id="account-pseudo-display">—</div>
+          <div style="font-size:12px;color:var(--muted);" id="account-sync-status">Synchronisé</div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('modal-account')">Fermer</button>
+        <button class="btn-primary" style="background:#ff4f4f;" onclick="logoutAccount()">Se déconnecter</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1497,7 +1539,7 @@ function initDragSort(pid) {
       // Sauvegarder le nouvel ordre
       const newOrder = [...container.querySelectorAll('.swipe-wrap')].map(w => w.dataset.sid);
       const p = playlists.find(x => x.id === pid);
-      if (p) { p.songs = newOrder; store('playlists','readwrite').put(p); }
+      if (p) { p.songs = newOrder; store('playlists','readwrite').put(p); if (currentUser) pushPlaylistsToCloud(); }
       dragEl = null;
     });
   });
@@ -1518,6 +1560,7 @@ function confirmDelete() {
   renderPlaylists();
   toast('🗑 Playlist supprimée');
   showPage('playlists');
+  if (currentUser) pushPlaylistsToCloud();
 }
 
 // ── RENOMMER ──
@@ -1542,6 +1585,7 @@ function confirmRename() {
   renderPlaylists();
   closeModal('modal-rename');
   toast('✏️ Playlist renommée');
+  if (currentUser) pushPlaylistsToCloud();
 }
 
 function toggleSongMenu(e, sid, pid) {
@@ -1574,6 +1618,7 @@ function confirmRenameSong() {
   store('songs','readwrite').put(s);
   closeModal('modal-rename-song');
   toast('✏️ Musique renommée');
+  if (currentUser) pushSongMetaToCloud(s);
   renamingSongId = null;
   renderSongs();
   renderPlaylists();
@@ -1673,6 +1718,7 @@ function deleteSong(id) {
   if (currentSongId === id) currentSongId = null;
   renderSongs(); renderUploadSongs(); renderPlaylists();
   toast('Musique supprimée');
+  if (currentUser) { deleteSongFromCloud(id); pushPlaylistsToCloud(); }
 }
 
 function cleanName(name) { return name.replace(/\.[^/.]+$/, '').replace(/_/g,' ').replace(/-/g,' '); }
@@ -1693,6 +1739,7 @@ function readFile(file) {
     store('songs','readwrite').put(song);
     renderSongs(); renderUploadSongs();
     toast('🎵 ' + cleanName(file.name) + ' importée !');
+    if (currentUser) pushSongToCloud(song);
   };
   reader.readAsDataURL(file);
 }
@@ -1728,6 +1775,7 @@ function confirmAdd() {
   closeModal('modal-add');
   toast('Playlists mises à jour ✓');
   pendingSong = null;
+  if (currentUser) pushPlaylistsToCloud();
 }
 
 // ── PLAYLIST CREATE ──
@@ -1742,6 +1790,7 @@ function createPlaylist() {
   renderPlaylists();
   closeModal('modal-create');
   toast('Playlist "' + name + '" créée 🎶');
+  if (currentUser) pushPlaylistsToCloud();
 }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
@@ -1918,6 +1967,204 @@ function renderQueue() {
 
 // ── TOAST ──
 function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+
+// ── COMPTE & SYNCHRO CLOUD (Supabase) ──
+// https://tlynuqffolzetigzkbzs.supabase.co/rest/v1/
+// sb_publishable_oMmOvCWWvN3EiT71g_YG1A_SXcW1NTB
+// (Dashboard Supabase > Project Settings > API). Gratuit, sans carte bancaire.
+// Tant que ce n'est pas rempli, l'app fonctionne normalement mais en local uniquement.
+const SUPABASE_URL = "COLLE_TON_URL_ICI";       // ex: https://abcdefgh.supabase.co
+const SUPABASE_ANON_KEY = "COLLE_TA_CLE_ICI";   // la clé "anon public"
+
+let sb = null, cloudReady = false;
+let currentUser = null, accountTab = 'login';
+
+try {
+  if (SUPABASE_URL !== "COLLE_TON_URL_ICI" && SUPABASE_ANON_KEY !== "COLLE_TA_CLE_ICI" && typeof supabase !== 'undefined') {
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    cloudReady = true;
+    sb.auth.getSession().then(({ data }) => {
+      currentUser = data.session ? data.session.user : null;
+      updateAccountUI();
+      if (currentUser) syncFromCloud();
+    });
+    sb.auth.onAuthStateChange((event, session) => {
+      currentUser = session ? session.user : null;
+      updateAccountUI();
+      if (currentUser) syncFromCloud();
+    });
+  }
+} catch (err) { console.warn('Supabase indisponible :', err); }
+
+// Un pseudo simple -> un email technique (Supabase Auth exige un email)
+function pseudoToEmail(pseudo) {
+  const clean = pseudo.trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
+  return clean + '@soundvault.local';
+}
+
+function openAccountModal() {
+  if (!cloudReady) {
+    toast('⚠️ Synchro cloud non configurée (voir instructions)');
+  }
+  document.getElementById('account-error').style.display = 'none';
+  document.getElementById('accountPseudo').value = '';
+  document.getElementById('accountPassword').value = '';
+  updateAccountUI();
+  document.getElementById('modal-account').classList.add('show');
+}
+
+function switchAccountTab(tab) {
+  accountTab = tab;
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+  document.getElementById('account-submit-btn').textContent = tab === 'login' ? 'Se connecter' : "S'inscrire";
+  document.getElementById('account-error').style.display = 'none';
+}
+
+function updateAccountUI() {
+  const out = document.getElementById('account-logged-out');
+  const inn = document.getElementById('account-logged-in');
+  const btn = document.getElementById('btnAccount');
+  if (currentUser) {
+    out.style.display = 'none';
+    inn.style.display = 'block';
+    document.getElementById('account-pseudo-display').textContent = (currentUser.email || '').split('@')[0];
+    btn.style.background = 'var(--green)';
+    btn.style.boxShadow = '0 0 12px rgba(29,185,84,0.5)';
+  } else {
+    out.style.display = 'block';
+    inn.style.display = 'none';
+    btn.style.background = 'var(--bg4)';
+    btn.style.boxShadow = 'none';
+  }
+}
+
+async function submitAccountForm() {
+  if (!cloudReady) { toast('⚠️ Synchro cloud non configurée'); return; }
+  const pseudo = document.getElementById('accountPseudo').value.trim();
+  const pass = document.getElementById('accountPassword').value;
+  const errEl = document.getElementById('account-error');
+  errEl.style.display = 'none';
+  if (!pseudo || pass.length < 6) {
+    errEl.textContent = 'Pseudo requis + mot de passe de 6 caractères minimum.';
+    errEl.style.display = 'block';
+    return;
+  }
+  const email = pseudoToEmail(pseudo);
+  const btn = document.getElementById('account-submit-btn');
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    let error;
+    if (accountTab === 'login') {
+      ({ error } = await sb.auth.signInWithPassword({ email, password: pass }));
+    } else {
+      ({ error } = await sb.auth.signUp({ email, password: pass }));
+    }
+    if (error) throw error;
+    closeModal('modal-account');
+    toast('👤 Connecté en tant que ' + pseudo);
+  } catch (err) {
+    errEl.textContent = translateSupabaseError(err);
+    errEl.style.display = 'block';
+  }
+  btn.disabled = false;
+  btn.textContent = accountTab === 'login' ? 'Se connecter' : "S'inscrire";
+}
+
+function translateSupabaseError(err) {
+  const m = (err.message || '').toLowerCase();
+  if (m.includes('invalid login credentials')) return 'Pseudo ou mot de passe incorrect.';
+  if (m.includes('already registered') || m.includes('already exists')) return 'Ce pseudo est déjà pris.';
+  if (m.includes('password') && m.includes('6')) return 'Mot de passe trop faible (6 caractères min.).';
+  if (m.includes('network') || m.includes('fetch')) return 'Pas de connexion internet.';
+  return 'Erreur : ' + (err.message || 'inconnue');
+}
+
+function logoutAccount() {
+  sb.auth.signOut();
+  closeModal('modal-account');
+  toast('👋 Déconnecté (tes musiques restent sur cet appareil)');
+}
+
+// Met à jour juste le nom d'une musique côté cloud (pas de ré-upload de l'audio)
+async function pushSongMetaToCloud(song) {
+  if (!cloudReady || !currentUser) return;
+  try {
+    await sb.from('songs').update({ name: song.name }).eq('id', song.id).eq('user_id', currentUser.id);
+  } catch (err) { console.warn('Maj nom cloud échouée :', err); }
+}
+
+// Pousse une musique vers le cloud (appelé après un ajout local)
+async function pushSongToCloud(song) {
+  if (!cloudReady || !currentUser) return;
+  try {
+    const path = `${currentUser.id}/${song.id}`;
+    const blob = await (await fetch(song.data)).blob();
+    const { error: upErr } = await sb.storage.from('songs').upload(path, blob, { upsert: true });
+    if (upErr) throw upErr;
+    const { error: dbErr } = await sb.from('songs').upsert({
+      id: song.id, user_id: currentUser.id, name: song.name, path, updated_at: new Date().toISOString()
+    });
+    if (dbErr) throw dbErr;
+  } catch (err) { console.warn('Push cloud échoué :', err); }
+}
+
+async function pushPlaylistsToCloud() {
+  if (!cloudReady || !currentUser) return;
+  try {
+    await sb.from('user_data').upsert({
+      user_id: currentUser.id, playlists, updated_at: new Date().toISOString()
+    });
+  } catch (err) { console.warn('Push playlists échoué :', err); }
+}
+
+async function deleteSongFromCloud(id) {
+  if (!cloudReady || !currentUser) return;
+  try {
+    await sb.from('songs').delete().eq('id', id).eq('user_id', currentUser.id);
+    await sb.storage.from('songs').remove([`${currentUser.id}/${id}`]);
+  } catch (err) { /* déjà absent, on ignore */ }
+}
+
+// Récupère depuis le cloud les musiques/playlists manquantes en local (ex: sur un nouvel appareil)
+async function syncFromCloud() {
+  if (!cloudReady || !currentUser) return;
+  const statusEl = document.getElementById('account-sync-status');
+  if (statusEl) statusEl.textContent = 'Synchronisation...';
+  try {
+    const { data: cloudSongs, error: songsErr } = await sb.from('songs').select('*').eq('user_id', currentUser.id);
+    if (songsErr) throw songsErr;
+    let added = 0;
+    for (const cs of (cloudSongs || [])) {
+      if (songs.find(s => s.id === cs.id)) continue;
+      const { data: blob, error: dlErr } = await sb.storage.from('songs').download(cs.path);
+      if (dlErr) { console.warn('Téléchargement échoué :', dlErr); continue; }
+      const dataUrl = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result);
+        r.onerror = rej;
+        r.readAsDataURL(blob);
+      });
+      const song = { id: cs.id, name: cs.name, data: dataUrl };
+      songs.push(song);
+      store('songs', 'readwrite').put(song);
+      added++;
+    }
+    const { data: userData } = await sb.from('user_data').select('playlists').eq('user_id', currentUser.id).maybeSingle();
+    if (userData && userData.playlists) {
+      userData.playlists.forEach(cp => {
+        const local = playlists.find(p => p.id === cp.id);
+        if (!local) { playlists.push(cp); store('playlists', 'readwrite').put(cp); }
+      });
+    }
+    renderSongs(); renderUploadSongs(); renderPlaylists();
+    if (statusEl) statusEl.textContent = 'Synchronisé';
+    if (added > 0) toast(`☁️ ${added} musique(s) récupérée(s)`);
+  } catch (err) {
+    console.warn('Sync cloud échouée :', err);
+    if (statusEl) statusEl.textContent = 'Erreur de synchro';
+  }
+}
 
 document.addEventListener('click', () => closeSongMenus());
 document.querySelectorAll('.modal-overlay').forEach(m => { m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); }); });
