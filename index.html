@@ -2133,7 +2133,10 @@ async function syncFromCloud() {
   try {
     const { data: cloudSongs, error: songsErr } = await sb.from('songs').select('*').eq('user_id', currentUser.id);
     if (songsErr) throw songsErr;
-    let added = 0;
+    const cloudIds = new Set((cloudSongs || []).map(cs => cs.id));
+    let added = 0, pushed = 0;
+
+    // 1) Télécharger ce qui est dans le cloud mais pas encore en local
     for (const cs of (cloudSongs || [])) {
       if (songs.find(s => s.id === cs.id)) continue;
       const { data: blob, error: dlErr } = await sb.storage.from('songs').download(cs.path);
@@ -2149,6 +2152,14 @@ async function syncFromCloud() {
       store('songs', 'readwrite').put(song);
       added++;
     }
+
+    // 2) Envoyer vers le cloud ce qui existait déjà en local (avant la 1ère connexion) et n'y est pas encore
+    for (const s of songs) {
+      if (cloudIds.has(s.id)) continue;
+      await pushSongToCloud(s);
+      pushed++;
+    }
+
     const { data: userData } = await sb.from('user_data').select('playlists').eq('user_id', currentUser.id).maybeSingle();
     if (userData && userData.playlists) {
       userData.playlists.forEach(cp => {
@@ -2159,6 +2170,8 @@ async function syncFromCloud() {
     renderSongs(); renderUploadSongs(); renderPlaylists();
     if (statusEl) statusEl.textContent = 'Synchronisé';
     if (added > 0) toast(`☁️ ${added} musique(s) récupérée(s)`);
+    if (pushed > 0) toast(`☁️ ${pushed} musique(s) envoyée(s) vers le cloud`);
+    await pushPlaylistsToCloud();
   } catch (err) {
     console.warn('Sync cloud échouée :', err);
     if (statusEl) statusEl.textContent = 'Erreur de synchro';
