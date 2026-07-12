@@ -2142,11 +2142,21 @@ async function syncFromCloud() {
     const { data: cloudSongs, error: songsErr } = await sb.from('songs').select('*').eq('user_id', currentUser.id);
     if (songsErr) throw songsErr;
     const cloudIds = new Set((cloudSongs || []).map(cs => cs.id));
-    let added = 0, pushed = 0;
+    const knownSongIds = new Set(JSON.parse(localStorage.getItem('sv_known_song_ids') || '[]'));
+    let added = 0, pushed = 0, renamed = 0, removedSongs = 0;
 
     // 1) Télécharger ce qui est dans le cloud mais pas encore en local
+    //    + mettre à jour le nom si elle a été renommée sur un autre appareil
     for (const cs of (cloudSongs || [])) {
-      if (songs.find(s => s.id === cs.id)) continue;
+      const existing = songs.find(s => s.id === cs.id);
+      if (existing) {
+        if (existing.name !== cs.name) {
+          existing.name = cs.name;
+          store('songs', 'readwrite').put(existing);
+          renamed++;
+        }
+        continue;
+      }
       const { data: blob, error: dlErr } = await sb.storage.from('songs').download(cs.path);
       if (dlErr) { console.warn('Téléchargement échoué pour "' + cs.name + '" :', dlErr); failedDownloads.push(cs.name); continue; }
       const dataUrl = await new Promise((res, rej) => {
@@ -2161,9 +2171,18 @@ async function syncFromCloud() {
       added++;
     }
 
-    // 2) Envoyer vers le cloud ce qui existait déjà en local (avant la 1ère connexion) et n'y est pas encore
+    // 2) Supprimer localement les musiques supprimées ailleurs (déjà vues avant, absentes du cloud maintenant)
+    const songsToRemove = songs.filter(s => knownSongIds.has(s.id) && !cloudIds.has(s.id));
+    for (const s of songsToRemove) {
+      store('songs', 'readwrite').delete(s.id);
+      songs = songs.filter(x => x.id !== s.id);
+      playlists.forEach(p => { p.songs = p.songs.filter(x => x !== s.id); store('playlists', 'readwrite').put(p); });
+      removedSongs++;
+    }
+
+    // 3) Envoyer vers le cloud les musiques locales jamais synchronisées (nouvelles, ou existantes avant la 1ère connexion)
     for (const s of songs) {
-      if (cloudIds.has(s.id)) continue;
+      if (cloudIds.has(s.id) || knownSongIds.has(s.id)) continue;
       try {
         await pushSongToCloud(s, true);
         pushed++;
@@ -2173,18 +2192,36 @@ async function syncFromCloud() {
       }
     }
 
+    // Mémoriser l'état "connu" pour détecter les suppressions au prochain sync
+    localStorage.setItem('sv_known_song_ids', JSON.stringify(songs.map(s => s.id)));
+
+    // ── PLAYLISTS : même logique (ajout / màj / suppression) ──
+    const knownPlaylistIds = new Set(JSON.parse(localStorage.getItem('sv_known_playlist_ids') || '[]'));
     const { data: userData } = await sb.from('user_data').select('playlists').eq('user_id', currentUser.id).maybeSingle();
-    if (userData && userData.playlists) {
-      userData.playlists.forEach(cp => {
-        const local = playlists.find(p => p.id === cp.id);
-        if (!local) { playlists.push(cp); store('playlists', 'readwrite').put(cp); }
-      });
-    }
+    const cloudPlaylists = (userData && userData.playlists) || [];
+    const cloudPlIds = new Set(cloudPlaylists.map(p => p.id));
+
+    // Ajouter / mettre à jour depuis le cloud (nom, contenu, ordre)
+    cloudPlaylists.forEach(cp => {
+      const idx = playlists.findIndex(p => p.id === cp.id);
+      if (idx === -1) playlists.push(cp);
+      else playlists[idx] = cp;
+      store('playlists', 'readwrite').put(cp);
+    });
+
+    // Supprimer localement les playlists supprimées ailleurs
+    const plToRemove = playlists.filter(p => knownPlaylistIds.has(p.id) && !cloudPlIds.has(p.id));
+    plToRemove.forEach(p => { store('playlists', 'readwrite').delete(p.id); playlists = playlists.filter(x => x.id !== p.id); });
+
+    // Pousser l'état final (inclut les playlists locales créées avant la 1ère connexion / hors-ligne)
+    await pushPlaylistsToCloud();
+    localStorage.setItem('sv_known_playlist_ids', JSON.stringify(playlists.map(p => p.id)));
+
     renderSongs(); renderUploadSongs(); renderPlaylists();
     if (statusEl) statusEl.textContent = 'Synchronisé';
     if (added > 0) toast(`☁️ ${added} musique(s) récupérée(s)`);
     if (pushed > 0) toast(`☁️ ${pushed} musique(s) envoyée(s) vers le cloud`);
-    await pushPlaylistsToCloud();
+    if (removedSongs > 0 || plToRemove.length > 0) toast(`🗑 ${removedSongs + plToRemove.length} élément(s) supprimé(s) ailleurs, retiré(s) ici`);
     if (failedDownloads.length || failedUploads.length) {
       console.warn('Échecs de synchro — téléchargement:', failedDownloads, '| envoi:', failedUploads);
       toast(`⚠️ ${failedDownloads.length + failedUploads.length} musique(s) en échec (voir console)`);
