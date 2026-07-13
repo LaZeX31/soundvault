@@ -1189,6 +1189,17 @@ let db, songs = [], playlists = [];
 let currentSongId = null, currentPlaylistId = null;
 let shuffleMode = false, repeatMode = false;
 let shuffleQueue = [];
+
+// Vrai mélange équitable (chaque ordre a la même probabilité), contrairement à sort(() => Math.random()-0.5)
+// qui est biaisé (certains morceaux reviennent plus souvent selon l'algo de tri du navigateur).
+function fisherYatesShuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 let manualQueue = [];
 let playHistory = [];
 let pendingSong = null;
@@ -1860,7 +1871,7 @@ function nextSong() {
   const idx = list.indexOf(currentSongId);
   let next;
   if (shuffleMode) {
-    if (!shuffleQueue.length) shuffleQueue = list.filter(x => x !== currentSongId).sort(() => Math.random() - 0.5);
+    if (!shuffleQueue.length) shuffleQueue = fisherYatesShuffle(list.filter(x => x !== currentSongId));
     if (!shuffleQueue.length) return;
     next = shuffleQueue.shift();
   } else { next = list[(idx + 1) % list.length]; }
