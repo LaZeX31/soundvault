@@ -2182,10 +2182,17 @@ async function syncFromCloud() {
         }
         continue;
       }
-      const headers = await authHeader();
-      const dlRes = await fetch(`${STORAGE_WORKER_URL}/song/${cs.id}`, { headers });
-      if (!dlRes.ok) { console.warn('Téléchargement échoué pour "' + cs.name + '" :', dlRes.status); failedDownloads.push(cs.name); continue; }
-      const blob = await dlRes.blob();
+      let blob;
+      try {
+        const headers = await authHeader();
+        const dlRes = await fetch(`${STORAGE_WORKER_URL}/song/${cs.id}`, { headers });
+        if (!dlRes.ok) { console.warn('Téléchargement échoué pour "' + cs.name + '" :', dlRes.status); failedDownloads.push(cs.name); continue; }
+        blob = await dlRes.blob();
+      } catch (netErr) {
+        console.warn('Téléchargement échoué (réseau) pour "' + cs.name + '" :', netErr);
+        failedDownloads.push(cs.name);
+        continue;
+      }
       const dataUrl = await new Promise((res, rej) => {
         const r = new FileReader();
         r.onload = () => res(r.result);
