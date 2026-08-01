@@ -1992,6 +1992,15 @@ const SUPABASE_ANON_KEY = "sb_publishable_oMmOvCWWvN3EiT71g_YG1A_SXcW1NTB";
 let sb = null, cloudReady = false;
 let currentUser = null, accountTab = 'login';
 
+// URL du Worker Cloudflare qui fait le pont vers Backblaze B2 (stockage des fichiers audio)
+const STORAGE_WORKER_URL = "https://soundvault-worker1.noam31012012.workers.dev";
+
+// Récupère le token de session Supabase, à envoyer au Worker pour prouver qu'on est connecté
+async function authHeader() {
+  const { data } = await sb.auth.getSession();
+  return data.session ? { Authorization: `Bearer ${data.session.access_token}` } : {};
+}
+
 try {
   if (SUPABASE_URL !== "COLLE_TON_URL_ICI" && SUPABASE_ANON_KEY !== "COLLE_TA_CLE_ICI" && typeof supabase !== 'undefined') {
     sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -2108,12 +2117,16 @@ async function pushSongMetaToCloud(song) {
 async function pushSongToCloud(song, rethrow) {
   if (!cloudReady || !currentUser) return;
   try {
-    const path = `${currentUser.id}/${song.id}`;
     const blob = await (await fetch(song.data)).blob();
-    const { error: upErr } = await sb.storage.from('songs').upload(path, blob, { upsert: true });
-    if (upErr) throw upErr;
+    const headers = await authHeader();
+    const upRes = await fetch(`${STORAGE_WORKER_URL}/song/${song.id}`, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': blob.type || 'application/octet-stream' },
+      body: blob
+    });
+    if (!upRes.ok) throw new Error('Upload échoué (' + upRes.status + ')');
     const { error: dbErr } = await sb.from('songs').upsert({
-      id: song.id, user_id: currentUser.id, name: song.name, path, updated_at: new Date().toISOString()
+      id: song.id, user_id: currentUser.id, name: song.name, updated_at: new Date().toISOString()
     });
     if (dbErr) throw dbErr;
   } catch (err) {
@@ -2136,7 +2149,8 @@ async function deleteSongFromCloud(id) {
   if (!cloudReady || !currentUser) return;
   try {
     await sb.from('songs').delete().eq('id', id).eq('user_id', currentUser.id);
-    await sb.storage.from('songs').remove([`${currentUser.id}/${id}`]);
+    const headers = await authHeader();
+    await fetch(`${STORAGE_WORKER_URL}/song/${id}`, { method: 'DELETE', headers });
   } catch (err) { /* déjà absent, on ignore */ }
 }
 
@@ -2168,8 +2182,10 @@ async function syncFromCloud() {
         }
         continue;
       }
-      const { data: blob, error: dlErr } = await sb.storage.from('songs').download(cs.path);
-      if (dlErr) { console.warn('Téléchargement échoué pour "' + cs.name + '" :', dlErr); failedDownloads.push(cs.name); continue; }
+      const headers = await authHeader();
+      const dlRes = await fetch(`${STORAGE_WORKER_URL}/song/${cs.id}`, { headers });
+      if (!dlRes.ok) { console.warn('Téléchargement échoué pour "' + cs.name + '" :', dlRes.status); failedDownloads.push(cs.name); continue; }
+      const blob = await dlRes.blob();
       const dataUrl = await new Promise((res, rej) => {
         const r = new FileReader();
         r.onload = () => res(r.result);
