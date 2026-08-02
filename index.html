@@ -1753,7 +1753,11 @@ function readFile(file) {
     store('songs','readwrite').put(song);
     renderSongs(); renderUploadSongs();
     toast('🎵 ' + cleanName(file.name) + ' importée !');
-    if (currentUser) pushSongToCloud(song);
+    if (currentUser) {
+      pushSongToCloud(song, true).catch(() => {
+        toast('⚠️ "' + cleanName(file.name) + '" pas envoyée au cloud (réessaiera plus tard)');
+      });
+    }
   };
   reader.readAsDataURL(file);
 }
