@@ -2145,13 +2145,14 @@ async function pushSongToCloud(song, rethrow) {
 }
 
 async function pushPlaylistsToCloud() {
-  if (!cloudReady || !currentUser) return;
+  if (!cloudReady || !currentUser) return false;
   try {
     const { error } = await sb.from('user_data').upsert({
       user_id: currentUser.id, playlists, updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' });
-    if (error) console.warn('Push playlists échoué :', error);
-  } catch (err) { console.warn('Push playlists échoué :', err); }
+    if (error) { console.warn('Push playlists échoué :', error); return false; }
+    return true;
+  } catch (err) { console.warn('Push playlists échoué :', err); return false; }
 }
 
 async function deleteSongFromCloud(id) {
@@ -2224,19 +2225,23 @@ async function syncFromCloud() {
     }
 
     // 3) Envoyer vers le cloud les musiques locales jamais synchronisées (nouvelles, ou existantes avant la 1ère connexion)
+    const confirmedIds = new Set(cloudIds); // musiques dont on est sûr qu'elles existent bien dans le cloud
     for (const s of songs) {
       if (cloudIds.has(s.id) || knownSongIds.has(s.id)) continue;
       try {
         await pushSongToCloud(s, true);
         pushed++;
+        confirmedIds.add(s.id); // envoi réussi : on peut la marquer comme connue en toute sécurité
       } catch (upErr) {
         console.warn('Envoi échoué pour "' + s.name + '" :', upErr);
         failedUploads.push(s.name);
+        // pas de confirmedIds.add ici : on retentera au prochain sync au lieu de risquer une suppression à tort
       }
     }
 
     // Mémoriser l'état "connu" pour détecter les suppressions au prochain sync
-    localStorage.setItem('sv_known_song_ids', JSON.stringify(songs.map(s => s.id)));
+    // (uniquement les musiques confirmées côté cloud, jamais celles dont l'envoi a échoué)
+    localStorage.setItem('sv_known_song_ids', JSON.stringify(songs.filter(s => confirmedIds.has(s.id)).map(s => s.id)));
 
     // ── PLAYLISTS : même logique (ajout / màj / suppression) ──
     const knownPlaylistIds = new Set(JSON.parse(localStorage.getItem('sv_known_playlist_ids') || '[]'));
@@ -2257,8 +2262,12 @@ async function syncFromCloud() {
     plToRemove.forEach(p => { store('playlists', 'readwrite').delete(p.id); playlists = playlists.filter(x => x.id !== p.id); });
 
     // Pousser l'état final (inclut les playlists locales créées avant la 1ère connexion / hors-ligne)
-    await pushPlaylistsToCloud();
-    localStorage.setItem('sv_known_playlist_ids', JSON.stringify(playlists.map(p => p.id)));
+    const playlistsPushOk = await pushPlaylistsToCloud();
+    if (playlistsPushOk) {
+      localStorage.setItem('sv_known_playlist_ids', JSON.stringify(playlists.map(p => p.id)));
+    }
+    // si l'envoi a échoué, on ne touche pas à sv_known_playlist_ids : les playlists non confirmées
+    // resteront "pas connues" et seront retentées au prochain sync, sans risque d'être supprimées à tort
 
     renderSongs(); renderUploadSongs(); renderPlaylists();
     if (statusEl) statusEl.textContent = 'Synchronisé';
