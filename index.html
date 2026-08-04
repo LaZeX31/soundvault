@@ -1188,7 +1188,7 @@ body:not(.queue-open) header {
 let db, songs = [], playlists = [];
 let currentSongId = null, currentPlaylistId = null;
 let shuffleMode = false, repeatMode = false;
-let shuffleQueue = [];
+let shuffleQueues = {}; // une file mélangée par contexte (playlist ou "toutes les musiques"), pour ne rien perdre en changeant de playlist
 
 // Vrai mélange équitable (chaque ordre a la même probabilité), contrairement à sort(() => Math.random()-0.5)
 // qui est biaisé (certains morceaux reviennent plus souvent selon l'algo de tri du navigateur).
@@ -1211,7 +1211,7 @@ function saveState() {
   try {
     localStorage.setItem('sv_state', JSON.stringify({
       currentSongId, currentPlaylistId, shuffleMode, repeatMode,
-      manualQueue, playHistory, shuffleQueue,
+      manualQueue, playHistory, shuffleQueues,
       volume: audio ? audio.volume : 1,
       currentTime: audio ? audio.currentTime : 0,
     }));
@@ -1231,7 +1231,12 @@ function restoreState() {
       if (ic) ic.textContent = s.volume === 0 ? '🔇' : s.volume < 0.5 ? '🔉' : '🔊';
     }
     if (s.shuffleMode) { shuffleMode = true; document.getElementById('btnShuffle').classList.add('active'); }
-    if (s.shuffleQueue) shuffleQueue = s.shuffleQueue.filter(id => songs.some(x => x.id === id));
+    if (s.shuffleQueues) {
+      shuffleQueues = {};
+      for (const key in s.shuffleQueues) {
+        shuffleQueues[key] = s.shuffleQueues[key].filter(id => songs.some(x => x.id === id));
+      }
+    }
     if (s.repeatMode)  { repeatMode  = true; audio.loop = true; document.getElementById('btnRepeat').classList.add('active'); }
     if (s.playHistory) playHistory = s.playHistory;
     if (s.manualQueue) manualQueue = s.manualQueue;
@@ -1388,9 +1393,9 @@ function filterHome(query) {
 function playPlaylistNow(pid) {
   const p = playlists.find(x => x.id === pid);
   if (!p || !p.songs.length) return;
-  // Si la musique affichée fait déjà partie de cette playlist, on la reprend au lieu d'en relancer une autre
-  if (currentSongId && p.songs.includes(currentSongId)) {
-    currentPlaylistId = pid;
+  // On ne reprend la musique affichée que si on écoute déjà CETTE playlist précise
+  // (pas juste "la musique fait partie de cette playlist" — elle peut être dans plusieurs)
+  if (currentSongId && currentPlaylistId === pid && p.songs.includes(currentSongId)) {
     if (audio.paused) togglePlay();
     updateHighlight();
     renderPlaylists();
@@ -1847,9 +1852,7 @@ function playSong(sid, pid) {
   const s = songs.find(x => x.id === sid);
   if (!s) return;
   currentSongId = sid;
-  const prevPid = currentPlaylistId;
   currentPlaylistId = pid || null;
-  if (prevPid !== currentPlaylistId) shuffleQueue = [];
   if (pid) {
     const p = playlists.find(x => x.id === pid);
     if (p) { p.lastPlayed = Date.now(); store('playlists','readwrite').put(p); }
@@ -1902,10 +1905,12 @@ function nextSong() {
   if (!list.length) return;
   const idx = list.indexOf(currentSongId);
   let next;
+  const qKey = currentPlaylistId || 'all';
   if (shuffleMode) {
-    if (!shuffleQueue.length) shuffleQueue = fisherYatesShuffle(list.filter(x => x !== currentSongId));
-    if (!shuffleQueue.length) return;
-    next = shuffleQueue.shift();
+    if (!shuffleQueues[qKey]) shuffleQueues[qKey] = [];
+    if (!shuffleQueues[qKey].length) shuffleQueues[qKey] = fisherYatesShuffle(list.filter(x => x !== currentSongId));
+    if (!shuffleQueues[qKey].length) return;
+    next = shuffleQueues[qKey].shift();
   } else { next = list[(idx + 1) % list.length]; }
   playSong(next, currentPlaylistId);
 }
@@ -1924,7 +1929,7 @@ function getQueue() {
   return songs.map(s => s.id);
 }
 
-function toggleShuffle() { shuffleMode = !shuffleMode; shuffleQueue = []; document.getElementById('btnShuffle').classList.toggle('active', shuffleMode); toast(shuffleMode ? '🔀 Aléatoire activé' : 'Aléatoire désactivé'); saveState(); }
+function toggleShuffle() { shuffleMode = !shuffleMode; shuffleQueues = {}; document.getElementById('btnShuffle').classList.toggle('active', shuffleMode); toast(shuffleMode ? '🔀 Aléatoire activé' : 'Aléatoire désactivé'); saveState(); }
 function toggleRepeat()  { repeatMode  = !repeatMode;  document.getElementById('btnRepeat').classList.toggle('active', repeatMode); audio.loop = repeatMode; toast(repeatMode ? '🔁 Répétition activée' : 'Répétition désactivée'); saveState(); }
 
 audio.addEventListener('ended',  () => { if (!repeatMode) nextSong(); });
@@ -1999,7 +2004,9 @@ function renderQueue() {
     });
   }
   const list = getQueue();
-  let upcoming = shuffleMode && shuffleQueue.length ? shuffleQueue : (!shuffleMode && list.length ? list.slice(list.indexOf(currentSongId)+1) : []);
+  const qKey = currentPlaylistId || 'all';
+  const currentQueue = shuffleQueues[qKey] || [];
+  let upcoming = shuffleMode && currentQueue.length ? currentQueue : (!shuffleMode && list.length ? list.slice(list.indexOf(currentSongId)+1) : []);
   if (upcoming.length) {
     html += '<div class="queue-section-label">À venir</div>';
     upcoming.slice(0,20).forEach(sid => {
