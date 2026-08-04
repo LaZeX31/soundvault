@@ -1272,6 +1272,14 @@ req.onerror   = e => { console.error('DB error', e); };
 
 function store(name, mode) { return db.transaction(name, mode).objectStore(name); }
 
+// Sauvegarde locale avec alerte si ça échoue (ex: stockage de l'appareil plein),
+// au lieu d'un échec silencieux où le changement semble marcher puis disparaît.
+function safePut(storeName, obj, label) {
+  const req = store(storeName, 'readwrite').put(obj);
+  req.onerror = () => toast('❌ "' + label + '" pas sauvegardé (stockage de l\'appareil plein ?)');
+  return req;
+}
+
 function loadAll() {
   store('songs','readonly').getAll().onsuccess = e => {
     songs = e.target.result;
@@ -1563,7 +1571,7 @@ function initDragSort(pid) {
       // Sauvegarder le nouvel ordre
       const newOrder = [...container.querySelectorAll('.swipe-wrap')].map(w => w.dataset.sid);
       const p = playlists.find(x => x.id === pid);
-      if (p) { p.songs = newOrder; store('playlists','readwrite').put(p); if (currentUser) pushPlaylistsToCloud(); }
+      if (p) { p.songs = newOrder; safePut('playlists', p, p.name); if (currentUser) pushPlaylistsToCloud(); }
       dragEl = null;
     });
   });
@@ -1604,12 +1612,12 @@ function confirmRename() {
   const p = playlists.find(x => x.id === pid);
   if (!p) return;
   p.name = name;
-  store('playlists','readwrite').put(p);
+  safePut('playlists', p, name);
   document.getElementById('detail-title').textContent = name;
   renderPlaylists();
   closeModal('modal-rename');
   toast('✏️ Playlist renommée');
-  if (currentUser) pushPlaylistsToCloud();
+  if (currentUser) pushPlaylistsToCloud().then(ok => { if (!ok) toast('⚠️ Renommage pas envoyé au cloud (réessaiera plus tard)'); });
 }
 
 function toggleSongMenu(e, sid, pid) {
@@ -1639,10 +1647,14 @@ function confirmRenameSong() {
   const s = songs.find(x => x.id === renamingSongId);
   if (!s) return;
   s.name = name;
-  store('songs','readwrite').put(s);
+  safePut('songs', s, name);
   closeModal('modal-rename-song');
   toast('✏️ Musique renommée');
-  if (currentUser) pushSongMetaToCloud(s);
+  if (currentUser) {
+    pushSongMetaToCloud(s).catch(() => {
+      toast('⚠️ Nouveau nom pas envoyé au cloud (réessaiera plus tard)');
+    });
+  }
   renamingSongId = null;
   renderSongs();
   renderPlaylists();
@@ -1673,7 +1685,8 @@ function removeFromPlaylist(pid, sid) {
   const p = playlists.find(x => x.id === pid);
   if (!p) return;
   p.songs = p.songs.filter(x => x !== sid);
-  store('playlists','readwrite').put(p);
+  safePut('playlists', p, p.name);
+  if (currentUser) pushPlaylistsToCloud();
   openPlaylist(pid);
   toast('Retiré de la playlist');
 }
@@ -1738,7 +1751,7 @@ function renderUploadSongs() {
 function deleteSong(id) {
   store('songs','readwrite').delete(id);
   songs = songs.filter(s => s.id !== id);
-  playlists.forEach(p => { p.songs = p.songs.filter(x => x !== id); store('playlists','readwrite').put(p); });
+  playlists.forEach(p => { p.songs = p.songs.filter(x => x !== id); safePut('playlists', p, p.name); });
   if (currentSongId === id) currentSongId = null;
   renderSongs(); renderUploadSongs(); renderPlaylists();
   toast('Musique supprimée');
@@ -1801,8 +1814,8 @@ function confirmAdd() {
     const pid = el.dataset.pid;
     const p = playlists.find(x => x.id === pid);
     if (!p) return;
-    if (el.classList.contains('checked')) { if (!p.songs.includes(pendingSong)) { p.songs.push(pendingSong); store('playlists','readwrite').put(p); } }
-    else { p.songs = p.songs.filter(x => x !== pendingSong); store('playlists','readwrite').put(p); }
+    if (el.classList.contains('checked')) { if (!p.songs.includes(pendingSong)) { p.songs.push(pendingSong); safePut('playlists', p, p.name); } }
+    else { p.songs = p.songs.filter(x => x !== pendingSong); safePut('playlists', p, p.name); }
   });
   renderPlaylists();
   closeModal('modal-add');
@@ -1819,11 +1832,11 @@ function createPlaylist() {
   if (!name) return;
   const p = { id: Date.now().toString(), name, songs: [], cover: COVERS[playlists.length % COVERS.length], lastPlayed: 0 };
   playlists.push(p);
-  store('playlists','readwrite').put(p);
+  safePut('playlists', p, name);
   renderPlaylists();
   closeModal('modal-create');
   toast('Playlist "' + name + '" créée 🎶');
-  if (currentUser) pushPlaylistsToCloud();
+  if (currentUser) pushPlaylistsToCloud().then(ok => { if (!ok) toast('⚠️ Playlist pas envoyée au cloud (réessaiera plus tard)'); });
 }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
@@ -2127,9 +2140,8 @@ function logoutAccount() {
 // Met à jour juste le nom d'une musique côté cloud (pas de ré-upload de l'audio)
 async function pushSongMetaToCloud(song) {
   if (!cloudReady || !currentUser) return;
-  try {
-    await sb.from('songs').update({ name: song.name }).eq('id', song.id).eq('user_id', currentUser.id);
-  } catch (err) { console.warn('Maj nom cloud échouée :', err); }
+  const { error } = await sb.from('songs').update({ name: song.name }).eq('id', song.id).eq('user_id', currentUser.id);
+  if (error) { console.warn('Maj nom cloud échouée :', error); throw error; }
 }
 
 // Pousse une musique vers le cloud (appelé après un ajout local)
