@@ -2049,7 +2049,10 @@ try {
     sb.auth.onAuthStateChange((event, session) => {
       currentUser = session ? session.user : null;
       updateAccountUI();
-      if (currentUser) syncFromCloud();
+      // On ne resynchronise que lors d'une vraie connexion, jamais lors du renouvellement
+      // automatique et silencieux du token (TOKEN_REFRESHED) qui pourrait sinon interrompre
+      // la lecture en cours sans raison apparente pour la personne.
+      if (currentUser && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) syncFromCloud();
     });
   }
 } catch (err) { console.warn('Supabase indisponible :', err); }
