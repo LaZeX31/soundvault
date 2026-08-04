@@ -1211,7 +1211,7 @@ function saveState() {
   try {
     localStorage.setItem('sv_state', JSON.stringify({
       currentSongId, currentPlaylistId, shuffleMode, repeatMode,
-      manualQueue, playHistory,
+      manualQueue, playHistory, shuffleQueue,
       volume: audio ? audio.volume : 1,
       currentTime: audio ? audio.currentTime : 0,
     }));
@@ -1231,6 +1231,7 @@ function restoreState() {
       if (ic) ic.textContent = s.volume === 0 ? '🔇' : s.volume < 0.5 ? '🔉' : '🔊';
     }
     if (s.shuffleMode) { shuffleMode = true; document.getElementById('btnShuffle').classList.add('active'); }
+    if (s.shuffleQueue) shuffleQueue = s.shuffleQueue.filter(id => songs.some(x => x.id === id));
     if (s.repeatMode)  { repeatMode  = true; audio.loop = true; document.getElementById('btnRepeat').classList.add('active'); }
     if (s.playHistory) playHistory = s.playHistory;
     if (s.manualQueue) manualQueue = s.manualQueue;
@@ -1379,6 +1380,15 @@ function filterHome(query) {
 function playPlaylistNow(pid) {
   const p = playlists.find(x => x.id === pid);
   if (!p || !p.songs.length) return;
+  // Si la musique affichée fait déjà partie de cette playlist, on la reprend au lieu d'en relancer une autre
+  if (currentSongId && p.songs.includes(currentSongId)) {
+    currentPlaylistId = pid;
+    if (audio.paused) togglePlay();
+    updateHighlight();
+    renderPlaylists();
+    saveState();
+    return;
+  }
   const idx = Math.floor(Math.random() * p.songs.length);
   playSong(p.songs[idx], pid);
 }
