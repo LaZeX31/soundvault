@@ -1393,17 +1393,9 @@ function filterHome(query) {
 function playPlaylistNow(pid) {
   const p = playlists.find(x => x.id === pid);
   if (!p || !p.songs.length) return;
-  // On ne reprend la musique affichée que si on écoute déjà CETTE playlist précise
-  // (pas juste "la musique fait partie de cette playlist" — elle peut être dans plusieurs)
-  if (currentSongId && currentPlaylistId === pid && p.songs.includes(currentSongId)) {
-    if (audio.paused) togglePlay();
-    updateHighlight();
-    renderPlaylists();
-    saveState();
-    return;
-  }
-  const idx = Math.floor(Math.random() * p.songs.length);
-  playSong(p.songs[idx], pid);
+  shuffleQueues[pid] = fisherYatesShuffle([...p.songs]);
+  const next = shuffleQueues[pid].shift();
+  playSong(next, pid);
 }
 
 function openPlaylist(pid) {
@@ -1906,9 +1898,10 @@ function nextSong() {
   const idx = list.indexOf(currentSongId);
   let next;
   const qKey = currentPlaylistId || 'all';
-  if (shuffleMode) {
-    if (!shuffleQueues[qKey]) shuffleQueues[qKey] = [];
-    if (!shuffleQueues[qKey].length) shuffleQueues[qKey] = fisherYatesShuffle(list.filter(x => x !== currentSongId));
+  if (shuffleQueues[qKey] && shuffleQueues[qKey].length) {
+    next = shuffleQueues[qKey].shift();
+  } else if (shuffleMode) {
+    shuffleQueues[qKey] = fisherYatesShuffle(list.filter(x => x !== currentSongId));
     if (!shuffleQueues[qKey].length) return;
     next = shuffleQueues[qKey].shift();
   } else { next = list[(idx + 1) % list.length]; }
@@ -2006,7 +1999,7 @@ function renderQueue() {
   const list = getQueue();
   const qKey = currentPlaylistId || 'all';
   const currentQueue = shuffleQueues[qKey] || [];
-  let upcoming = shuffleMode && currentQueue.length ? currentQueue : (!shuffleMode && list.length ? list.slice(list.indexOf(currentSongId)+1) : []);
+  let upcoming = currentQueue.length ? currentQueue : (list.length ? list.slice(list.indexOf(currentSongId)+1) : []);
   if (upcoming.length) {
     html += '<div class="queue-section-label">À venir</div>';
     upcoming.slice(0,20).forEach(sid => {
