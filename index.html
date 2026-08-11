@@ -1252,7 +1252,7 @@ function restoreState() {
           ? (playlists.find(p => p.id === s.currentPlaylistId)?.name || '—')
           : 'Toutes les musiques';
         document.getElementById('player-playlist').textContent = plName;
-        audio.src = song.data;
+        loadAudioSrc(song.data);
         if (s.currentTime > 0) {
           audio.addEventListener('loadedmetadata', () => { audio.currentTime = s.currentTime; }, { once: true });
         }
@@ -1300,6 +1300,13 @@ function loadAll() {
 // ── PAGES ──
 let currentPage = 'playlists';
 function showPage(p) {
+  if (p !== 'playlists') {
+    if (!awayFromHome) { pushNav(() => { awayFromHome = false; renderPageBody('playlists'); }); awayFromHome = true; }
+  } else if (awayFromHome) { history.back(); return; }
+  renderPageBody(p);
+}
+
+function renderPageBody(p) {
   document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
   document.getElementById('page-' + p).classList.add('active');
@@ -1315,6 +1322,31 @@ function showPage(p) {
     const sh = document.getElementById('searchHome');
     if (sh && sh.value.trim()) { sh.value = ''; filterHome(''); }
   }
+}
+
+// ── Bouton retour du téléphone : une vraie pile de navigation ──
+// Chaque fois qu'on ouvre "quelque chose en plus" (un onglet loin de Playlists, une playlist en
+// détail, ou une popup), on empile une action "annuler" avec l'historique du navigateur. Un appui
+// sur retour dépile toujours un seul niveau, où qu'on soit dans l'appli — jamais besoin de sortir
+// pour fermer une popup ou revenir en arrière.
+let navStack = [];
+let awayFromHome = !!history.state?.away;
+function pushNav(undoFn) {
+  navStack.push(undoFn);
+  history.pushState({ away: true }, '');
+}
+window.addEventListener('popstate', () => {
+  const undoFn = navStack.pop();
+  if (undoFn) undoFn();
+});
+
+function openModal(id) {
+  document.getElementById(id).classList.add('show');
+  pushNav(() => document.getElementById(id).classList.remove('show'));
+}
+function closeModal(id) {
+  if (navStack.length) { history.back(); }
+  else { document.getElementById(id).classList.remove('show'); }
 }
 
 // ── PLAYLISTS ──
@@ -1598,7 +1630,7 @@ function openRenamePlaylist() {
   const p = playlists.find(x => x.id === pid);
   if (!p) return;
   document.getElementById('renameInput').value = p.name;
-  document.getElementById('modal-rename').classList.add('show');
+  openModal('modal-rename');
   setTimeout(() => document.getElementById('renameInput').focus(), 100);
 }
 document.getElementById('renameInput').addEventListener('keydown', e => { if (e.key === 'Enter') confirmRename(); });
@@ -1634,7 +1666,7 @@ function openRenameSong(sid) {
   if (!s) return;
   renamingSongId = sid;
   document.getElementById('renameSongInput').value = cleanName(s.name);
-  document.getElementById('modal-rename-song').classList.add('show');
+  openModal('modal-rename-song');
   setTimeout(() => document.getElementById('renameSongInput').focus(), 100);
 }
 document.getElementById('renameSongInput').addEventListener('keydown', e => { if (e.key === 'Enter') confirmRenameSong(); });
@@ -1681,6 +1713,8 @@ function addToQueueNext(sid) {
 function removeFromPlaylist(pid, sid) {
   const p = playlists.find(x => x.id === pid);
   if (!p) return;
+  const s = songs.find(x => x.id === sid);
+  if (!confirm('Retirer "' + (s ? cleanName(s.name) : 'cette musique') + '" de la playlist "' + p.name + '" ?')) return;
   p.songs = p.songs.filter(x => x !== sid);
   safePut('playlists', p, p.name);
   if (currentUser) pushPlaylistsToCloud();
@@ -1746,6 +1780,8 @@ function renderUploadSongs() {
 }
 
 function deleteSong(id) {
+  const s = songs.find(x => x.id === id);
+  if (!confirm('Supprimer définitivement "' + (s ? cleanName(s.name) : 'cette musique') + '" ? Elle sera aussi retirée de toutes tes playlists et du cloud.')) return;
   store('songs','readwrite').delete(id);
   songs = songs.filter(s => s.id !== id);
   playlists.forEach(p => { p.songs = p.songs.filter(x => x !== id); safePut('playlists', p, p.name); });
@@ -1766,25 +1802,21 @@ zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
 zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); [...e.dataTransfer.files].filter(f => f.type.startsWith('audio/')).forEach(readFile); });
 
 function readFile(file) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    const song = { id: Date.now().toString() + Math.random().toString(36).slice(2), name: file.name, data: reader.result };
-    songs.push(song);
-    const putReq = store('songs','readwrite').put(song);
-    putReq.onerror = () => {
-      songs = songs.filter(s => s.id !== song.id);
-      renderSongs(); renderUploadSongs();
-      toast('❌ "' + cleanName(file.name) + '" pas sauvegardée (stockage de l\'appareil plein ?)');
-    };
+  const song = { id: Date.now().toString() + Math.random().toString(36).slice(2), name: file.name, data: file };
+  songs.push(song);
+  const putReq = store('songs','readwrite').put(song);
+  putReq.onerror = () => {
+    songs = songs.filter(s => s.id !== song.id);
     renderSongs(); renderUploadSongs();
-    toast('🎵 ' + cleanName(file.name) + ' importée !');
-    if (currentUser) {
-      pushSongToCloud(song, true).catch(() => {
-        toast('⚠️ "' + cleanName(file.name) + '" pas envoyée au cloud (réessaiera plus tard)');
-      });
-    }
+    toast('❌ "' + cleanName(file.name) + '" pas sauvegardée (stockage de l\'appareil plein ?)');
   };
-  reader.readAsDataURL(file);
+  renderSongs(); renderUploadSongs();
+  toast('🎵 ' + cleanName(file.name) + ' importée !');
+  if (currentUser) {
+    pushSongToCloud(song, true).catch(() => {
+      toast('⚠️ "' + cleanName(file.name) + '" pas envoyée au cloud (réessaiera plus tard)');
+    });
+  }
 }
 
 // ── ADD TO PLAYLIST ──
@@ -1802,7 +1834,7 @@ function openAddToPlaylist(sid) {
       </div>`;
     }).join('');
   }
-  document.getElementById('modal-add').classList.add('show');
+  openModal('modal-add');
 }
 function togglePl(el) { el.classList.toggle('checked'); el.querySelector('.pl-check').textContent = el.classList.contains('checked') ? '✓' : ''; }
 function confirmAdd() {
@@ -1822,7 +1854,7 @@ function confirmAdd() {
 }
 
 // ── PLAYLIST CREATE ──
-function openCreatePlaylist() { document.getElementById('playlistNameInput').value = ''; document.getElementById('modal-create').classList.add('show'); setTimeout(() => document.getElementById('playlistNameInput').focus(), 100); }
+function openCreatePlaylist() { document.getElementById('playlistNameInput').value = ''; openModal('modal-create'); setTimeout(() => document.getElementById('playlistNameInput').focus(), 100); }
 document.getElementById('playlistNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') createPlaylist(); });
 function createPlaylist() {
   const name = document.getElementById('playlistNameInput').value.trim();
@@ -1835,10 +1867,21 @@ function createPlaylist() {
   toast('Playlist "' + name + '" créée 🎶');
   if (currentUser) pushPlaylistsToCloud().then(ok => { if (!ok) toast('⚠️ Playlist pas envoyée au cloud (réessaiera plus tard)'); });
 }
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
 // ── PLAYER ──
 const audio = document.getElementById('audioEl');
+let currentObjectURL = null;
+// Charge le blob audio d'une musique dans le lecteur, en libérant proprement l'URL précédente
+// (évite les fuites mémoire, importantes vu le nombre de musiques manipulées).
+function loadAudioSrc(songData) {
+  if (currentObjectURL) { URL.revokeObjectURL(currentObjectURL); currentObjectURL = null; }
+  if (songData instanceof Blob) {
+    currentObjectURL = URL.createObjectURL(songData);
+    audio.src = currentObjectURL;
+  } else {
+    audio.src = songData; // rétrocompatibilité avec d'anciennes musiques encore en base64
+  }
+}
 
 function playSong(sid, pid) {
   const s = songs.find(x => x.id === sid);
@@ -1853,7 +1896,7 @@ function playSong(sid, pid) {
   document.getElementById('player-art').className = 'player-art ' + cover;
   document.getElementById('player-title').textContent = cleanName(s.name);
   document.getElementById('player-playlist').textContent = pid ? (playlists.find(p=>p.id===pid)?.name || '—') : 'Toutes les musiques';
-  audio.src = s.data;
+  loadAudioSrc(s.data);
   audio.play();
   document.getElementById('player').classList.add('visible');
   document.getElementById('btnPlay').textContent = '⏸';
@@ -2064,7 +2107,7 @@ function openAccountModal() {
   document.getElementById('accountPseudo').value = '';
   document.getElementById('accountPassword').value = '';
   updateAccountUI();
-  document.getElementById('modal-account').classList.add('show');
+  openModal('modal-account');
 }
 
 function switchAccountTab(tab) {
@@ -2151,7 +2194,7 @@ async function pushSongMetaToCloud(song) {
 async function pushSongToCloud(song, rethrow) {
   if (!cloudReady || !currentUser) return;
   try {
-    const blob = await (await fetch(song.data)).blob();
+    const blob = song.data instanceof Blob ? song.data : await (await fetch(song.data)).blob();
     const headers = await authHeader();
     const upRes = await fetch(`${STORAGE_WORKER_URL}/song/${song.id}`, {
       method: 'PUT',
@@ -2228,13 +2271,7 @@ async function syncFromCloud() {
         failedDownloads.push(cs.name);
         continue;
       }
-      const dataUrl = await new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(r.result);
-        r.onerror = rej;
-        r.readAsDataURL(blob);
-      });
-      const song = { id: cs.id, name: cs.name, data: dataUrl };
+      const song = { id: cs.id, name: cs.name, data: blob };
       songs.push(song);
       store('songs', 'readwrite').put(song);
       added++;
