@@ -301,6 +301,22 @@ main { padding: 16px 20px; position: relative; z-index: 1; }
   margin-right: 4px;
 }
 .song-card.playing .eq { display: flex; }
+.select-check {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--muted);
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: white;
+  transition: all 0.15s;
+}
+.select-check.checked { background: var(--green); border-color: var(--green); }
+.song-card.selected { background: rgba(29,185,84,0.08); border-color: rgba(29,185,84,0.3); }
 .eq-bar {
   width: 3px;
   background: var(--green);
@@ -310,6 +326,7 @@ main { padding: 16px 20px; position: relative; z-index: 1; }
 .eq-bar:nth-child(1) { height: 8px; animation-delay: 0s; }
 .eq-bar:nth-child(2) { height: 14px; animation-delay: 0.2s; }
 .eq-bar:nth-child(3) { height: 10px; animation-delay: 0.4s; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes eq-anim {
   from { transform: scaleY(0.4); }
   to   { transform: scaleY(1); }
@@ -563,6 +580,20 @@ main { padding: 16px 20px; position: relative; z-index: 1; }
   transition: all 0.2s;
 }
 .btn-secondary:hover { color: var(--text); background: var(--bg4); }
+.btn-danger {
+  flex: 1;
+  background: #ff4f4f;
+  border: none;
+  color: white;
+  padding: 12px;
+  border-radius: 12px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-danger:hover { background: #ff6b6b; }
 
 .pl-option {
   display: flex;
@@ -970,6 +1001,7 @@ body:not(.queue-open) header {
 <header>
   <div class="logo">🎵 <span>Sound</span>Vault</div>
   <div style="display:flex;gap:8px;align-items:center;">
+    <span id="syncStatus" title="Synchronisé" style="display:none;font-size:16px;width:24px;text-align:center;transition:opacity 0.2s;">☁️</span>
     <button class="btn-add" id="btnAccount" style="width:42px;height:42px;font-size:16px;background:var(--bg4);box-shadow:none;" onclick="openAccountModal()" title="Compte">👤</button>
     <button class="btn-add" onclick="openCreatePlaylist()">+</button>
   </div>
@@ -1010,12 +1042,19 @@ body:not(.queue-open) header {
       <button class="btn-rename" id="btn-rename-pl" onclick="openRenamePlaylist()" title="Renommer">✏️</button>
       <button id="btn-delete-pl" onclick="deleteCurrentPlaylist()" title="Supprimer" style="background:rgba(255,79,79,0.12);border:1px solid rgba(255,79,79,0.25);color:#ff6b6b;padding:6px 10px;border-radius:10px;font-size:14px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,79,79,0.22)'" onmouseout="this.style.background='rgba(255,79,79,0.12)'">🗑</button>
     </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchDetail" placeholder="Rechercher dans cette playlist..." oninput="filterDetail(this.value)">
+    </div>
     <div id="detail-list"></div>
   </div>
 
   <!-- PAGE SONGS -->
   <div class="page" id="page-songs">
-    <div class="section-title">🎵 Toutes les musiques</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <div class="section-title" style="margin-bottom:0;">🎵 Toutes les musiques</div>
+      <button class="btn-secondary" id="btnSelectMode" onclick="toggleSelectMode()" style="padding:8px 14px;font-size:13px;white-space:nowrap;">Sélectionner</button>
+    </div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input class="search-input" id="searchInput" placeholder="Rechercher une musique..." oninput="filterSongs(this.value)">
@@ -1035,7 +1074,7 @@ body:not(.queue-open) header {
       </a>
     </div>
     <div class="upload-zone" id="uploadZone">
-      <input type="file" id="fileInput" accept="audio/*" multiple>
+      <input type="file" id="fileInput" accept="audio/mpeg,.mp3" multiple>
       <div class="icon">🎧</div>
       <strong>Clique ou glisse tes fichiers ici</strong>
       <p>MP3, WAV, OGG, M4A...</p>
@@ -1092,6 +1131,18 @@ body:not(.queue-open) header {
 </div>
 
 <!-- MODAL CRÉER PLAYLIST -->
+<!-- MODAL CONFIRMATION GÉNÉRIQUE -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal-box">
+    <div class="modal-title" id="confirmTitle">⚠️ Confirmer</div>
+    <p id="confirmMessage" style="color:var(--muted);font-size:14px;margin:0 0 18px;line-height:1.5;"></p>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-confirm')">Annuler</button>
+      <button class="btn-danger" id="confirmActionBtn">Confirmer</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-create">
   <div class="modal-box">
     <div class="modal-title">✨ Nouvelle playlist</div>
@@ -1180,6 +1231,14 @@ body:not(.queue-open) header {
 </div>
 
 
+<div id="multiSelectBar" style="display:none;position:fixed;left:12px;right:12px;bottom:78px;background:#1a1a24;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:12px 16px;z-index:60;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,0.4);">
+  <span id="selectCount" style="font-size:13px;color:#f0f0ff;font-weight:600;">0 sélectionnée(s)</span>
+  <div style="display:flex;gap:8px;">
+    <button onclick="bulkAddToPlaylist()" style="background:var(--bg4);border:none;color:var(--text);padding:8px 12px;border-radius:10px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">📂 Ajouter</button>
+    <button onclick="bulkDelete()" style="background:#ff4f4f;border:none;color:white;padding:8px 12px;border-radius:10px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;">🗑 Supprimer</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <audio id="audioEl"></audio>
 
@@ -1202,7 +1261,9 @@ function fisherYatesShuffle(arr) {
 }
 let manualQueue = [];
 let playHistory = [];
-let pendingSong = null;
+let pendingSongs = [];
+let selectMode = false;
+let selectedIds = new Set();
 let activeQueueTab = 'upcoming';
 const COVERS = ['cover-1','cover-2','cover-3','cover-4','cover-5','cover-6'];
 
@@ -1344,6 +1405,16 @@ function openModal(id) {
   document.getElementById(id).classList.add('show');
   pushNav(() => document.getElementById(id).classList.remove('show'));
 }
+// Popup de confirmation stylée façon app, à la place du confirm() moche du navigateur.
+function askConfirm(title, message, onConfirm) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMessage').textContent = message;
+  const btn = document.getElementById('confirmActionBtn');
+  const freshBtn = btn.cloneNode(true); // évite d'empiler les anciens listeners à chaque appel
+  btn.parentNode.replaceChild(freshBtn, btn);
+  freshBtn.addEventListener('click', () => { closeModal('modal-confirm'); onConfirm(); });
+  openModal('modal-confirm');
+}
 function closeModal(id) {
   if (navStack.length) { history.back(); }
   else { document.getElementById(id).classList.remove('show'); }
@@ -1433,6 +1504,8 @@ function playPlaylistNow(pid) {
 function openPlaylist(pid) {
   const p = playlists.find(x => x.id === pid);
   if (!p) return;
+  const sd = document.getElementById('searchDetail');
+  if (sd) sd.value = '';
   document.getElementById('detail-title').textContent = p.name;
   document.getElementById('btn-delete-pl').dataset.pid = pid;
   document.getElementById('btn-rename-pl').dataset.pid = pid;
@@ -1714,12 +1787,13 @@ function removeFromPlaylist(pid, sid) {
   const p = playlists.find(x => x.id === pid);
   if (!p) return;
   const s = songs.find(x => x.id === sid);
-  if (!confirm('Retirer "' + (s ? cleanName(s.name) : 'cette musique') + '" de la playlist "' + p.name + '" ?')) return;
-  p.songs = p.songs.filter(x => x !== sid);
-  safePut('playlists', p, p.name);
-  if (currentUser) pushPlaylistsToCloud();
-  openPlaylist(pid);
-  toast('Retiré de la playlist');
+  askConfirm('Retirer de la playlist', 'Retirer "' + (s ? cleanName(s.name) : 'cette musique') + '" de la playlist "' + p.name + '" ?', () => {
+    p.songs = p.songs.filter(x => x !== sid);
+    safePut('playlists', p, p.name);
+    if (currentUser) pushPlaylistsToCloud();
+    openPlaylist(pid);
+    toast('Retiré de la playlist');
+  });
 }
 
 // ── SONGS ──
@@ -1732,14 +1806,86 @@ function renderSongs() {
   el.innerHTML = songs.map((s, i) => {
     const playing = s.id === currentSongId;
     const c = COVERS[parseInt(s.id) % COVERS.length];
-    return `<div class="song-card${playing?' playing':''}" onclick="openAddToPlaylist('${s.id}')">
-      <div class="eq"><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div></div>
-      ${!playing?`<div class="song-num">${i+1}</div>`:''}
+    const checked = selectedIds.has(s.id);
+    const clickAction = selectMode ? `toggleSelect('${s.id}')` : `openAddToPlaylist('${s.id}')`;
+    return `<div class="song-card${playing?' playing':''}${checked?' selected':''}" onclick="${clickAction}">
+      ${selectMode ? `<div class="select-check${checked?' checked':''}">${checked?'✓':''}</div>` : `<div class="eq"><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div></div>${!playing?`<div class=\"song-num\">${i+1}</div>`:''}`}
       <div class="song-cover ${c}">🎵</div>
-      <div class="song-info"><div class="song-name">${cleanName(s.name)}</div><div class="song-sub">Appuie pour ajouter à une playlist</div></div>
-      <button class="btn-delete" onclick="event.stopPropagation();deleteSong('${s.id}')">🗑</button>
+      <div class="song-info"><div class="song-name">${cleanName(s.name)}</div><div class="song-sub">${selectMode ? 'Appuie pour sélectionner' : 'Appuie pour ajouter à une playlist'}</div></div>
+      ${selectMode ? '' : `<button class="btn-delete" onclick="event.stopPropagation();deleteSong('${s.id}')">🗑</button>`}
     </div>`;
   }).join('');
+}
+
+function toggleSelectMode() {
+  selectMode = !selectMode;
+  selectedIds.clear();
+  document.getElementById('btnSelectMode').textContent = selectMode ? 'Annuler' : 'Sélectionner';
+  updateSelectBar();
+  renderSongs();
+}
+
+function toggleSelect(id) {
+  if (selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
+  updateSelectBar();
+  renderSongs();
+}
+
+function updateSelectBar() {
+  const bar = document.getElementById('multiSelectBar');
+  if (selectMode && selectedIds.size > 0) {
+    bar.style.display = 'flex';
+    document.getElementById('selectCount').textContent = selectedIds.size + ' sélectionnée(s)';
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function bulkAddToPlaylist() {
+  if (!selectedIds.size) return;
+  openAddToPlaylistBulk([...selectedIds]);
+}
+
+function bulkDelete() {
+  if (!selectedIds.size) return;
+  const ids = [...selectedIds];
+  askConfirm('Supprimer ' + ids.length + ' musique(s)', 'Supprimer définitivement ces ' + ids.length + ' musique(s) ? Elles seront aussi retirées de toutes tes playlists et du cloud.', () => {
+    ids.forEach(id => {
+      store('songs','readwrite').delete(id);
+      songs = songs.filter(s => s.id !== id);
+      playlists.forEach(p => { p.songs = p.songs.filter(x => x !== id); safePut('playlists', p, p.name); });
+      if (currentSongId === id) currentSongId = null;
+      if (currentUser) deleteSongFromCloud(id);
+    });
+    if (currentUser) pushPlaylistsToCloud();
+    toast(ids.length + ' musique(s) supprimée(s)');
+    toggleSelectMode();
+    renderSongs(); renderUploadSongs(); renderPlaylists();
+  });
+}
+
+function filterDetail(query) {
+  const q = query.trim().toLowerCase();
+  const wraps = document.querySelectorAll('#detail-list .swipe-wrap');
+  let anyVisible = false;
+  wraps.forEach(w => {
+    const s = songs.find(x => x.id === w.dataset.sid);
+    const match = !q || (s && cleanName(s.name).toLowerCase().includes(q));
+    w.style.display = match ? '' : 'none';
+    if (match) anyVisible = true;
+  });
+  let emptyMsg = document.getElementById('detail-empty-search');
+  if (!anyVisible && wraps.length) {
+    if (!emptyMsg) {
+      emptyMsg = document.createElement('div');
+      emptyMsg.id = 'detail-empty-search';
+      emptyMsg.className = 'empty';
+      document.getElementById('detail-list').appendChild(emptyMsg);
+    }
+    emptyMsg.innerHTML = `<div class="icon">🔍</div><p>Aucun résultat pour "<strong>${escHtml(query)}</strong>"</p>`;
+  } else if (emptyMsg) {
+    emptyMsg.remove();
+  }
 }
 
 function filterSongs(query) {
@@ -1781,14 +1927,15 @@ function renderUploadSongs() {
 
 function deleteSong(id) {
   const s = songs.find(x => x.id === id);
-  if (!confirm('Supprimer définitivement "' + (s ? cleanName(s.name) : 'cette musique') + '" ? Elle sera aussi retirée de toutes tes playlists et du cloud.')) return;
-  store('songs','readwrite').delete(id);
-  songs = songs.filter(s => s.id !== id);
-  playlists.forEach(p => { p.songs = p.songs.filter(x => x !== id); safePut('playlists', p, p.name); });
-  if (currentSongId === id) currentSongId = null;
-  renderSongs(); renderUploadSongs(); renderPlaylists();
-  toast('Musique supprimée');
-  if (currentUser) { deleteSongFromCloud(id); pushPlaylistsToCloud(); }
+  askConfirm('Supprimer la musique', 'Supprimer définitivement "' + (s ? cleanName(s.name) : 'cette musique') + '" ? Elle sera aussi retirée de toutes tes playlists et du cloud.', () => {
+    store('songs','readwrite').delete(id);
+    songs = songs.filter(s => s.id !== id);
+    playlists.forEach(p => { p.songs = p.songs.filter(x => x !== id); safePut('playlists', p, p.name); });
+    if (currentSongId === id) currentSongId = null;
+    renderSongs(); renderUploadSongs(); renderPlaylists();
+    toast('Musique supprimée');
+    if (currentUser) { deleteSongFromCloud(id); pushPlaylistsToCloud(); }
+  });
 }
 
 function cleanName(name) { return name.replace(/\.[^/.]+$/, '').replace(/_/g,' ').replace(/-/g,' '); }
@@ -1799,9 +1946,19 @@ document.getElementById('fileInput').addEventListener('change', e => { [...e.tar
 const zone = document.getElementById('uploadZone');
 zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag'); });
 zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
-zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); [...e.dataTransfer.files].filter(f => f.type.startsWith('audio/')).forEach(readFile); });
+zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); [...e.dataTransfer.files].forEach(readFile); });
 
 function readFile(file) {
+  const isMp3 = file.type === 'audio/mpeg' || /\.mp3$/i.test(file.name);
+  if (!isMp3) {
+    toast('❌ "' + file.name + '" refusé : seuls les fichiers MP3 sont acceptés');
+    return;
+  }
+  const normalized = cleanName(file.name).trim().toLowerCase();
+  if (songs.some(s => cleanName(s.name).trim().toLowerCase() === normalized)) {
+    toast('⚠️ "' + cleanName(file.name) + '" est déjà dans ta bibliothèque');
+    return;
+  }
   const song = { id: Date.now().toString() + Math.random().toString(36).slice(2), name: file.name, data: file };
   songs.push(song);
   const putReq = store('songs','readwrite').put(song);
@@ -1820,14 +1977,15 @@ function readFile(file) {
 }
 
 // ── ADD TO PLAYLIST ──
-function openAddToPlaylist(sid) {
-  pendingSong = sid;
+function openAddToPlaylist(sid) { openAddToPlaylistBulk([sid]); }
+function openAddToPlaylistBulk(sids) {
+  pendingSongs = sids;
   const el = document.getElementById('modal-pl-list');
   if (!playlists.length) {
     el.innerHTML = '<p style="color:var(--muted);font-size:14px;text-align:center;padding:12px;">Aucune playlist. Crée-en une d\'abord.</p>';
   } else {
     el.innerHTML = playlists.map(p => {
-      const checked = p.songs.includes(sid);
+      const checked = sids.every(sid => p.songs.includes(sid)); // coché seulement si TOUTES les musiques sélectionnées y sont déjà
       return `<div class="pl-option${checked?' checked':''}" data-pid="${p.id}" onclick="togglePl(this)">
         <span class="pl-option-name">${p.name}</span>
         <div class="pl-check">${checked?'✓':''}</div>
@@ -1838,18 +1996,23 @@ function openAddToPlaylist(sid) {
 }
 function togglePl(el) { el.classList.toggle('checked'); el.querySelector('.pl-check').textContent = el.classList.contains('checked') ? '✓' : ''; }
 function confirmAdd() {
-  if (!pendingSong) return;
+  if (!pendingSongs || !pendingSongs.length) return;
   document.querySelectorAll('.pl-option').forEach(el => {
     const pid = el.dataset.pid;
     const p = playlists.find(x => x.id === pid);
     if (!p) return;
-    if (el.classList.contains('checked')) { if (!p.songs.includes(pendingSong)) { p.songs.push(pendingSong); safePut('playlists', p, p.name); } }
-    else { p.songs = p.songs.filter(x => x !== pendingSong); safePut('playlists', p, p.name); }
+    if (el.classList.contains('checked')) {
+      pendingSongs.forEach(sid => { if (!p.songs.includes(sid)) p.songs.push(sid); });
+    } else {
+      p.songs = p.songs.filter(x => !pendingSongs.includes(x));
+    }
+    safePut('playlists', p, p.name);
   });
   renderPlaylists();
   closeModal('modal-add');
   toast('Playlists mises à jour ✓');
-  pendingSong = null;
+  if (selectMode) toggleSelectMode();
+  pendingSongs = [];
   if (currentUser) pushPlaylistsToCloud();
 }
 
@@ -2055,6 +2218,20 @@ function renderQueue() {
 }
 
 // ── TOAST ──
+function setSyncIcon(state) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  if (!currentUser) { el.style.display = 'none'; return; }
+  el.style.display = 'inline-block';
+  if (state === 'syncing') {
+    el.textContent = '🔄'; el.title = 'Synchronisation en cours...'; el.style.animation = 'spin 1s linear infinite';
+  } else if (state === 'error') {
+    el.textContent = '⚠️'; el.title = 'Certaines musiques ne sont pas synchronisées'; el.style.animation = 'none';
+  } else {
+    el.textContent = '☁️'; el.title = 'Synchronisé'; el.style.animation = 'none';
+  }
+}
+
 function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
 
 // ── COMPTE & SYNCHRO CLOUD (Supabase) ──
@@ -2238,6 +2415,7 @@ async function syncFromCloud() {
   if (!cloudReady || !currentUser) return;
   if (syncInProgress) { toast('⏳ Synchro déjà en cours...'); return; }
   syncInProgress = true;
+  setSyncIcon('syncing');
   const statusEl = document.getElementById('account-sync-status');
   if (statusEl) statusEl.textContent = 'Synchronisation...';
   const failedDownloads = [], failedUploads = [];
@@ -2339,10 +2517,14 @@ async function syncFromCloud() {
     if (failedDownloads.length || failedUploads.length) {
       console.warn('Échecs de synchro — téléchargement:', failedDownloads, '| envoi:', failedUploads);
       toast(`⚠️ ${failedDownloads.length + failedUploads.length} musique(s) en échec (voir console)`);
+      setSyncIcon('error');
+    } else {
+      setSyncIcon('synced');
     }
   } catch (err) {
     console.warn('Sync cloud échouée :', err);
     if (statusEl) statusEl.textContent = 'Erreur de synchro';
+    setSyncIcon('error');
   } finally {
     syncInProgress = false;
   }
