@@ -2255,7 +2255,18 @@ async function authHeader() {
 
 try {
   if (SUPABASE_URL !== "COLLE_TON_URL_ICI" && SUPABASE_ANON_KEY !== "COLLE_TA_CLE_ICI" && typeof supabase !== 'undefined') {
-    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Options explicites : sans ça, certains contextes (PWA installée sur Android/iOS,
+    // navigateurs stricts) ne conservent pas la session correctement entre deux ouvertures.
+    // On force ici un stockage précis et fixe pour que la session survive à la fermeture de l'appli.
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,        // garde la session après fermeture de l'appli
+        autoRefreshToken: true,      // renouvelle le token avant expiration
+        detectSessionInUrl: false,   // inutile en PWA, évite un conflit au démarrage
+        storage: window.localStorage,
+        storageKey: 'soundvault-auth' // clé fixe, indépendante du nom du projet Supabase
+      }
+    });
     cloudReady = true;
     // onAuthStateChange se déclenche automatiquement une fois au chargement avec la session existante
     // (événement INITIAL_SESSION) : pas besoin d'un getSession() séparé, ça créerait un double appel.
