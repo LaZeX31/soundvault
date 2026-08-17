@@ -1352,6 +1352,18 @@ function loadAll() {
     renderSongs(); renderUploadSongs();
     store('playlists','readonly').getAll().onsuccess = e2 => {
       playlists = e2.target.result;
+      // Nettoyage : retire les doublons qui auraient pu se glisser dans une playlist
+      // (sinon une musique en double "vole" la place d'une autre en mode aléatoire).
+      let dedupedAny = false;
+      playlists.forEach(p => {
+        const unique = [...new Set(p.songs)];
+        if (unique.length !== p.songs.length) {
+          p.songs = unique;
+          safePut('playlists', p, p.name);
+          dedupedAny = true;
+        }
+      });
+      if (dedupedAny && currentUser) pushPlaylistsToCloud();
       renderPlaylists();
       restoreState();
     };
@@ -1496,7 +1508,8 @@ function filterHome(query) {
 function playPlaylistNow(pid) {
   const p = playlists.find(x => x.id === pid);
   if (!p || !p.songs.length) return;
-  shuffleQueues[pid] = fisherYatesShuffle([...p.songs]);
+  const uniqueSongs = [...new Set(p.songs)];
+  shuffleQueues[pid] = fisherYatesShuffle(uniqueSongs);
   const next = shuffleQueues[pid].shift();
   playSong(next, pid);
 }
@@ -2124,7 +2137,7 @@ function prevSong() {
 }
 
 function getQueue() {
-  if (currentPlaylistId) { const p = playlists.find(x => x.id === currentPlaylistId); return p ? p.songs : []; }
+  if (currentPlaylistId) { const p = playlists.find(x => x.id === currentPlaylistId); return p ? [...new Set(p.songs)] : []; }
   return songs.map(s => s.id);
 }
 
