@@ -1368,7 +1368,7 @@ body:not(.queue-open) header {
         <button id="tab-login" class="nav-btn active" style="flex:1;padding:8px;font-size:13px;" onclick="switchAccountTab('login')">Connexion</button>
         <button id="tab-signup" class="nav-btn" style="flex:1;padding:8px;font-size:13px;" onclick="switchAccountTab('signup')">Inscription</button>
       </div>
-      <input class="modal-input" id="accountPseudo" placeholder="Pseudo" maxlength="30" autocomplete="username">
+      <input class="modal-input" id="accountEmail" type="email" placeholder="Adresse email" maxlength="100" autocomplete="email">
       <input class="modal-input" id="accountPassword" type="password" placeholder="Mot de passe (6 caractères min.)" maxlength="60" autocomplete="current-password">
       <div id="account-error" style="color:#ff6b6b;font-size:13px;margin:-4px 0 12px;display:none;"></div>
       <div class="modal-actions">
@@ -1380,10 +1380,19 @@ body:not(.queue-open) header {
     <!-- Vue connecté -->
     <div id="account-logged-in" style="display:none;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
-        <div style="width:44px;height:44px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;font-family:'Syne',sans-serif;color:white;">👤</div>
-        <div>
-          <div style="font-weight:600;font-size:15px;" id="account-pseudo-display">—</div>
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;font-family:'Syne',sans-serif;color:white;flex-shrink:0;">👤</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="account-email-display">—</div>
           <div style="font-size:12px;color:var(--muted);" id="account-sync-status">Synchronisé</div>
+        </div>
+        <button class="btn-queue" onclick="toggleRenameEmail()" title="Changer mon adresse email">✏️</button>
+      </div>
+      <div id="account-rename-box" style="display:none;margin-bottom:6px;">
+        <input class="modal-input" id="accountRenameInput" type="email" placeholder="Nouvelle adresse email" maxlength="100" onkeydown="if(event.key==='Enter')renameEmail()">
+        <div id="account-rename-error" style="color:#ff6b6b;font-size:13px;margin:-4px 0 12px;display:none;"></div>
+        <div class="modal-actions" style="margin-bottom:8px;">
+          <button class="btn-secondary" onclick="toggleRenameEmail()">Annuler</button>
+          <button class="btn-primary" id="accountRenameBtn" onclick="renameEmail()">Valider</button>
         </div>
       </div>
       <div class="modal-actions">
@@ -2711,18 +2720,13 @@ try {
   }
 } catch (err) { console.warn('Supabase indisponible :', err); toast('⚠️ Init cloud échouée : ' + err.message); }
 
-// Un pseudo simple -> un email technique (Supabase Auth exige un email)
-function pseudoToEmail(pseudo) {
-  const clean = pseudo.trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
-  return clean + '@soundvault.local';
-}
-
 function openAccountModal() {
   if (!cloudReady) {
     toast('⚠️ Synchro cloud non configurée (voir instructions)');
   }
   document.getElementById('account-error').style.display = 'none';
-  document.getElementById('accountPseudo').value = '';
+  document.getElementById('account-error').style.color = '';
+  document.getElementById('accountEmail').value = '';
   document.getElementById('accountPassword').value = '';
   updateAccountUI();
   openModal('modal-account');
@@ -2734,6 +2738,7 @@ function switchAccountTab(tab) {
   document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
   document.getElementById('account-submit-btn').textContent = tab === 'login' ? 'Se connecter' : "S'inscrire";
   document.getElementById('account-error').style.display = 'none';
+  document.getElementById('account-error').style.color = '';
 }
 
 function updateAccountUI() {
@@ -2743,7 +2748,7 @@ function updateAccountUI() {
   if (currentUser) {
     out.style.display = 'none';
     inn.style.display = 'block';
-    document.getElementById('account-pseudo-display').textContent = (currentUser.email || '').split('@')[0];
+    document.getElementById('account-email-display').textContent = currentUser.email || '—';
     btn.style.background = 'var(--green)';
     btn.style.boxShadow = '0 0 12px rgba(29,185,84,0.5)';
   } else {
@@ -2756,29 +2761,47 @@ function updateAccountUI() {
 
 async function submitAccountForm() {
   if (!cloudReady) { toast('⚠️ Synchro cloud non configurée'); return; }
-  const pseudo = document.getElementById('accountPseudo').value.trim();
+  const email = document.getElementById('accountEmail').value.trim().toLowerCase();
   const pass = document.getElementById('accountPassword').value;
   const errEl = document.getElementById('account-error');
   errEl.style.display = 'none';
-  if (!pseudo || pass.length < 6) {
-    errEl.textContent = 'Pseudo requis + mot de passe de 6 caractères minimum.';
+  if (!email || pass.length < 6) {
+    errEl.textContent = 'Email + mot de passe de 6 caractères minimum requis.';
     errEl.style.display = 'block';
     return;
   }
-  const email = pseudoToEmail(pseudo);
+  if (accountTab === 'signup' && (!email.includes('@') || !email.includes('.'))) {
+    errEl.textContent = 'Une adresse email valide est requise pour créer un compte.';
+    errEl.style.display = 'block';
+    return;
+  }
   const btn = document.getElementById('account-submit-btn');
   btn.disabled = true; btn.textContent = '...';
   try {
-    let error;
     if (accountTab === 'login') {
-      ({ error } = await sb.auth.signInWithPassword({ email, password: pass }));
+      // Compatibilité avec les anciens comptes créés avec juste un pseudo (sans @) :
+      // on complète nous-mêmes en coulisses, la personne n'a jamais besoin de le taper.
+      const loginEmail = email.includes('@') ? email : email + '@soundvault.local';
+      const { error } = await sb.auth.signInWithPassword({ email: loginEmail, password: pass });
+      if (error) throw error;
+      closeModal('modal-account');
+      toast('👤 Connecté en tant que ' + email);
     } else {
-      ({ error } = await sb.auth.signUp({ email, password: pass }));
+      const { data, error } = await sb.auth.signUp({ email, password: pass });
+      if (error) throw error;
+      if (data.session) {
+        // Pas de confirmation par email exigée côté Supabase : la personne est directement connectée.
+        closeModal('modal-account');
+        toast('👤 Compte créé, connecté en tant que ' + email);
+      } else {
+        // Confirmation par email exigée : la session ne s'ouvrira qu'après avoir cliqué le lien reçu.
+        errEl.style.color = '#1db954';
+        errEl.textContent = '📧 Compte créé ! Vérifie ta boîte mail (' + email + ') et clique sur le lien de confirmation pour activer ton compte.';
+        errEl.style.display = 'block';
+      }
     }
-    if (error) throw error;
-    closeModal('modal-account');
-    toast('👤 Connecté en tant que ' + pseudo);
   } catch (err) {
+    errEl.style.color = '';
     errEl.textContent = translateSupabaseError(err);
     errEl.style.display = 'block';
   }
@@ -2788,9 +2811,10 @@ async function submitAccountForm() {
 
 function translateSupabaseError(err) {
   const m = (err.message || '').toLowerCase();
-  if (m.includes('invalid login credentials')) return 'Pseudo ou mot de passe incorrect.';
-  if (m.includes('already registered') || m.includes('already exists')) return 'Ce pseudo est déjà pris.';
+  if (m.includes('invalid login credentials')) return 'Email ou mot de passe incorrect.';
+  if (m.includes('already registered') || m.includes('already exists')) return 'Cette adresse email est déjà utilisée.';
   if (m.includes('password') && m.includes('6')) return 'Mot de passe trop faible (6 caractères min.).';
+  if (m.includes('invalid') && m.includes('email')) return "Cette adresse email n'est pas valide.";
   if (m.includes('network') || m.includes('fetch')) return 'Pas de connexion internet.';
   return 'Erreur : ' + (err.message || 'inconnue');
 }
@@ -2799,6 +2823,47 @@ function logoutAccount() {
   sb.auth.signOut();
   closeModal('modal-account');
   toast('👋 Déconnecté (tes musiques restent sur cet appareil)');
+}
+
+function toggleRenameEmail() {
+  const box = document.getElementById('account-rename-box');
+  const showing = box.style.display !== 'none';
+  box.style.display = showing ? 'none' : 'block';
+  const err = document.getElementById('account-rename-error');
+  if (err) err.style.display = 'none';
+  const input = document.getElementById('accountRenameInput');
+  if (input) {
+    input.value = '';
+    if (!showing) setTimeout(() => input.focus(), 50);
+  }
+}
+
+async function renameEmail() {
+  if (!cloudReady || !currentUser) return;
+  const newEmail = document.getElementById('accountRenameInput').value.trim().toLowerCase();
+  const errEl = document.getElementById('account-rename-error');
+  errEl.style.display = 'none';
+  if (!newEmail || !newEmail.includes('@') || !newEmail.includes('.')) { errEl.textContent = 'Entre une adresse email valide.'; errEl.style.display = 'block'; return; }
+  if (newEmail === currentUser.email) { errEl.textContent = "C'est déjà ton adresse actuelle."; errEl.style.display = 'block'; return; }
+  const btn = document.getElementById('accountRenameBtn');
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const { data, error } = await sb.auth.updateUser({ email: newEmail });
+    if (error) throw error;
+    // onAuthStateChange (déjà en écoute) mettra l'affichage à jour tout seul dès que le
+    // changement est effectif.
+    const applied = data && data.user && data.user.email === newEmail;
+    if (applied) {
+      toast('✅ Adresse email mise à jour');
+    } else {
+      toast('📧 Vérifie ta boîte mail : un lien de confirmation a été envoyé pour valider le changement.');
+    }
+    toggleRenameEmail();
+  } catch (err) {
+    errEl.textContent = translateSupabaseError(err);
+    errEl.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Valider';
 }
 
 // Met à jour juste le nom d'une musique côté cloud (pas de ré-upload de l'audio)
