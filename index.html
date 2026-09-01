@@ -800,6 +800,40 @@ body:not(.queue-open) header {
 .btn-queue.pending svg { animation: sleepPulse 1s ease-in-out infinite; }
 @keyframes sleepPulse { 0%,100%{opacity:0.4;} 50%{opacity:1;} }
 
+/* ── BANNIÈRE ERREUR STOCKAGE LOCAL ── */
+.db-error-banner {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 300;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(255,79,79,0.12);
+  border-bottom: 1px solid rgba(255,79,79,0.35);
+  backdrop-filter: blur(10px);
+  padding: 14px 20px;
+}
+.db-error-banner.show { display: flex; }
+.db-error-icon { font-size: 20px; line-height: 1; flex-shrink: 0; }
+.db-error-text { flex: 1; min-width: 0; }
+.db-error-text strong { font-family: 'Syne', sans-serif; font-size: 14px; color: var(--text); }
+.db-error-text p { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+.db-error-retry {
+  flex-shrink: 0;
+  background: #ff4f4f;
+  border: none;
+  color: white;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.db-error-retry:hover { background: #ff6b6b; }
+
 /* ── MINUTEUR D'ARRÊT ── */
 .sleep-status {
   display: flex;
@@ -1084,6 +1118,15 @@ body:not(.queue-open) header {
 <div class="bg-orb orb1"></div>
 <div class="bg-orb orb2"></div>
 
+<div id="dbErrorBanner" class="db-error-banner">
+  <div class="db-error-icon">⚠️</div>
+  <div class="db-error-text">
+    <strong>Stockage local indisponible</strong>
+    <p>SoundVault n'arrive pas à accéder à sa base de données sur cet appareil. Vérifie que tu n'es pas en navigation privée, que le stockage n'est pas plein, puis réessaie.</p>
+  </div>
+  <button class="db-error-retry" onclick="location.reload()">Réessayer</button>
+</div>
+
 <header>
   <div class="logo">🎵 <span>Sound</span>Vault</div>
   <div style="display:flex;gap:8px;align-items:center;">
@@ -1256,14 +1299,14 @@ body:not(.queue-open) header {
     </div>
     <div class="sleep-divider">ou une durée précise</div>
     <div class="sleep-custom">
-      <input type="number" id="sleepCustomMinutes" class="modal-input" placeholder="Ex : 67" min="1" onkeydown="if(event.key==='Enter')startCustomSleepTimer()">
+      <input type="number" id="sleepCustomMinutes" class="modal-input" placeholder="Ex : 60" min="1" onkeydown="if(event.key==='Enter')startCustomSleepTimer()">
       <span class="sleep-custom-unit">min</span>
       <button class="btn-primary sleep-custom-btn" onclick="startCustomSleepTimer()">Démarrer</button>
     </div>
     <div class="sleep-note">🎵 La musique en cours ira jusqu'à sa fin avant que la lecture ne s'arrête.</div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="cancelSleepTimer()">Annuler le minuteur</button>
-      <button onclick="closeModal('modal-sleep')">Fermer</button>
+      <button class="btn-primary" onclick="closeModal('modal-sleep')">Fermer</button>
     </div>
   </div>
 </div>
@@ -1464,16 +1507,53 @@ function restoreState() {
 }
 
 // ── INDEXEDDB ──
-const req = indexedDB.open('soundvaultDB', 2);
-req.onupgradeneeded = e => {
-  const d = e.target.result;
-  if (!d.objectStoreNames.contains('songs'))     d.createObjectStore('songs',     {keyPath:'id'});
-  if (!d.objectStoreNames.contains('playlists')) d.createObjectStore('playlists', {keyPath:'id'});
-};
-req.onsuccess = e => { db = e.target.result; loadAll(); };
-req.onerror   = e => { console.error('DB error', e); };
+// Si l'ouverture échoue, on retente une fois automatiquement (souvent transitoire,
+// ex: juste après un nettoyage des données du site) avant d'afficher une bannière claire.
+let dbOpenAttempts = 0;
+function openDatabase() {
+  dbOpenAttempts++;
+  const req = indexedDB.open('soundvaultDB', 2);
+  req.onupgradeneeded = e => {
+    const d = e.target.result;
+    if (!d.objectStoreNames.contains('songs'))     d.createObjectStore('songs',     {keyPath:'id'});
+    if (!d.objectStoreNames.contains('playlists')) d.createObjectStore('playlists', {keyPath:'id'});
+  };
+  req.onsuccess = e => {
+    db = e.target.result;
+    hideDbErrorBanner();
+    loadAll();
+  };
+  req.onerror = e => {
+    const reason = e.target.error;
+    console.error('DB error:', reason ? (reason.name + ' — ' + reason.message) : e);
+    if (dbOpenAttempts < 2) {
+      setTimeout(openDatabase, 500);
+    } else {
+      showDbErrorBanner();
+    }
+  };
+  req.onblocked = () => {
+    console.warn('DB blocked : une autre fenêtre/onglet de SoundVault bloque la mise à jour de la base.');
+    showDbErrorBanner('Ferme les autres onglets de SoundVault ouverts, puis réessaie.');
+  };
+}
+openDatabase();
 
-function store(name, mode) { return db.transaction(name, mode).objectStore(name); }
+function showDbErrorBanner(customMsg) {
+  const banner = document.getElementById('dbErrorBanner');
+  if (!banner) return;
+  if (customMsg) banner.querySelector('.db-error-text p').textContent = customMsg;
+  banner.classList.add('show');
+}
+function hideDbErrorBanner() {
+  const banner = document.getElementById('dbErrorBanner');
+  if (banner) banner.classList.remove('show');
+}
+
+function store(name, mode) {
+  if (!db) throw new Error('Base de données locale indisponible');
+  return db.transaction(name, mode).objectStore(name);
+}
 
 // Sauvegarde locale avec alerte si ça échoue (ex: stockage de l'appareil plein),
 // au lieu d'un échec silencieux où le changement semble marcher puis disparaît.
