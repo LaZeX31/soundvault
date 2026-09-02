@@ -979,7 +979,8 @@ body:not(.queue-open) header {
 /* ── RECHERCHE PAGE PLAYLISTS ── */
 .search-wrap { position: relative; margin-bottom: 14px; }
 .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 15px; pointer-events: none; }
-.search-input { width: 100%; background: var(--bg3); border: 1px solid rgba(255,255,255,0.07); color: var(--text); padding: 10px 14px 10px 36px; border-radius: 12px; font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s; }
+.search-input { width: 100%; background: var(--bg3); border: 1px solid rgba(255,255,255,0.07); color: var(--text); padding: 10px 14px 10px 36px; border-radius: 12px; font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s; -webkit-appearance: none; appearance: none; }
+.search-input::-webkit-search-cancel-button { -webkit-appearance: none; }
 .search-input:focus { border-color: rgba(29,185,84,0.4); }
 
 /* ── PLAYLIST CARD WRAP ── */
@@ -1148,7 +1149,7 @@ body:not(.queue-open) header {
     <div class="section-title" id="pl-section-title" style="margin-top:4px;">🎶 Mes Playlists</div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
-      <input class="search-input" id="searchHome" placeholder="Rechercher un son..." oninput="filterHome(this.value)">
+      <input class="search-input" id="searchHome" name="search-home" type="search" autocomplete="off" placeholder="Rechercher un son..." oninput="filterHome(this.value)">
     </div>
     <div id="home-search-results" style="display:none;margin-bottom:10px;"></div>
     <div id="playlists-list"></div>
@@ -1173,7 +1174,7 @@ body:not(.queue-open) header {
     </div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
-      <input class="search-input" id="searchDetail" placeholder="Rechercher dans cette playlist..." oninput="filterDetail(this.value)">
+      <input class="search-input" id="searchDetail" name="search-detail" type="search" autocomplete="off" placeholder="Rechercher dans cette playlist..." oninput="filterDetail(this.value)">
     </div>
     <div id="detail-list"></div>
   </div>
@@ -1186,7 +1187,7 @@ body:not(.queue-open) header {
     </div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
-      <input class="search-input" id="searchInput" placeholder="Rechercher une musique..." oninput="filterSongs(this.value)">
+      <input class="search-input" id="searchInput" name="search-songs" type="search" autocomplete="off" placeholder="Rechercher une musique..." oninput="filterSongs(this.value)">
     </div>
     <div style="display:flex;align-items:center;justify-content:flex-end;margin:0 0 12px;">
       <button class="btn-secondary" id="btnSortSongs" onclick="toggleSongSort()" style="padding:6px 12px;font-size:12px;display:flex;align-items:center;gap:6px;">
@@ -1201,7 +1202,7 @@ body:not(.queue-open) header {
     <div class="section-title">⬇️ Ajouter une musique</div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
-      <input class="search-input" id="searchUpload" placeholder="Rechercher une musique importée..." oninput="filterUploadSongs(this.value)">
+      <input class="search-input" id="searchUpload" name="search-upload" type="search" autocomplete="off" placeholder="Rechercher une musique importée..." oninput="filterUploadSongs(this.value)">
     </div>
     <div class="upload-links">
       <a href="https://www.youtube.com" target="_blank" class="upload-link">
@@ -1384,15 +1385,6 @@ body:not(.queue-open) header {
         <div style="flex:1;min-width:0;">
           <div style="font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="account-email-display">—</div>
           <div style="font-size:12px;color:var(--muted);" id="account-sync-status">Synchronisé</div>
-        </div>
-        <button class="btn-queue" onclick="toggleRenameEmail()" title="Changer mon adresse email">✏️</button>
-      </div>
-      <div id="account-rename-box" style="display:none;margin-bottom:6px;">
-        <input class="modal-input" id="accountRenameInput" type="email" placeholder="Nouvelle adresse email" maxlength="100" onkeydown="if(event.key==='Enter')renameEmail()">
-        <div id="account-rename-error" style="color:#ff6b6b;font-size:13px;margin:-4px 0 12px;display:none;"></div>
-        <div class="modal-actions" style="margin-bottom:8px;">
-          <button class="btn-secondary" onclick="toggleRenameEmail()">Annuler</button>
-          <button class="btn-primary" id="accountRenameBtn" onclick="renameEmail()">Valider</button>
         </div>
       </div>
       <div class="modal-actions">
@@ -2717,6 +2709,21 @@ try {
       // la lecture en cours sans raison apparente pour la personne.
       if (currentUser && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) syncFromCloud();
     });
+
+    // ── SYNCHRO AUTOMATIQUE AU RETOUR SUR L'ONGLET ──
+    // Sans ça, une suppression/ajout fait sur un autre appareil ne remonte jamais
+    // sur cet appareil tant que la page n'est pas rechargée ou "Resynchroniser" cliqué.
+    let lastAutoSync = 0;
+    function autoSyncIfStale() {
+      if (!currentUser || syncInProgress) return;
+      const now = Date.now();
+      if (now - lastAutoSync < 20000) return; // pas plus d'une fois toutes les 20s
+      lastAutoSync = now;
+      syncFromCloud();
+    }
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') autoSyncIfStale(); });
+    window.addEventListener('focus', autoSyncIfStale);
+    setInterval(autoSyncIfStale, 120000); // filet de sécurité si l'onglet reste ouvert et visible longtemps
   }
 } catch (err) { console.warn('Supabase indisponible :', err); toast('⚠️ Init cloud échouée : ' + err.message); }
 
@@ -2823,47 +2830,6 @@ function logoutAccount() {
   sb.auth.signOut();
   closeModal('modal-account');
   toast('👋 Déconnecté (tes musiques restent sur cet appareil)');
-}
-
-function toggleRenameEmail() {
-  const box = document.getElementById('account-rename-box');
-  const showing = box.style.display !== 'none';
-  box.style.display = showing ? 'none' : 'block';
-  const err = document.getElementById('account-rename-error');
-  if (err) err.style.display = 'none';
-  const input = document.getElementById('accountRenameInput');
-  if (input) {
-    input.value = '';
-    if (!showing) setTimeout(() => input.focus(), 50);
-  }
-}
-
-async function renameEmail() {
-  if (!cloudReady || !currentUser) return;
-  const newEmail = document.getElementById('accountRenameInput').value.trim().toLowerCase();
-  const errEl = document.getElementById('account-rename-error');
-  errEl.style.display = 'none';
-  if (!newEmail || !newEmail.includes('@') || !newEmail.includes('.')) { errEl.textContent = 'Entre une adresse email valide.'; errEl.style.display = 'block'; return; }
-  if (newEmail === currentUser.email) { errEl.textContent = "C'est déjà ton adresse actuelle."; errEl.style.display = 'block'; return; }
-  const btn = document.getElementById('accountRenameBtn');
-  btn.disabled = true; btn.textContent = '...';
-  try {
-    const { data, error } = await sb.auth.updateUser({ email: newEmail });
-    if (error) throw error;
-    // onAuthStateChange (déjà en écoute) mettra l'affichage à jour tout seul dès que le
-    // changement est effectif.
-    const applied = data && data.user && data.user.email === newEmail;
-    if (applied) {
-      toast('✅ Adresse email mise à jour');
-    } else {
-      toast('📧 Vérifie ta boîte mail : un lien de confirmation a été envoyé pour valider le changement.');
-    }
-    toggleRenameEmail();
-  } catch (err) {
-    errEl.textContent = translateSupabaseError(err);
-    errEl.style.display = 'block';
-  }
-  btn.disabled = false; btn.textContent = 'Valider';
 }
 
 // Met à jour juste le nom d'une musique côté cloud (pas de ré-upload de l'audio)
