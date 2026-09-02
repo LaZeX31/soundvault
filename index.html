@@ -1551,8 +1551,26 @@ function hideDbErrorBanner() {
   if (banner) banner.classList.remove('show');
 }
 
+let lastDbErrorToast = 0;
 function store(name, mode) {
-  if (!db) throw new Error('Base de données locale indisponible');
+  if (!db) {
+    console.warn('store() appelé sans base de données locale disponible (' + name + ')');
+    showDbErrorBanner();
+    const now = Date.now();
+    if (now - lastDbErrorToast > 4000) { // évite de spammer si plusieurs actions échouent d'affilée
+      lastDbErrorToast = now;
+      toast('⚠️ Action impossible : stockage local indisponible');
+    }
+    // Un "faux" object store inoffensif : les appels .put()/.delete()/.get()/.getAll() ne
+    // plantent plus jamais, ils ne font juste rien — au lieu d'une exception qui coupait
+    // en silence le reste de la fonction appelante (pas de toast, pas de mise à jour d'écran).
+    return {
+      put:    () => ({}),
+      delete: () => ({}),
+      get:    () => ({}),
+      getAll: () => ({ result: [] }),
+    };
+  }
   return db.transaction(name, mode).objectStore(name);
 }
 
@@ -1679,7 +1697,7 @@ function renderPlaylists() {
       <div class="playlist-card${isActive ? ' now-playing' : ''}" onclick="openPlaylist('${p.id}')">
         <div class="playlist-cover ${cover}">🎵</div>
         <div class="playlist-info">
-          <div class="playlist-name">${p.name}${isActive ? '<span class="now-playing-badge">▶ En cours</span>' : ''}</div>
+          <div class="playlist-name">${escHtml(p.name)}${isActive ? '<span class="now-playing-badge">▶ En cours</span>' : ''}</div>
           <div class="playlist-meta">${p.songs.length} morceau${p.songs.length !== 1 ? 'x' : ''}</div>
         </div>
       </div>
@@ -1716,7 +1734,7 @@ function filterHome(query) {
       ${!playing?`<div class="song-num">${i+1}</div>`:''}
       <div class="song-cover ${c}">🎵</div>
       <div class="song-info">
-        <div class="song-name">${cleanName(s.name)}</div>
+        <div class="song-name">${escHtml(cleanName(s.name))}</div>
         <div class="song-sub">Cliquer pour écouter</div>
       </div>
       <div class="song-menu-wrap">
@@ -1764,7 +1782,7 @@ function openPlaylist(pid) {
         <div class="eq"><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div></div>
         ${!playing?`<div class="song-num">${i+1}</div>`:''}
         <div class="song-cover ${c}">🎵</div>
-        <div class="song-info"><div class="song-name">${cleanName(s.name)}</div></div>
+        <div class="song-info"><div class="song-name">${escHtml(cleanName(s.name))}</div></div>
         <button class="btn-delete" onclick="event.stopPropagation();removeFromPlaylist('${pid}','${sid}')">🗑</button>
         <div class="song-menu-wrap">
           <button class="btn-dots" onclick="event.stopPropagation();toggleSongMenu(event,'${sid}','${pid}')">⋯</button>
@@ -2091,7 +2109,7 @@ function renderSongs() {
     return `<div class="song-card${playing?' playing':''}${checked?' selected':''}" onclick="${clickAction}">
       ${selectMode ? `<div class="select-check${checked?' checked':''}">${checked?'✓':''}</div>` : `<div class="eq"><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div></div>${!playing?`<div class=\"song-num\">${i+1}</div>`:''}`}
       <div class="song-cover ${c}">🎵</div>
-      <div class="song-info"><div class="song-name">${cleanName(s.name)}</div><div class="song-sub">${selectMode ? 'Appuie pour sélectionner' : 'Appuie pour ajouter à une playlist'}</div></div>
+      <div class="song-info"><div class="song-name">${escHtml(cleanName(s.name))}</div><div class="song-sub">${selectMode ? 'Appuie pour sélectionner' : 'Appuie pour ajouter à une playlist'}</div></div>
       ${selectMode ? '' : `<button class="btn-delete" onclick="event.stopPropagation();downloadSong('${s.id}')" title="Télécharger">⬇️</button><button class="btn-delete" onclick="event.stopPropagation();deleteSong('${s.id}')">🗑</button>`}
     </div>`;
   }).join('');
@@ -2194,7 +2212,7 @@ function filterSongs(query) {
       <div class="eq"><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div></div>
       ${!playing?`<div class="song-num">${i+1}</div>`:''}
       <div class="song-cover ${c}">🎵</div>
-      <div class="song-info"><div class="song-name">${cleanName(s.name)}</div><div class="song-sub">Appuie pour ajouter à une playlist</div></div>
+      <div class="song-info"><div class="song-name">${escHtml(cleanName(s.name))}</div><div class="song-sub">Appuie pour ajouter à une playlist</div></div>
       <button class="btn-delete" onclick="event.stopPropagation();downloadSong('${s.id}')" title="Télécharger">⬇️</button>
       <button class="btn-delete" onclick="event.stopPropagation();deleteSong('${s.id}')">🗑</button>
     </div>`;
@@ -2209,7 +2227,7 @@ function renderUploadSongs() {
       const c = COVERS[parseInt(s.id) % COVERS.length];
       return `<div class="song-card" onclick="playSongDirect('${s.id}')">
         <div class="song-cover ${c}">🎵</div>
-        <div class="song-info"><div class="song-name">${cleanName(s.name)}</div></div>
+        <div class="song-info"><div class="song-name">${escHtml(cleanName(s.name))}</div></div>
         <button class="btn-delete" onclick="event.stopPropagation();downloadSong('${s.id}')" title="Télécharger">⬇️</button>
         <button class="btn-delete" onclick="event.stopPropagation();deleteSong('${s.id}')">🗑</button>
       </div>`;
@@ -2232,7 +2250,7 @@ function filterUploadSongs(query) {
       const c = COVERS[parseInt(s.id) % COVERS.length];
       return `<div class="song-card" onclick="playSongDirect('${s.id}')">
         <div class="song-cover ${c}">🎵</div>
-        <div class="song-info"><div class="song-name">${cleanName(s.name)}</div></div>
+        <div class="song-info"><div class="song-name">${escHtml(cleanName(s.name))}</div></div>
         <button class="btn-delete" onclick="event.stopPropagation();downloadSong('${s.id}')" title="Télécharger">⬇️</button>
         <button class="btn-delete" onclick="event.stopPropagation();deleteSong('${s.id}')">🗑</button>
       </div>`;
@@ -2328,7 +2346,7 @@ function openAddToPlaylistBulk(sids) {
     el.innerHTML = playlists.map(p => {
       const checked = sids.every(sid => p.songs.includes(sid)); // coché seulement si TOUTES les musiques sélectionnées y sont déjà
       return `<div class="pl-option${checked?' checked':''}" data-pid="${p.id}" onclick="togglePl(this)">
-        <span class="pl-option-name">${p.name}</span>
+        <span class="pl-option-name">${escHtml(p.name)}</span>
         <div class="pl-check">${checked?'✓':''}</div>
       </div>`;
     }).join('');
@@ -2363,7 +2381,7 @@ document.getElementById('playlistNameInput').addEventListener('keydown', e => { 
 function createPlaylist() {
   const name = document.getElementById('playlistNameInput').value.trim();
   if (!name) return;
-  const p = { id: Date.now().toString(), name, songs: [], cover: COVERS[playlists.length % COVERS.length], lastPlayed: 0 };
+  const p = { id: Date.now().toString() + Math.random().toString(36).slice(2), name, songs: [], cover: COVERS[playlists.length % COVERS.length], lastPlayed: 0 };
   playlists.push(p);
   safePut('playlists', p, name);
   renderPlaylists();
@@ -2622,7 +2640,7 @@ function renderQueue() {
       const c = COVERS[parseInt(s.id) % COVERS.length];
       return `<div class="queue-item${sid===currentSongId?' current':' queue-item-past'}" onclick="playSong('${sid}','${currentPlaylistId||''}')">
         <div class="queue-item-cover ${c}">🎵</div>
-        <div class="queue-item-name">${cleanName(s.name)}</div>
+        <div class="queue-item-name">${escHtml(cleanName(s.name))}</div>
       </div>`;
     }).join('');
     return;
@@ -2638,7 +2656,7 @@ function renderQueue() {
     manualQueue.forEach(sid => {
       const s = songs.find(x => x.id === sid); if (!s) return;
       const c = COVERS[parseInt(s.id)%COVERS.length];
-      html += `<div class="queue-item" style="border-left:2px solid var(--green);padding-left:6px;" onclick="playSong('${sid}','${currentPlaylistId||''}')"><div class="queue-item-cover ${c}">🎵</div><div class="queue-item-name">${cleanName(s.name)}</div></div>`;
+      html += `<div class="queue-item" style="border-left:2px solid var(--green);padding-left:6px;" onclick="playSong('${sid}','${currentPlaylistId||''}')"><div class="queue-item-cover ${c}">🎵</div><div class="queue-item-name">${escHtml(cleanName(s.name))}</div></div>`;
     });
   }
   const list = getQueue();
@@ -2650,7 +2668,7 @@ function renderQueue() {
     upcoming.forEach(sid => {
       const s = songs.find(x => x.id === sid); if (!s) return;
       const c = COVERS[parseInt(s.id)%COVERS.length];
-      html += `<div class="queue-item" onclick="playSong('${sid}','${currentPlaylistId||''}')"><div class="queue-item-cover ${c}">🎵</div><div class="queue-item-name">${cleanName(s.name)}</div></div>`;
+      html += `<div class="queue-item" onclick="playSong('${sid}','${currentPlaylistId||''}')"><div class="queue-item-cover ${c}">🎵</div><div class="queue-item-name">${escHtml(cleanName(s.name))}</div></div>`;
     });
   }
   el.innerHTML = html || '<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px;">File vide</div>';
