@@ -1369,13 +1369,15 @@ body:not(.queue-open) header {
         <button id="tab-login" class="nav-btn active" style="flex:1;padding:8px;font-size:13px;" onclick="switchAccountTab('login')">Connexion</button>
         <button id="tab-signup" class="nav-btn" style="flex:1;padding:8px;font-size:13px;" onclick="switchAccountTab('signup')">Inscription</button>
       </div>
-      <input class="modal-input" id="accountEmail" type="email" placeholder="Adresse email" maxlength="100" autocomplete="email">
-      <input class="modal-input" id="accountPassword" type="password" placeholder="Mot de passe (6 caractères min.)" maxlength="60" autocomplete="current-password">
-      <div id="account-error" style="color:#ff6b6b;font-size:13px;margin:-4px 0 12px;display:none;"></div>
-      <div class="modal-actions">
-        <button class="btn-secondary" onclick="closeModal('modal-account')">Annuler</button>
-        <button class="btn-primary" id="account-submit-btn" onclick="submitAccountForm()">Se connecter</button>
-      </div>
+      <form id="account-form" autocomplete="on" onsubmit="event.preventDefault(); submitAccountForm(); return false;">
+        <input class="modal-input" id="accountEmail" type="email" placeholder="Adresse email" maxlength="100" autocomplete="email">
+        <input class="modal-input" id="accountPassword" type="password" placeholder="Mot de passe (6 caractères min.)" maxlength="60" autocomplete="current-password">
+        <div id="account-error" style="color:#ff6b6b;font-size:13px;margin:-4px 0 12px;display:none;"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-account')">Annuler</button>
+          <button type="submit" class="btn-primary" id="account-submit-btn">Se connecter</button>
+        </div>
+      </form>
     </div>
 
     <!-- Vue connecté -->
@@ -2832,6 +2834,7 @@ async function submitAccountForm() {
   }
   btn.disabled = false;
   btn.textContent = accountTab === 'login' ? 'Se connecter' : "S'inscrire";
+  document.getElementById('accountPassword').value = '';
 }
 
 function translateSupabaseError(err) {
