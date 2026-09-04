@@ -2983,11 +2983,20 @@ async function syncFromCloud() {
     const cloudPlIds = new Set(cloudPlaylists.map(p => p.id));
 
     // Ajouter / mettre à jour depuis le cloud (nom, contenu, ordre)
+    // Fusion par UNION des musiques (jamais un remplacement total) pour ne jamais
+    // perdre de musiques ajoutées d'un côté avant que l'autre ait synchronisé.
     cloudPlaylists.forEach(cp => {
       const idx = playlists.findIndex(p => p.id === cp.id);
-      if (idx === -1) playlists.push(cp);
-      else playlists[idx] = cp;
-      store('playlists', 'readwrite').put(cp);
+      if (idx === -1) {
+        playlists.push(cp);
+        store('playlists', 'readwrite').put(cp);
+      } else {
+        const local = playlists[idx];
+        const mergedSongs = Array.from(new Set([...(local.songs || []), ...(cp.songs || [])]));
+        const merged = { ...local, ...cp, songs: mergedSongs };
+        playlists[idx] = merged;
+        store('playlists', 'readwrite').put(merged);
+      }
     });
 
     // Supprimer localement les playlists supprimées ailleurs
