@@ -617,6 +617,8 @@ main { padding: 16px 20px; position: relative; z-index: 1; }
 }
 .pl-option:hover { border-color: rgba(29,185,84,0.2); }
 .pl-option.checked { border-color: var(--green); background: rgba(29,185,84,0.08); }
+.pl-option.partial { border-color: rgba(167,139,250,0.4); }
+.pl-option.partial .pl-check { background: rgba(167,139,250,0.25); border-color: var(--accent); color: var(--accent); }
 .pl-option-name { font-size: 14px; font-weight: 500; }
 .pl-check {
   width: 22px; height: 22px;
@@ -1181,13 +1183,13 @@ body:not(.queue-open) header {
 
   <!-- PAGE SONGS -->
   <div class="page" id="page-songs">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-      <div class="section-title" style="margin-bottom:0;">🎵 Toutes les musiques</div>
-      <button class="btn-secondary" id="btnSelectMode" onclick="toggleSelectMode()" style="padding:8px 14px;font-size:13px;white-space:nowrap;">Sélectionner</button>
-    </div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input class="search-input" id="searchInput" name="search-songs" type="search" autocomplete="off" placeholder="Rechercher une musique..." oninput="filterSongs(this.value)">
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;">
+      <div class="section-title" style="margin-bottom:0;">🎵 Toutes les musiques</div>
+      <button class="btn-secondary" id="btnSelectMode" onclick="toggleSelectMode()" style="padding:8px 14px;font-size:13px;white-space:nowrap;">Sélectionner</button>
     </div>
     <div style="display:flex;align-items:center;justify-content:flex-end;margin:0 0 12px;">
       <button class="btn-secondary" id="btnSortSongs" onclick="toggleSongSort()" style="padding:6px 12px;font-size:12px;display:flex;align-items:center;gap:6px;">
@@ -2217,6 +2219,14 @@ function filterSongs(query) {
       <div class="song-info"><div class="song-name">${escHtml(cleanName(s.name))}</div><div class="song-sub">Appuie pour ajouter à une playlist</div></div>
       <button class="btn-delete" onclick="event.stopPropagation();downloadSong('${s.id}')" title="Télécharger">⬇️</button>
       <button class="btn-delete" onclick="event.stopPropagation();deleteSong('${s.id}')">🗑</button>
+      <div class="song-menu-wrap">
+        <button class="btn-dots" onclick="event.stopPropagation();toggleSongMenu(event,'${s.id}',null)">⋯</button>
+        <div class="song-menu" id="menu-sr-${s.id}" style="display:none;">
+          <div class="song-menu-item" onclick="event.stopPropagation();addToQueue('${s.id}');closeSongMenus()"><span class="mi">➕</span> Ajouter à la file d'attente</div>
+          <div class="song-menu-item" onclick="event.stopPropagation();openAddToPlaylist('${s.id}');closeSongMenus()"><span class="mi">📂</span> Ajouter à d'autres playlists</div>
+          <div class="song-menu-item" onclick="event.stopPropagation();openRenameSong('${s.id}');closeSongMenus()"><span class="mi">✏️</span> Renommer</div>
+        </div>
+      </div>
     </div>`;
   }).join('');
 }
@@ -2346,24 +2356,39 @@ function openAddToPlaylistBulk(sids) {
     el.innerHTML = '<p style="color:var(--muted);font-size:14px;text-align:center;padding:12px;">Aucune playlist. Crée-en une d\'abord.</p>';
   } else {
     el.innerHTML = playlists.map(p => {
-      const checked = sids.every(sid => p.songs.includes(sid)); // coché seulement si TOUTES les musiques sélectionnées y sont déjà
-      return `<div class="pl-option${checked?' checked':''}" data-pid="${p.id}" onclick="togglePl(this)">
+      const inCount = sids.filter(sid => p.songs.includes(sid)).length;
+      // 'full' = toutes les musiques sélectionnées sont déjà dans la playlist
+      // 'partial' = certaines seulement (on ne touche à rien tant que l'utilisateur ne clique pas)
+      // 'none' = aucune
+      const state = inCount === 0 ? 'none' : (inCount === sids.length ? 'full' : 'partial');
+      const cls = state === 'full' ? ' checked' : (state === 'partial' ? ' partial' : '');
+      const icon = state === 'full' ? '✓' : (state === 'partial' ? '–' : '');
+      return `<div class="pl-option${cls}" data-pid="${p.id}" data-initial="${state}" onclick="togglePl(this)">
         <span class="pl-option-name">${escHtml(p.name)}</span>
-        <div class="pl-check">${checked?'✓':''}</div>
+        <div class="pl-check">${icon}</div>
       </div>`;
     }).join('');
   }
   openModal('modal-add');
 }
-function togglePl(el) { el.classList.toggle('checked'); el.querySelector('.pl-check').textContent = el.classList.contains('checked') ? '✓' : ''; }
+function togglePl(el) {
+  // On force un état binaire dès que l'utilisateur clique (même si elle était "partielle"),
+  // et on marque la playlist comme "touchée" : c'est ce qui protège les autres playlists
+  // (jamais cliquées) d'être modifiées à la validation.
+  el.classList.remove('partial');
+  el.classList.toggle('checked');
+  el.dataset.touched = '1';
+  el.querySelector('.pl-check').textContent = el.classList.contains('checked') ? '✓' : '';
+}
 function confirmAdd() {
   if (!pendingSongs || !pendingSongs.length) return;
   document.querySelectorAll('.pl-option').forEach(el => {
+    if (el.dataset.touched !== '1') return; // playlist jamais cliquée : on n'y touche pas du tout
     const pid = el.dataset.pid;
     const p = playlists.find(x => x.id === pid);
     if (!p) return;
     if (el.classList.contains('checked')) {
-      pendingSongs.forEach(sid => { if (!p.songs.includes(sid)) p.songs.push(sid); });
+      pendingSongs.forEach(sid => { if (!p.songs.includes(sid)) p.songs.push(sid); }); // pas de doublons
     } else {
       p.songs = p.songs.filter(x => !pendingSongs.includes(x));
     }
