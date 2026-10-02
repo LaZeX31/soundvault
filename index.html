@@ -394,6 +394,7 @@ main { padding: 16px 20px; position: relative; z-index: 1; }
   transition: background 0.2s;
 }
 .btn-back:hover { background: var(--bg4); }
+.back-bar { position: sticky; top: var(--header-h, 78px); z-index: 40; background: var(--bg); padding: 8px 0; margin-bottom: 12px; }
 
 .empty {
   text-align: center;
@@ -1159,7 +1160,7 @@ body:not(.queue-open) header {
 
   <!-- PAGE PLAYLIST DETAIL -->
   <div class="page" id="page-detail">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;position:relative;">
+    <div class="back-bar" style="display:flex;align-items:center;gap:10px;">
       <button class="btn-back" style="margin-bottom:0;" onclick="showPage('playlists')">← Retour</button>
       <div id="confirm-delete-pl" style="display:none;position:absolute;top:58px;left:0;right:0;background:#1a1a24;border:1px solid rgba(255,79,79,0.4);border-radius:14px;padding:14px 16px;z-index:10;align-items:center;justify-content:space-between;gap:10px;">
         <span style="font-size:13px;color:#f0f0ff;">Supprimer cette playlist ?</span>
@@ -1183,6 +1184,7 @@ body:not(.queue-open) header {
 
   <!-- PAGE SONGS -->
   <div class="page" id="page-songs">
+    <div class="back-bar"><button class="btn-back" style="margin-bottom:0;" onclick="showPage('playlists')">← Retour</button></div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input class="search-input" id="searchInput" name="search-songs" type="search" autocomplete="off" placeholder="Rechercher une musique..." oninput="filterSongs(this.value)">
@@ -1201,6 +1203,7 @@ body:not(.queue-open) header {
 
   <!-- PAGE UPLOAD -->
   <div class="page" id="page-upload">
+    <div class="back-bar"><button class="btn-back" style="margin-bottom:0;" onclick="showPage('playlists')">← Retour</button></div>
     <div class="section-title">⬇️ Ajouter une musique</div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
@@ -1306,7 +1309,7 @@ body:not(.queue-open) header {
       <span class="sleep-custom-unit">min</span>
       <button class="btn-primary sleep-custom-btn" onclick="startCustomSleepTimer()">Démarrer</button>
     </div>
-    <div class="sleep-note">🎵 La musique en cours ira jusqu'à sa fin avant que la lecture ne s'arrête.</div>
+    <div class="sleep-note">🎵 La musique en cours ira jusqu'à sa fin avant que la lecture ne s'arrête.<br>➕ Si un minuteur est déjà en cours, la durée choisie s'ajoute au temps restant.</div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="cancelSleepTimer()">Annuler le minuteur</button>
       <button class="btn-primary" onclick="closeModal('modal-sleep')">Fermer</button>
@@ -1609,6 +1612,15 @@ function loadAll() {
     };
   };
 }
+
+// Hauteur du header (pour que la barre "Retour" colle juste en dessous)
+function syncHeaderHeight() {
+  const h = document.querySelector('header');
+  if (h) document.documentElement.style.setProperty('--header-h', h.offsetHeight + 'px');
+}
+window.addEventListener('resize', syncHeaderHeight);
+window.addEventListener('load', syncHeaderHeight);
+syncHeaderHeight();
 
 // ── PAGES ──
 let currentPage = 'playlists';
@@ -2435,11 +2447,17 @@ function loadAudioSrc(songData) {
 function playSong(sid, pid) {
   const s = songs.find(x => x.id === sid);
   if (!s) return;
+  const prevPid = currentPlaylistId;
   currentSongId = sid;
   currentPlaylistId = pid || null;
+  // Le morceau qu'on lance ne doit plus apparaître dans les "à venir" (sinon il passe deux fois)
+  const qk = pid || 'all';
+  if (shuffleQueues[qk]) shuffleQueues[qk] = shuffleQueues[qk].filter(x => x !== sid);
   if (pid) {
     const p = playlists.find(x => x.id === pid);
     if (p) { p.lastPlayed = Date.now(); store('playlists','readwrite').put(p); }
+    // Changement de playlist : on envoie l'ordre au cloud pour qu'une synchro ne le remette pas à zéro
+    if (prevPid !== pid && currentUser) pushPlaylistsToCloud();
   }
   const cover = COVERS[parseInt(sid) % COVERS.length];
   document.getElementById('player-art').className = 'player-art ' + cover;
@@ -2484,20 +2502,33 @@ function togglePlay() {
 }
 
 function nextSong() {
-  if (manualQueue && manualQueue.length) { playSong(manualQueue.shift(), currentPlaylistId); return; }
+  while (manualQueue && manualQueue.length) {
+    const sid = manualQueue.shift();
+    if (songs.some(x => x.id === sid)) { playSong(sid, currentPlaylistId); return; }
+  }
   const list = getQueue();
   if (!list.length) return;
-  const idx = list.indexOf(currentSongId);
-  let next;
-  const qKey = currentPlaylistId || 'all';
-  if (shuffleQueues[qKey] && shuffleQueues[qKey].length) {
-    next = shuffleQueues[qKey].shift();
-  } else if (shuffleMode) {
-    shuffleQueues[qKey] = fisherYatesShuffle(list.filter(x => x !== currentSongId));
-    if (!shuffleQueues[qKey].length) return;
-    next = shuffleQueues[qKey].shift();
-  } else { next = list[(idx + 1) % list.length]; }
+  // Même source que l'affichage de la file : ce qui est annoncé est ce qui joue vraiment
+  const next = getUpcoming()[0] ?? list[0];
   playSong(next, currentPlaylistId);
+}
+
+// Morceaux à venir (hors "jouer ensuite"), identiques à ce qui sera réellement joué
+function getUpcoming() {
+  const list = getQueue();
+  const qKey = currentPlaylistId || 'all';
+  let q = (shuffleQueues[qKey] || []).filter(id => list.includes(id) && id !== currentSongId);
+  if (shuffleMode && !q.length) q = fisherYatesShuffle(list.filter(x => x !== currentSongId));
+  shuffleQueues[qKey] = q;
+  if (q.length) return q;
+  const idx = list.indexOf(currentSongId);
+  if (idx === -1) return list.slice();
+  return [...list.slice(idx + 1), ...list.slice(0, idx)];
+}
+
+function playFromManualQueue(i) {
+  const sid = manualQueue.splice(i, 1)[0];
+  if (sid) playSong(sid, currentPlaylistId);
 }
 
 function prevSong() {
@@ -2510,7 +2541,7 @@ function prevSong() {
 }
 
 function getQueue() {
-  if (currentPlaylistId) { const p = playlists.find(x => x.id === currentPlaylistId); return p ? [...new Set(p.songs)] : []; }
+  if (currentPlaylistId) { const p = playlists.find(x => x.id === currentPlaylistId); return p ? [...new Set(p.songs)].filter(id => songs.some(s => s.id === id)) : []; }
   return songs.map(s => s.id);
 }
 
@@ -2537,21 +2568,28 @@ let sleepTimerInterval = null;
 let sleepTimerPending = false; // true = le temps est écoulé, on attend la fin de la chanson en cours
 
 function startSleepTimer(minutes) {
+  // Si un minuteur tourne déjà, la durée choisie s'ajoute au temps restant (5 min restantes + 30 min = 35 min)
+  let totalMinutes = minutes;
+  if (sleepTimerEnd && !sleepTimerPending) {
+    const remainingMs = sleepTimerEnd - Date.now();
+    if (remainingMs > 0) totalMinutes += remainingMs / 60000;
+  }
+  const totalMs = totalMinutes * 60 * 1000;
   cancelSleepTimer();
-  sleepTimerEnd = Date.now() + minutes * 60 * 1000;
+  sleepTimerEnd = Date.now() + totalMs;
   sleepTimerPending = false;
   sleepTimerId = setTimeout(() => {
     sleepTimerPending = true;
     // On laisse la répétition en boucle native se terminer normalement pour que 'ended' se déclenche
     if (audio.loop) audio.loop = false;
     updateSleepStatus();
-  }, minutes * 60 * 1000);
+  }, totalMs);
   updateSleepStatus();
   sleepTimerInterval = setInterval(updateSleepStatus, 1000);
   const customInput = document.getElementById('sleepCustomMinutes');
   if (customInput) customInput.value = '';
   closeModal('modal-sleep');
-  toast(`⏱ Minuteur réglé sur ${formatSleepDuration(minutes)}`);
+  toast(`⏱ Minuteur réglé sur ${formatSleepDuration(Math.round(totalMinutes))}`);
 }
 
 function startCustomSleepTimer() {
@@ -2676,20 +2714,17 @@ function renderQueue() {
   let html = '';
   if (currentSongId) {
     const s = songs.find(x => x.id === currentSongId);
-    if (s) { const c = COVERS[parseInt(s.id)%COVERS.length]; html += '<div class="queue-section-label">En cours</div><div class="queue-item current"><div class="queue-item-cover '+c+'">🎵</div><div class="queue-item-name">'+cleanName(s.name)+'</div></div>'; }
+    if (s) { const c = COVERS[parseInt(s.id)%COVERS.length]; html += '<div class="queue-section-label">En cours</div><div class="queue-item current"><div class="queue-item-cover '+c+'">🎵</div><div class="queue-item-name">'+escHtml(cleanName(s.name))+'</div></div>'; }
   }
   if (manualQueue && manualQueue.length) {
     html += '<div class="queue-section-label">⏭ Jouer ensuite</div>';
-    manualQueue.forEach(sid => {
+    manualQueue.forEach((sid, i) => {
       const s = songs.find(x => x.id === sid); if (!s) return;
       const c = COVERS[parseInt(s.id)%COVERS.length];
-      html += `<div class="queue-item" style="border-left:2px solid var(--green);padding-left:6px;" onclick="playSong('${sid}','${currentPlaylistId||''}')"><div class="queue-item-cover ${c}">🎵</div><div class="queue-item-name">${escHtml(cleanName(s.name))}</div></div>`;
+      html += `<div class="queue-item" style="border-left:2px solid var(--green);padding-left:6px;" onclick="playFromManualQueue(${i})"><div class="queue-item-cover ${c}">🎵</div><div class="queue-item-name">${escHtml(cleanName(s.name))}</div></div>`;
     });
   }
-  const list = getQueue();
-  const qKey = currentPlaylistId || 'all';
-  const currentQueue = shuffleQueues[qKey] || [];
-  let upcoming = currentQueue.length ? currentQueue : (list.length ? list.slice(list.indexOf(currentSongId)+1) : []);
+  const upcoming = getUpcoming();
   if (upcoming.length) {
     html += '<div class="queue-section-label">À venir</div>';
     upcoming.forEach(sid => {
@@ -3018,7 +3053,7 @@ async function syncFromCloud() {
       } else {
         const local = playlists[idx];
         const mergedSongs = Array.from(new Set([...(local.songs || []), ...(cp.songs || [])]));
-        const merged = { ...local, ...cp, songs: mergedSongs };
+        const merged = { ...local, ...cp, songs: mergedSongs, lastPlayed: Math.max(local.lastPlayed || 0, cp.lastPlayed || 0) };
         playlists[idx] = merged;
         store('playlists', 'readwrite').put(merged);
       }
