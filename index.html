@@ -3141,15 +3141,62 @@ try { songFx = JSON.parse(localStorage.getItem('sv_song_fx') || '{}') || {}; } c
 function saveSongFx() {
   try { localStorage.setItem('sv_song_fx', JSON.stringify(songFx)); }
   catch (e) { toast('❌ Réglage pas sauvegardé (stockage de l\'appareil plein ?)'); }
+  scheduleFxPush();
 }
 function getFx(id) {
   const f = songFx[id];
   return { gainDb: (f && f.gainDb) || 0, cuts: (f && Array.isArray(f.cuts)) ? f.cuts : [] };
 }
+// Chaque réglage a une date (t) : à la synchro, le plus récent gagne.
+// Un réglage remis à zéro reste sous forme de "tombstone" (0 dB, aucune coupe) pour que la remise à zéro se propage aussi.
 function setFx(id, patch) {
-  const next = { ...getFx(id), ...patch };
-  if (!next.gainDb && !next.cuts.length) delete songFx[id]; else songFx[id] = next;
+  const next = { ...getFx(id), ...patch, t: Date.now() };
+  songFx[id] = next;
   saveSongFx();
+}
+let fxPushTimer = null;
+function scheduleFxPush() {
+  if (typeof cloudReady === 'undefined' || !cloudReady || !currentUser) return;
+  clearTimeout(fxPushTimer);
+  fxPushTimer = setTimeout(pushFxToCloud, 1500);
+}
+async function pushFxToCloud() {
+  if (!cloudReady || !currentUser) return false;
+  try {
+    const now = new Date().toISOString();
+    const { data, error } = await sb.from('user_data')
+      .update({ fx: songFx, updated_at: now }).eq('user_id', currentUser.id).select('user_id');
+    if (error) { console.warn('Push réglages échoué (colonne "fx" créée dans Supabase ?) :', error); return false; }
+    if (!data || !data.length) {
+      const { error: e2 } = await sb.from('user_data')
+        .upsert({ user_id: currentUser.id, playlists, fx: songFx, updated_at: now }, { onConflict: 'user_id' });
+      if (e2) { console.warn('Push réglages échoué :', e2); return false; }
+    }
+    return true;
+  } catch (err) { console.warn('Push réglages échoué :', err); return false; }
+}
+// Fusionne les réglages du cloud avec les locaux (le plus récent gagne, par musique)
+function mergeFxFromCloud(cloudFx) {
+  if (!cloudFx || typeof cloudFx !== 'object') return false;
+  let changed = false;
+  for (const id of Object.keys(cloudFx)) {
+    const c = cloudFx[id];
+    if (!c || typeof c !== 'object') continue;
+    const l = songFx[id];
+    if (!l || (c.t || 0) > (l.t || 0)) {
+      songFx[id] = { gainDb: c.gainDb || 0, cuts: Array.isArray(c.cuts) ? c.cuts : [], t: c.t || 0 };
+      changed = true;
+    }
+  }
+  if (changed) {
+    try { localStorage.setItem('sv_song_fx', JSON.stringify(songFx)); } catch (e) {}
+    if (currentSongId) {
+      currentCuts = normalizeCuts(getFx(currentSongId).cuts, 0);
+      updateProgressCuts();
+      applySongGain(currentSongId);
+    }
+  }
+  return changed;
 }
 function fmtDb(db) {
   const v = Math.round(db * 2) / 2;
@@ -3278,7 +3325,8 @@ function openFxCuts() {
 }
 function resetAllFx() {
   askConfirm('Tout réinitialiser', 'Remettre tous les sons à 0 dB et rétablir toutes les parties coupées ?', () => {
-    songFx = {};
+    const nowT = Date.now();
+    Object.keys(songFx).forEach(id => { songFx[id] = { gainDb: 0, cuts: [], t: nowT }; });
     saveSongFx();
     currentCuts = [];
     updateProgressCuts();
@@ -4148,7 +4196,17 @@ async function syncFromCloud() {
 
     // ── PLAYLISTS : même logique (ajout / màj / suppression) ──
     const knownPlaylistIds = new Set(JSON.parse(localStorage.getItem('sv_known_playlist_ids') || '[]'));
-    const { data: userData } = await sb.from('user_data').select('playlists').eq('user_id', currentUser.id).maybeSingle();
+    let userData = null, fxColumnOk = true;
+    {
+      const r = await sb.from('user_data').select('playlists, fx').eq('user_id', currentUser.id).maybeSingle();
+      if (r.error) {
+        // colonne "fx" absente : on récupère quand même les playlists
+        fxColumnOk = false;
+        console.warn('Colonne "fx" introuvable dans user_data, réglages non synchronisés :', r.error);
+        const r2 = await sb.from('user_data').select('playlists').eq('user_id', currentUser.id).maybeSingle();
+        userData = r2.data;
+      } else userData = r.data;
+    }
     const cloudPlaylists = (userData && userData.playlists) || [];
     const cloudPlIds = new Set(cloudPlaylists.map(p => p.id));
 
@@ -4180,6 +4238,13 @@ async function syncFromCloud() {
     }
     // si l'envoi a échoué, on ne touche pas à sv_known_playlist_ids : les playlists non confirmées
     // resteront "pas connues" et seront retentées au prochain sync, sans risque d'être supprimées à tort
+
+    // ── RÉGLAGES PAR MUSIQUE (volume + coupes) ──
+    if (fxColumnOk) {
+      const fxChanged = mergeFxFromCloud(userData && userData.fx);
+      await pushFxToCloud();
+      if (fxChanged) toast('🎚 Réglages de volume/coupes synchronisés');
+    }
 
     renderSongs(); renderUploadSongs(); renderPlaylists();
     if (statusEl) statusEl.textContent = 'Synchronisé';
