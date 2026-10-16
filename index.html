@@ -394,7 +394,6 @@ main { padding: 16px 20px; position: relative; z-index: 1; }
   transition: background 0.2s;
 }
 .btn-back:hover { background: var(--bg4); }
-.back-bar { position: sticky; top: var(--header-h, 78px); z-index: 40; background: var(--bg); padding: 8px 0; margin-bottom: 12px; }
 
 .empty {
   text-align: center;
@@ -1115,6 +1114,381 @@ body:not(.queue-open) header {
   from { opacity:0; transform:translateY(-8px); }
   to   { opacity:1; transform:translateY(0); }
 }
+
+/* ═══════════════════════════════════════════
+   NOUVEAU STYLE : lecteur, paramètres, éditeur de coupes
+   ═══════════════════════════════════════════ */
+
+/* ── Bouton icône d'en-tête (paramètres) ── */
+.btn-icon {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: var(--bg4);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: var(--text);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), background 0.2s;
+}
+.btn-icon:hover { background: #2c2c3d; transform: rotate(45deg); }
+.btn-icon:active { transform: rotate(45deg) scale(0.92); }
+
+/* ── Lecteur ── */
+.player {
+  background: linear-gradient(180deg, rgba(22,22,32,0.94), rgba(10,10,16,0.98));
+  border-top: 1px solid rgba(29,185,84,0.16);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -12px 40px rgba(0,0,0,0.55);
+}
+.progress-bar { height: 5px; }
+.progress-fill { background: linear-gradient(90deg, #1db954, #5af08e); }
+.progress-cut {
+  position: absolute; top: 0; bottom: 0;
+  background: rgba(255,79,79,0.6);
+  border-radius: 2px;
+  pointer-events: none;
+}
+.controls { gap: 12px; }
+.ctrl-btn svg { display: block; }
+.ctrl-btn.skip { color: var(--text); width: 44px; height: 44px; }
+.ctrl-btn.skip:hover { background: rgba(255,255,255,0.07); }
+.ctrl-btn.skip:active { transform: scale(0.86); }
+
+/* ── Nouveau bouton lecture / pause ── */
+.ctrl-btn.main-btn {
+  width: 62px; height: 62px;
+  position: relative;
+  color: #052e14;
+  background: linear-gradient(145deg, #3df27e 0%, #1db954 55%, #14903f 100%);
+  box-shadow:
+    0 8px 26px rgba(29,185,84,0.45),
+    inset 0 0 0 1px rgba(255,255,255,0.14),
+    inset 0 2px 0 rgba(255,255,255,0.35);
+  transition: transform 0.15s ease, box-shadow 0.25s ease;
+}
+.ctrl-btn.main-btn:hover {
+  background: linear-gradient(145deg, #52ff90 0%, #22c55e 55%, #16a34a 100%);
+  transform: scale(1.06);
+}
+.ctrl-btn.main-btn:active { transform: scale(0.93); }
+.ctrl-btn.main-btn::before {
+  content: '';
+  position: absolute; inset: -7px;
+  border-radius: 50%;
+  border: 2px solid rgba(29,185,84,0);
+  pointer-events: none;
+}
+.ctrl-btn.main-btn.playing::before { animation: playRing 2.2s ease-out infinite; }
+@keyframes playRing {
+  0%   { transform: scale(0.92); border-color: rgba(29,185,84,0.55); }
+  100% { transform: scale(1.2);  border-color: rgba(29,185,84,0); }
+}
+.main-btn svg {
+  position: absolute;
+  transition: opacity 0.2s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.main-btn .ico-play  { margin-left: 3px; }
+.main-btn .ico-pause { opacity: 0; transform: scale(0.5) rotate(-60deg); }
+.main-btn.playing .ico-play  { opacity: 0; transform: scale(0.5) rotate(60deg); }
+.main-btn.playing .ico-pause { opacity: 1; transform: scale(1) rotate(0); }
+
+.pl-play-btn {
+  background: linear-gradient(145deg, #3df27e, #17a349);
+  color: #052e14;
+  box-shadow: 0 4px 14px rgba(29,185,84,0.4);
+}
+.pl-play-btn svg { margin-left: 2px; }
+
+/* ── Modales : un peu plus de relief ── */
+.modal-box { box-shadow: 0 24px 70px rgba(0,0,0,0.65); }
+
+#modal-settings { z-index: 200; }
+#modal-fx-volume, #modal-fx-cuts { z-index: 210; }
+#modal-trim { z-index: 220; }
+#modal-confirm { z-index: 260; }
+
+.modal-box.sheet {
+  display: flex;
+  flex-direction: column;
+  max-height: 86vh;
+  max-height: 86dvh;
+  padding: 12px 18px 18px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #171722, #101017);
+}
+.sheet-grip {
+  width: 38px; height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.14);
+  margin: 0 auto 14px;
+  flex-shrink: 0;
+}
+.sheet-title {
+  display: flex; align-items: center; gap: 10px;
+  flex-shrink: 0;
+  margin-bottom: 12px;
+}
+.sheet-hint {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: -4px 0 12px;
+  flex-shrink: 0;
+}
+.sheet .search-wrap { flex-shrink: 0; margin-bottom: 10px; }
+.sheet-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 -6px 14px;
+  padding: 0 6px;
+  -webkit-overflow-scrolling: touch;
+}
+.sheet .modal-actions { flex-shrink: 0; }
+.sheet-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 2px 8px;
+}
+
+/* ── Menu paramètres ── */
+.set-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--bg3);
+  border: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.set-row:hover { border-color: rgba(29,185,84,0.28); transform: translateX(2px); }
+.set-row:active { transform: scale(0.98); }
+.set-ico {
+  width: 46px; height: 46px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+.set-ico.g1 { background: linear-gradient(135deg, #1db954, #14532d); }
+.set-ico.g2 { background: linear-gradient(135deg, #a78bfa, #4c1d95); }
+.set-ico.g3 { background: linear-gradient(135deg, #ef4444, #7f1d1d); }
+.set-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.set-txt strong { font-family: 'Syne', sans-serif; font-size: 15px; }
+.set-txt span { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.set-chev { color: var(--muted); font-size: 24px; line-height: 1; }
+.set-row.danger .set-txt strong { color: #ff8585; }
+
+/* ── Volume par son ── */
+.fx-row {
+  background: var(--bg3);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 14px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: border-color 0.2s, background 0.2s;
+}
+.fx-row.modified { border-color: rgba(29,185,84,0.25); }
+.fx-row.open { background: var(--bg4); border-color: rgba(29,185,84,0.45); }
+.fx-row-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 12px;
+  cursor: pointer;
+}
+.fx-row-head .song-info { min-width: 0; }
+.fx-badge {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 4px 9px;
+  border-radius: 20px;
+  background: var(--bg4);
+  color: var(--muted);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.fx-row.open .fx-badge { background: var(--bg3); }
+.fx-badge.on { background: rgba(29,185,84,0.15); color: var(--green); }
+.fx-chev { color: var(--muted); font-size: 20px; line-height: 1; transition: transform 0.2s; }
+.fx-row.open .fx-chev { transform: rotate(90deg); }
+.fx-row-body { display: none; padding: 2px 14px 14px; }
+.fx-row.open .fx-row-body { display: block; animation: fadeUp 0.25s ease; }
+.fx-val {
+  text-align: center;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 32px;
+  letter-spacing: -1px;
+  margin: 4px 0 12px;
+  font-variant-numeric: tabular-nums;
+}
+.fx-slider-line { display: flex; align-items: center; gap: 10px; }
+.fx-step {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--bg3);
+  color: var(--text);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.12s, background 0.2s;
+}
+.fx-step:hover { background: #2a2a3a; }
+.fx-step:active { transform: scale(0.88); }
+.fx-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  min-width: 0;
+  height: 8px;
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  background: var(--bg3);
+}
+.fx-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--green);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.55);
+}
+.fx-slider::-moz-range-thumb {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--green);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.55);
+}
+.fx-scale {
+  display: flex; justify-content: space-between;
+  font-size: 10px;
+  color: var(--muted);
+  margin: 7px 48px 14px;
+}
+.fx-actions { display: flex; gap: 8px; }
+.fx-actions .btn-secondary {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  white-space: nowrap;
+}
+
+/* ── Éditeur de coupes ── */
+.trim-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wave-box {
+  position: relative;
+  height: 120px;
+  border-radius: 16px;
+  background: var(--bg3);
+  border: 1px solid rgba(255,255,255,0.06);
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: ew-resize;
+}
+.wave-box canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+#waveCuts { position: absolute; inset: 0; pointer-events: none; }
+.wave-cut {
+  position: absolute; top: 0; bottom: 0;
+  background: repeating-linear-gradient(45deg, rgba(255,79,79,0.4) 0 6px, rgba(255,79,79,0.22) 6px 12px);
+  border-left: 1px solid rgba(255,79,79,0.75);
+  border-right: 1px solid rgba(255,79,79,0.75);
+}
+.wave-sel {
+  position: absolute; top: 0; bottom: 0;
+  background: rgba(167,139,250,0.22);
+  border-left: 3px solid var(--accent);
+  border-right: 3px solid var(--accent);
+  pointer-events: none;
+}
+.wave-handle {
+  position: absolute; top: 50%;
+  width: 14px; height: 36px;
+  margin-top: -18px;
+  border-radius: 7px;
+  background: var(--accent);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.55);
+}
+.wh-l { left: -8.5px; }
+.wh-r { right: -8.5px; }
+.wave-playhead {
+  position: absolute; top: 0; bottom: 0;
+  width: 2px;
+  background: #fff;
+  display: none;
+  pointer-events: none;
+  box-shadow: 0 0 8px rgba(255,255,255,0.8);
+}
+.wave-loading {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  color: var(--muted);
+  background: rgba(26,26,36,0.72);
+  pointer-events: none;
+}
+.wave-times {
+  display: flex; justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+  margin: 6px 2px 12px;
+  font-variant-numeric: tabular-nums;
+}
+.trim-hint { font-size: 12px; color: var(--muted); margin: 0 2px 12px; line-height: 1.5; }
+.trim-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.trim-fields label {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px; font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.trim-fields .modal-input {
+  margin: 6px 0 0;
+  text-align: center;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.trim-actions { display: flex; gap: 8px; margin: 10px 0 20px; }
+.trim-actions .btn-primary { flex: 1.5; }
+.trim-actions .btn-secondary {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  white-space: nowrap;
+}
+.cut-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg3);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border-left: 3px solid #ff4f4f;
+}
+.cut-range { flex: 1; font-size: 13px; font-variant-numeric: tabular-nums; }
+.cut-len { font-size: 11px; color: var(--muted); }
+.cut-restore {
+  background: var(--bg4);
+  border: none;
+  color: var(--text);
+  padding: 7px 11px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.cut-restore:hover { background: #33334a; }
+.trim-empty { font-size: 13px; color: var(--muted); padding: 6px 2px 10px; }
+
 </style>
 </head>
 <body>
@@ -1135,6 +1509,7 @@ body:not(.queue-open) header {
   <div class="logo">🎵 <span>Sound</span>Vault</div>
   <div style="display:flex;gap:8px;align-items:center;">
     <span id="syncStatus" title="Synchronisé" style="display:none;font-size:16px;width:24px;text-align:center;transition:opacity 0.2s;">☁️</span>
+    <button class="btn-icon" onclick="openSettings()" title="Paramètres" aria-label="Paramètres"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     <button class="btn-add" id="btnAccount" style="width:42px;height:42px;font-size:16px;background:var(--bg4);box-shadow:none;" onclick="openAccountModal()" title="Compte">👤</button>
     <button class="btn-add" onclick="openCreatePlaylist()">+</button>
   </div>
@@ -1160,7 +1535,7 @@ body:not(.queue-open) header {
 
   <!-- PAGE PLAYLIST DETAIL -->
   <div class="page" id="page-detail">
-    <div class="back-bar" style="display:flex;align-items:center;gap:10px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;position:relative;">
       <button class="btn-back" style="margin-bottom:0;" onclick="showPage('playlists')">← Retour</button>
       <div id="confirm-delete-pl" style="display:none;position:absolute;top:58px;left:0;right:0;background:#1a1a24;border:1px solid rgba(255,79,79,0.4);border-radius:14px;padding:14px 16px;z-index:10;align-items:center;justify-content:space-between;gap:10px;">
         <span style="font-size:13px;color:#f0f0ff;">Supprimer cette playlist ?</span>
@@ -1184,7 +1559,6 @@ body:not(.queue-open) header {
 
   <!-- PAGE SONGS -->
   <div class="page" id="page-songs">
-    <div class="back-bar"><button class="btn-back" style="margin-bottom:0;" onclick="showPage('playlists')">← Retour</button></div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input class="search-input" id="searchInput" name="search-songs" type="search" autocomplete="off" placeholder="Rechercher une musique..." oninput="filterSongs(this.value)">
@@ -1203,7 +1577,6 @@ body:not(.queue-open) header {
 
   <!-- PAGE UPLOAD -->
   <div class="page" id="page-upload">
-    <div class="back-bar"><button class="btn-back" style="margin-bottom:0;" onclick="showPage('playlists')">← Retour</button></div>
     <div class="section-title">⬇️ Ajouter une musique</div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
@@ -1247,9 +1620,9 @@ body:not(.queue-open) header {
   </div>
   <div class="controls">
     <button class="ctrl-btn" id="btnShuffle" onclick="toggleShuffle()"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
-    <button class="ctrl-btn" onclick="prevSong()">⏮</button>
-    <button class="ctrl-btn main-btn" id="btnPlay" onclick="togglePlay()">▶</button>
-    <button class="ctrl-btn" onclick="nextSong()">⏭</button>
+    <button class="ctrl-btn skip" onclick="prevSong()" aria-label="Précédent"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M6 5h2v14H6z"/><path d="M20 5.5v13a.8.8 0 0 1-1.25.66l-9-6.5a.8.8 0 0 1 0-1.3l9-6.5A.8.8 0 0 1 20 5.5z"/></svg></button>
+    <button class="ctrl-btn main-btn" id="btnPlay" onclick="togglePlay()" aria-label="Lecture"><svg class="ico-play" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11-6.86a1 1 0 0 0 0-1.7l-11-6.86A1 1 0 0 0 8 5.14z"/></svg><svg class="ico-pause" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><rect x="6" y="5" width="4.5" height="14" rx="1.5"/><rect x="13.5" y="5" width="4.5" height="14" rx="1.5"/></svg></button>
+    <button class="ctrl-btn skip" onclick="nextSong()" aria-label="Suivant"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M16 5h2v14h-2z"/><path d="M4 5.5v13a.8.8 0 0 0 1.25.66l9-6.5a.8.8 0 0 0 0-1.3l-9-6.5A.8.8 0 0 0 4 5.5z"/></svg></button>
     <button class="ctrl-btn" id="btnRepeat" onclick="toggleRepeat()"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg></button>
     <div class="volume-wrap">
       <span class="volume-icon">🔊</span>
@@ -1309,7 +1682,7 @@ body:not(.queue-open) header {
       <span class="sleep-custom-unit">min</span>
       <button class="btn-primary sleep-custom-btn" onclick="startCustomSleepTimer()">Démarrer</button>
     </div>
-    <div class="sleep-note">🎵 La musique en cours ira jusqu'à sa fin avant que la lecture ne s'arrête.<br>➕ Si un minuteur est déjà en cours, la durée choisie s'ajoute au temps restant.</div>
+    <div class="sleep-note">🎵 La musique en cours ira jusqu'à sa fin avant que la lecture ne s'arrête.</div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="cancelSleepTimer()">Annuler le minuteur</button>
       <button class="btn-primary" onclick="closeModal('modal-sleep')">Fermer</button>
@@ -1427,6 +1800,107 @@ body:not(.queue-open) header {
   </div>
 </div>
 
+<!-- MODAL PARAMÈTRES -->
+<div class="modal-overlay" id="modal-settings">
+  <div class="modal-box sheet">
+    <div class="sheet-grip"></div>
+    <div class="modal-title sheet-title">⚙️ Paramètres</div>
+    <div class="sheet-scroll">
+      <div class="set-row" onclick="openFxVolume()">
+        <div class="set-ico g1">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+        </div>
+        <div class="set-txt"><strong>Volume des sons</strong><span>Booste ou baisse un son (en dB) pour qu'il sonne comme les autres</span></div>
+        <div class="set-chev">›</div>
+      </div>
+      <div class="set-row" onclick="openFxCuts()">
+        <div class="set-ico g2">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+        </div>
+        <div class="set-txt"><strong>Couper des musiques</strong><span>Retire des passages, ils restent coupés jusqu'à ce que tu les rétablisses</span></div>
+        <div class="set-chev">›</div>
+      </div>
+      <div class="set-row danger" onclick="resetAllFx()">
+        <div class="set-ico g3">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        </div>
+        <div class="set-txt"><strong>Tout réinitialiser</strong><span>Remet tous les sons à 0 dB et rétablit toutes les coupes</span></div>
+        <div class="set-chev">›</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeModal('modal-settings')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VOLUME PAR SON -->
+<div class="modal-overlay" id="modal-fx-volume">
+  <div class="modal-box sheet">
+    <div class="sheet-grip"></div>
+    <div class="modal-title sheet-title">🔊 Volume des sons</div>
+    <p class="sheet-hint">Appuie sur un son pour régler son gain. +6 dB ≈ deux fois plus fort. Le réglage est enregistré et s'applique à chaque lecture.</p>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchFxVol" name="search-fx-vol" type="search" autocomplete="off" placeholder="Rechercher un son..." oninput="renderFxVolume()">
+    </div>
+    <div class="sheet-scroll" id="fxVolList"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeModal('modal-fx-volume')">Terminé</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LISTE DES MUSIQUES À COUPER -->
+<div class="modal-overlay" id="modal-fx-cuts">
+  <div class="modal-box sheet">
+    <div class="sheet-grip"></div>
+    <div class="modal-title sheet-title">✂️ Couper des musiques</div>
+    <p class="sheet-hint">Choisis une musique, sélectionne le passage à retirer sur la forme d'onde, puis coupe-le. Tu pourras toujours le rétablir.</p>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchFxCut" name="search-fx-cut" type="search" autocomplete="off" placeholder="Rechercher une musique..." oninput="renderFxCuts()">
+    </div>
+    <div class="sheet-scroll" id="fxCutList"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeModal('modal-fx-cuts')">Terminé</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ÉDITEUR DE COUPES -->
+<div class="modal-overlay" id="modal-trim">
+  <div class="modal-box sheet">
+    <div class="sheet-grip"></div>
+    <div class="modal-title sheet-title">✂️ <span class="trim-name" id="trimTitle">Couper</span></div>
+    <div class="sheet-scroll">
+      <div class="wave-box" id="waveBox">
+        <canvas id="waveCanvas"></canvas>
+        <div id="waveCuts"></div>
+        <div class="wave-sel" id="waveSel"><div class="wave-handle wh-l"></div><div class="wave-handle wh-r"></div></div>
+        <div class="wave-playhead" id="wavePlayhead"></div>
+        <div class="wave-loading" id="waveLoading">Analyse du son…</div>
+      </div>
+      <div class="wave-times"><span>0:00</span><span id="trimDur">0:00</span></div>
+      <p class="trim-hint">Touche ou fais glisser sur la forme d'onde pour placer le début et la fin de la partie à couper (en violet). Les parties coupées apparaissent en rouge.</p>
+      <div class="trim-fields">
+        <label>Début<input class="modal-input" id="trimFrom" inputmode="decimal" autocomplete="off" onchange="onTrimField('from', this.value)" onkeydown="if(event.key==='Enter')this.blur()"></label>
+        <label>Fin<input class="modal-input" id="trimTo" inputmode="decimal" autocomplete="off" onchange="onTrimField('to', this.value)" onkeydown="if(event.key==='Enter')this.blur()"></label>
+      </div>
+      <div class="trim-actions">
+        <button class="btn-secondary" id="btnTrimPreview" onclick="toggleTrimPreview()"></button>
+        <button class="btn-primary" onclick="addCutFromSelection()">✂️ Couper cette partie</button>
+      </div>
+      <div class="sheet-label">Parties coupées</div>
+      <div id="trimCutList"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="clearAllCuts()">Tout rétablir</button>
+      <button class="btn-primary" onclick="closeModal('modal-trim')">Terminé</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <audio id="audioEl"></audio>
 
@@ -1502,11 +1976,13 @@ function restoreState() {
           : 'Toutes les musiques';
         document.getElementById('player-playlist').textContent = plName;
         loadAudioSrc(song.data);
+        currentCuts = normalizeCuts(getFx(song.id).cuts, 0);
+        applySongGain(song.id);
         if (s.currentTime > 0) {
           audio.addEventListener('loadedmetadata', () => { audio.currentTime = s.currentTime; }, { once: true });
         }
         document.getElementById('player').classList.add('visible');
-        document.getElementById('btnPlay').textContent = '▶';
+        setPlayIcon(false);
         updateHighlight();
         renderPlaylists();
       }
@@ -1613,15 +2089,6 @@ function loadAll() {
   };
 }
 
-// Hauteur du header (pour que la barre "Retour" colle juste en dessous)
-function syncHeaderHeight() {
-  const h = document.querySelector('header');
-  if (h) document.documentElement.style.setProperty('--header-h', h.offsetHeight + 'px');
-}
-window.addEventListener('resize', syncHeaderHeight);
-window.addEventListener('load', syncHeaderHeight);
-syncHeaderHeight();
-
 // ── PAGES ──
 let currentPage = 'playlists';
 function showPage(p) {
@@ -1717,7 +2184,7 @@ function renderPlaylists() {
           <div class="playlist-meta">${p.songs.length} morceau${p.songs.length !== 1 ? 'x' : ''}</div>
         </div>
       </div>
-      ${p.songs.length ? `<button class="pl-play-btn" onclick="playPlaylistNow('${p.id}')">▶</button>` : ''}
+      ${p.songs.length ? `<button class="pl-play-btn" onclick="playPlaylistNow('${p.id}')" aria-label="Lire la playlist"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11-6.86a1 1 0 0 0 0-1.7l-11-6.86A1 1 0 0 0 8 5.14z"/></svg></button>` : ''}
     </div>`;
   }).join('');
 }
@@ -2177,6 +2644,7 @@ function bulkDelete() {
       store('songs','readwrite').delete(id);
       songs = songs.filter(s => s.id !== id);
       playlists.forEach(p => { p.songs = p.songs.filter(x => x !== id); safePut('playlists', p, p.name); });
+      if (songFx[id]) { delete songFx[id]; saveSongFx(); }
       if (currentSongId === id) currentSongId = null;
       if (currentUser) deleteSongFromCloud(id);
     });
@@ -2308,6 +2776,7 @@ function deleteSong(id) {
     store('songs','readwrite').delete(id);
     songs = songs.filter(s => s.id !== id);
     playlists.forEach(p => { p.songs = p.songs.filter(x => x !== id); safePut('playlists', p, p.name); });
+    if (songFx[id]) { delete songFx[id]; saveSongFx(); }
     // On nettoie aussi la musique de toutes les files (manuelle + mélangées de chaque playlist) et de l'historique.
     manualQueue = manualQueue.filter(x => x !== id);
     for (const key in shuffleQueues) shuffleQueues[key] = shuffleQueues[key].filter(x => x !== id);
@@ -2447,26 +2916,24 @@ function loadAudioSrc(songData) {
 function playSong(sid, pid) {
   const s = songs.find(x => x.id === sid);
   if (!s) return;
-  const prevPid = currentPlaylistId;
   currentSongId = sid;
   currentPlaylistId = pid || null;
-  // Le morceau qu'on lance ne doit plus apparaître dans les "à venir" (sinon il passe deux fois)
-  const qk = pid || 'all';
-  if (shuffleQueues[qk]) shuffleQueues[qk] = shuffleQueues[qk].filter(x => x !== sid);
   if (pid) {
     const p = playlists.find(x => x.id === pid);
     if (p) { p.lastPlayed = Date.now(); store('playlists','readwrite').put(p); }
-    // Changement de playlist : on envoie l'ordre au cloud pour qu'une synchro ne le remette pas à zéro
-    if (prevPid !== pid && currentUser) pushPlaylistsToCloud();
   }
   const cover = COVERS[parseInt(sid) % COVERS.length];
   document.getElementById('player-art').className = 'player-art ' + cover;
   document.getElementById('player-title').textContent = cleanName(s.name);
   document.getElementById('player-playlist').textContent = pid ? (playlists.find(p=>p.id===pid)?.name || '—') : 'Toutes les musiques';
   loadAudioSrc(s.data);
+  currentCuts = normalizeCuts(getFx(sid).cuts, 0);
+  updateProgressCuts();
+  applySongGain(sid);
+  fxResume();
   audio.play();
   document.getElementById('player').classList.add('visible');
-  document.getElementById('btnPlay').textContent = '⏸';
+  setPlayIcon(true);
   if (playHistory[playHistory.length - 1] !== sid) { playHistory.push(sid); if (playHistory.length > 50) playHistory.shift(); }
   updateHighlight();
   renderPlaylists();
@@ -2479,8 +2946,8 @@ function playSong(sid, pid) {
       artist: currentPlaylistId ? (playlists.find(p=>p.id===currentPlaylistId)?.name||'SoundVault') : 'SoundVault',
       album: 'SoundVault',
     });
-    navigator.mediaSession.setActionHandler('play',          () => { audio.play();  document.getElementById('btnPlay').textContent = '⏸'; });
-    navigator.mediaSession.setActionHandler('pause',         () => { audio.pause(); document.getElementById('btnPlay').textContent = '▶'; });
+    navigator.mediaSession.setActionHandler('play',          () => { audio.play();  setPlayIcon(true); });
+    navigator.mediaSession.setActionHandler('pause',         () => { audio.pause(); setPlayIcon(false); });
     navigator.mediaSession.setActionHandler('previoustrack', () => prevSong());
     navigator.mediaSession.setActionHandler('nexttrack',     () => nextSong());
   }
@@ -2497,38 +2964,25 @@ function setVolume(val) {
 }
 
 function togglePlay() {
-  if (audio.paused) { audio.play(); document.getElementById('btnPlay').textContent = '⏸'; }
-  else { audio.pause(); document.getElementById('btnPlay').textContent = '▶'; }
+  if (audio.paused) { fxResume(); audio.play(); setPlayIcon(true); }
+  else { audio.pause(); setPlayIcon(false); }
 }
 
 function nextSong() {
-  while (manualQueue && manualQueue.length) {
-    const sid = manualQueue.shift();
-    if (songs.some(x => x.id === sid)) { playSong(sid, currentPlaylistId); return; }
-  }
+  if (manualQueue && manualQueue.length) { playSong(manualQueue.shift(), currentPlaylistId); return; }
   const list = getQueue();
   if (!list.length) return;
-  // Même source que l'affichage de la file : ce qui est annoncé est ce qui joue vraiment
-  const next = getUpcoming()[0] ?? list[0];
-  playSong(next, currentPlaylistId);
-}
-
-// Morceaux à venir (hors "jouer ensuite"), identiques à ce qui sera réellement joué
-function getUpcoming() {
-  const list = getQueue();
-  const qKey = currentPlaylistId || 'all';
-  let q = (shuffleQueues[qKey] || []).filter(id => list.includes(id) && id !== currentSongId);
-  if (shuffleMode && !q.length) q = fisherYatesShuffle(list.filter(x => x !== currentSongId));
-  shuffleQueues[qKey] = q;
-  if (q.length) return q;
   const idx = list.indexOf(currentSongId);
-  if (idx === -1) return list.slice();
-  return [...list.slice(idx + 1), ...list.slice(0, idx)];
-}
-
-function playFromManualQueue(i) {
-  const sid = manualQueue.splice(i, 1)[0];
-  if (sid) playSong(sid, currentPlaylistId);
+  let next;
+  const qKey = currentPlaylistId || 'all';
+  if (shuffleQueues[qKey] && shuffleQueues[qKey].length) {
+    next = shuffleQueues[qKey].shift();
+  } else if (shuffleMode) {
+    shuffleQueues[qKey] = fisherYatesShuffle(list.filter(x => x !== currentSongId));
+    if (!shuffleQueues[qKey].length) return;
+    next = shuffleQueues[qKey].shift();
+  } else { next = list[(idx + 1) % list.length]; }
+  playSong(next, currentPlaylistId);
 }
 
 function prevSong() {
@@ -2541,14 +2995,14 @@ function prevSong() {
 }
 
 function getQueue() {
-  if (currentPlaylistId) { const p = playlists.find(x => x.id === currentPlaylistId); return p ? [...new Set(p.songs)].filter(id => songs.some(s => s.id === id)) : []; }
+  if (currentPlaylistId) { const p = playlists.find(x => x.id === currentPlaylistId); return p ? [...new Set(p.songs)] : []; }
   return songs.map(s => s.id);
 }
 
 function toggleShuffle() { shuffleMode = !shuffleMode; shuffleQueues = {}; document.getElementById('btnShuffle').classList.toggle('active', shuffleMode); toast(shuffleMode ? '🔀 Aléatoire activé' : 'Aléatoire désactivé'); saveState(); }
 function toggleRepeat()  { repeatMode  = !repeatMode;  document.getElementById('btnRepeat').classList.toggle('active', repeatMode); audio.loop = repeatMode; toast(repeatMode ? '🔁 Répétition activée' : 'Répétition désactivée'); saveState(); }
 
-audio.addEventListener('ended',  () => {
+function handleEnded() {
   if (sleepTimerPending) {
     // Le minuteur est arrivé à échéance : on coupe ici, à la fin naturelle de la chanson.
     audio.pause();
@@ -2557,9 +3011,559 @@ audio.addEventListener('ended',  () => {
     return;
   }
   if (!repeatMode) nextSong();
+}
+audio.addEventListener('ended', handleEnded);
+audio.addEventListener('play',   () => setPlayIcon(true));
+audio.addEventListener('pause',  () => setPlayIcon(false));
+
+// ── BOUTON LECTURE / PAUSE ──
+function setPlayIcon(playing) {
+  const b = document.getElementById('btnPlay');
+  if (!b) return;
+  b.classList.toggle('playing', !!playing);
+  b.setAttribute('aria-label', playing ? 'Pause' : 'Lecture');
+}
+
+const SVG_PLAY_SM  = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11-6.86a1 1 0 0 0 0-1.7l-11-6.86A1 1 0 0 0 8 5.14z"/></svg>';
+const SVG_PAUSE_SM = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><rect x="6" y="5" width="4.5" height="14" rx="1.5"/><rect x="13.5" y="5" width="4.5" height="14" rx="1.5"/></svg>';
+
+// ── RÉGLAGES PAR MUSIQUE (volume en dB + parties coupées) ──
+// Enregistrés dans le stockage de l'appareil : ils restent jusqu'à ce que tu les modifies.
+let songFx = {};
+try { songFx = JSON.parse(localStorage.getItem('sv_song_fx') || '{}') || {}; } catch (e) { songFx = {}; }
+function saveSongFx() {
+  try { localStorage.setItem('sv_song_fx', JSON.stringify(songFx)); }
+  catch (e) { toast('❌ Réglage pas sauvegardé (stockage de l\'appareil plein ?)'); }
+}
+function getFx(id) {
+  const f = songFx[id];
+  return { gainDb: (f && f.gainDb) || 0, cuts: (f && Array.isArray(f.cuts)) ? f.cuts : [] };
+}
+function setFx(id, patch) {
+  const next = { ...getFx(id), ...patch };
+  if (!next.gainDb && !next.cuts.length) delete songFx[id]; else songFx[id] = next;
+  saveSongFx();
+}
+function fmtDb(db) {
+  const v = Math.round(db * 2) / 2;
+  return (v > 0 ? '+' : '') + v.toFixed(1).replace(/\.0$/, '') + ' dB';
+}
+
+// ── GAIN EN dB (Web Audio) ──
+// Le graphe audio n'est créé qu'au moment où tu règles un son : tant que tu n'y touches pas,
+// la lecture reste 100 % native, exactement comme avant.
+let audioCtx = null, fxGain = null;
+function initAudioFx() {
+  if (audioCtx) return true;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return false;
+  try {
+    audioCtx = new AC();
+    const src = audioCtx.createMediaElementSource(audio);
+    fxGain = audioCtx.createGain();
+    // Petit limiteur après le gain : évite la saturation quand on booste un son
+    const limiter = audioCtx.createDynamicsCompressor();
+    limiter.threshold.value = -2;
+    limiter.knee.value = 0;
+    limiter.ratio.value = 20;
+    limiter.attack.value = 0.003;
+    limiter.release.value = 0.12;
+    src.connect(fxGain);
+    fxGain.connect(limiter);
+    limiter.connect(audioCtx.destination);
+    return true;
+  } catch (e) {
+    console.warn('Web Audio indisponible :', e);
+    audioCtx = null; fxGain = null;
+    return false;
+  }
+}
+function fxResume() {
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+}
+function applySongGain(id) {
+  const db = id ? getFx(id).gainDb : 0;
+  if (!audioCtx) {
+    if (!db) return; // aucun réglage : on ne touche à rien
+    if (!initAudioFx()) { toast('⚠️ Le boost de volume n\'est pas supporté sur cet appareil'); return; }
+  }
+  fxGain.gain.setTargetAtTime(Math.pow(10, db / 20), audioCtx.currentTime, 0.03);
+  fxResume();
+}
+
+// ── PARTIES COUPÉES : lecture ──
+let currentCuts = [];
+function normalizeCuts(cuts, dur) {
+  const arr = (cuts || [])
+    .map(c => {
+      const a = Math.max(0, Math.min(c[0], c[1]));
+      let b = Math.max(c[0], c[1]);
+      if (dur) b = Math.min(dur, b);
+      return [Math.round(a * 100) / 100, Math.round(b * 100) / 100];
+    })
+    .filter(c => c[1] - c[0] >= 0.2)
+    .sort((x, y) => x[0] - y[0]);
+  const out = [];
+  for (const c of arr) {
+    const last = out[out.length - 1];
+    if (last && c[0] <= last[1] + 0.05) last[1] = Math.max(last[1], c[1]);
+    else out.push([c[0], c[1]]);
+  }
+  return out;
+}
+function firstPlayable() {
+  const c = currentCuts[0];
+  return (c && c[0] <= 0.05) ? c[1] : 0;
+}
+function skipToEnd() {
+  if (audio.loop) { audio.currentTime = firstPlayable(); return; }
+  handleEnded();
+}
+function checkCuts() {
+  if (!currentSongId || audio.paused || !currentCuts.length) return;
+  const t = audio.currentTime;
+  for (const c of currentCuts) {
+    if (t >= c[0] - 0.02 && t < c[1]) {
+      if (audio.duration && c[1] >= audio.duration - 0.15) skipToEnd();
+      else audio.currentTime = c[1];
+      return;
+    }
+  }
+}
+function updateProgressCuts() {
+  const bar = document.getElementById('progressBar');
+  bar.querySelectorAll('.progress-cut').forEach(n => n.remove());
+  const d = audio.duration;
+  if (!d || !isFinite(d)) return;
+  currentCuts.forEach(c => {
+    const n = document.createElement('div');
+    n.className = 'progress-cut';
+    n.style.left = (c[0] / d * 100) + '%';
+    n.style.width = ((Math.min(c[1], d) - c[0]) / d * 100) + '%';
+    bar.appendChild(n);
+  });
+}
+let cutTimer = null;
+audio.addEventListener('play', () => { fxResume(); clearInterval(cutTimer); cutTimer = setInterval(checkCuts, 90); });
+audio.addEventListener('pause', () => { clearInterval(cutTimer); cutTimer = null; });
+audio.addEventListener('timeupdate', checkCuts);
+audio.addEventListener('loadedmetadata', () => {
+  updateProgressCuts();
+  if (currentCuts.length && audio.currentTime < 0.05) {
+    const f = firstPlayable();
+    if (f > 0) audio.currentTime = f;
+  }
 });
-audio.addEventListener('play',   () => document.getElementById('btnPlay').textContent = '⏸');
-audio.addEventListener('pause',  () => document.getElementById('btnPlay').textContent = '▶');
+
+// ── MENU PARAMÈTRES ──
+function openSettings() { openModal('modal-settings'); }
+
+function openFxVolume() {
+  document.getElementById('searchFxVol').value = '';
+  fxOpenId = null;
+  renderFxVolume();
+  openModal('modal-fx-volume');
+}
+function openFxCuts() {
+  document.getElementById('searchFxCut').value = '';
+  renderFxCuts();
+  openModal('modal-fx-cuts');
+}
+function resetAllFx() {
+  askConfirm('Tout réinitialiser', 'Remettre tous les sons à 0 dB et rétablir toutes les parties coupées ?', () => {
+    songFx = {};
+    saveSongFx();
+    currentCuts = [];
+    updateProgressCuts();
+    applySongGain(currentSongId);
+    toast('🧹 Réglages réinitialisés');
+  });
+}
+
+function fxEmptyHTML(q) {
+  if (!songs.length) return '<div class="empty"><div class="icon">🎧</div><p>Aucune musique pour l\'instant.</p></div>';
+  return '<div class="empty"><div class="icon">🔍</div><p>Aucun résultat pour "<strong>' + escHtml(q) + '</strong>"</p></div>';
+}
+function fxFilteredSongs(inputId) {
+  const q = (document.getElementById(inputId).value || '').trim();
+  const list = sortByAddedDate(songs).filter(s => !q || cleanName(s.name).toLowerCase().includes(q.toLowerCase()));
+  return { q, list };
+}
+
+// ── Volume par son ──
+let fxOpenId = null;
+function renderFxVolume() {
+  const el = document.getElementById('fxVolList');
+  const { q, list } = fxFilteredSongs('searchFxVol');
+  if (!list.length) { el.innerHTML = fxEmptyHTML(q); return; }
+  el.innerHTML = list.map(s => {
+    const fx = getFx(s.id);
+    const c = COVERS[parseInt(s.id) % COVERS.length];
+    const open = fxOpenId === s.id;
+    return `<div class="fx-row${open ? ' open' : ''}${fx.gainDb ? ' modified' : ''}" id="fxrow-${s.id}">
+      <div class="fx-row-head" onclick="toggleFxRow('${s.id}')">
+        <div class="song-cover ${c}">🎵</div>
+        <div class="song-info"><div class="song-name">${escHtml(cleanName(s.name))}</div></div>
+        <span class="fx-badge${fx.gainDb ? ' on' : ''}" id="fxbadge-${s.id}">${fmtDb(fx.gainDb)}</span>
+        <span class="fx-chev">›</span>
+      </div>
+      <div class="fx-row-body">
+        <div class="fx-val" id="fxval-${s.id}">${fmtDb(fx.gainDb)}</div>
+        <div class="fx-slider-line">
+          <button class="fx-step" onclick="stepFxGain('${s.id}', -0.5)">−</button>
+          <input type="range" class="fx-slider" id="fxrange-${s.id}" min="-12" max="18" step="0.5" value="${fx.gainDb}" oninput="onFxGain('${s.id}', this.value)">
+          <button class="fx-step" onclick="stepFxGain('${s.id}', 0.5)">+</button>
+        </div>
+        <div class="fx-scale"><span>−12</span><span>0</span><span>+18 dB</span></div>
+        <div class="fx-actions">
+          <button class="btn-secondary" onclick="playSongKeepPlaylist('${s.id}')">${SVG_PLAY_SM} Écouter</button>
+          <button class="btn-secondary" onclick="resetFxGain('${s.id}')">Remettre à 0</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  if (fxOpenId) updateFxRowUI(fxOpenId);
+}
+
+function toggleFxRow(id) {
+  const prev = fxOpenId ? document.getElementById('fxrow-' + fxOpenId) : null;
+  if (prev) prev.classList.remove('open');
+  if (fxOpenId === id) { fxOpenId = null; return; }
+  fxOpenId = id;
+  const row = document.getElementById('fxrow-' + id);
+  if (!row) return;
+  row.classList.add('open');
+  // On prépare le moteur audio ici, pendant un appui (les navigateurs l'exigent)
+  if (initAudioFx()) { fxResume(); applySongGain(currentSongId); }
+  updateFxRowUI(id);
+  setTimeout(() => row.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 60);
+}
+
+function paintFxSlider(id) {
+  const r = document.getElementById('fxrange-' + id);
+  if (!r) return;
+  const min = +r.min, max = +r.max, v = +r.value;
+  const zero = (0 - min) / (max - min) * 100;
+  const pos = (v - min) / (max - min) * 100;
+  const a = Math.min(zero, pos), b = Math.max(zero, pos);
+  const col = v >= 0 ? 'var(--green)' : 'var(--accent)';
+  r.style.background = `linear-gradient(90deg, var(--bg3) 0 ${a}%, ${col} ${a}% ${b}%, var(--bg3) ${b}% 100%)`;
+}
+function updateFxRowUI(id) {
+  const db = getFx(id).gainDb;
+  const badge = document.getElementById('fxbadge-' + id);
+  if (badge) { badge.textContent = fmtDb(db); badge.classList.toggle('on', !!db); }
+  const val = document.getElementById('fxval-' + id);
+  if (val) {
+    val.textContent = fmtDb(db);
+    val.style.color = db > 0 ? 'var(--green)' : db < 0 ? 'var(--accent)' : 'var(--text)';
+  }
+  const row = document.getElementById('fxrow-' + id);
+  if (row) row.classList.toggle('modified', !!db);
+  paintFxSlider(id);
+}
+function onFxGain(id, val) {
+  const db = Math.round(parseFloat(val) * 2) / 2;
+  setFx(id, { gainDb: db });
+  updateFxRowUI(id);
+  if (id === currentSongId) applySongGain(id); // réglage entendu en direct si c'est le son en cours
+}
+function stepFxGain(id, delta) {
+  const r = document.getElementById('fxrange-' + id);
+  if (!r) return;
+  const v = Math.max(-12, Math.min(18, getFx(id).gainDb + delta));
+  r.value = v;
+  onFxGain(id, v);
+}
+function resetFxGain(id) {
+  const r = document.getElementById('fxrange-' + id);
+  if (r) r.value = 0;
+  onFxGain(id, 0);
+}
+
+// ── Liste des musiques à couper ──
+function renderFxCuts() {
+  const el = document.getElementById('fxCutList');
+  const { q, list } = fxFilteredSongs('searchFxCut');
+  if (!list.length) { el.innerHTML = fxEmptyHTML(q); return; }
+  el.innerHTML = list.map(s => {
+    const n = getFx(s.id).cuts.length;
+    const c = COVERS[parseInt(s.id) % COVERS.length];
+    return `<div class="fx-row${n ? ' modified' : ''}">
+      <div class="fx-row-head" onclick="openTrim('${s.id}')">
+        <div class="song-cover ${c}">🎵</div>
+        <div class="song-info"><div class="song-name">${escHtml(cleanName(s.name))}</div></div>
+        ${n ? `<span class="fx-badge on">✂ ${n}</span>` : ''}
+        <span class="fx-chev" style="transform:none;">›</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ÉDITEUR DE COUPES ──
+const trim = { sid: null, dur: 0, from: 0, to: 0, cuts: [], peaks: null, audio: null, url: null, raf: 0, previewing: false, drag: null };
+
+function fmtPrecise(t) {
+  const tenths = Math.round(Math.max(0, t) * 10);
+  const m = Math.floor(tenths / 600);
+  const sec = (tenths % 600) / 10;
+  return m + ':' + (sec < 10 ? '0' : '') + sec.toFixed(1);
+}
+function parseTime(str) {
+  str = String(str).trim().replace(',', '.');
+  if (!str) return NaN;
+  const parts = str.split(':');
+  if (parts.length > 2) return NaN;
+  const nums = parts.map(Number);
+  if (nums.some(n => isNaN(n))) return NaN;
+  return parts.length === 2 ? nums[0] * 60 + nums[1] : nums[0];
+}
+
+async function openTrim(id) {
+  const s = songs.find(x => x.id === id);
+  if (!s) return;
+  cleanupTrim();
+  trim.sid = id;
+  trim.cuts = normalizeCuts(getFx(id).cuts, 0);
+  document.getElementById('trimTitle').textContent = cleanName(s.name);
+  const loading = document.getElementById('waveLoading');
+  loading.style.display = 'flex';
+  loading.textContent = 'Analyse du son…';
+  setPreviewBtn(false);
+  updateTrimOverlays();
+  renderTrimCuts();
+  openModal('modal-trim');
+  layoutTrim();
+
+  let blob = s.data instanceof Blob ? s.data : null;
+  if (!blob) { try { blob = await (await fetch(s.data)).blob(); } catch (e) { blob = null; } }
+  if (!blob || trim.sid !== id) return;
+  trim.url = URL.createObjectURL(blob);
+  trim.audio = new Audio();
+  trim.audio.preload = 'metadata';
+  trim.audio.addEventListener('loadedmetadata', () => {
+    if (trim.sid !== id) return;
+    trim.dur = trim.audio.duration || 0;
+    trim.from = 0;
+    trim.to = Math.min(trim.dur, Math.max(1, Math.min(10, trim.dur / 4)));
+    layoutTrim();
+    renderTrimCuts();
+  }, { once: true });
+  trim.audio.src = trim.url;
+  decodePeaks(blob, id);
+}
+
+async function decodePeaks(blob, id) {
+  const loading = document.getElementById('waveLoading');
+  try {
+    if (blob.size > 24 * 1024 * 1024) throw new Error('fichier trop gros pour la forme d\'onde');
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) throw new Error('OfflineAudioContext indisponible');
+    const buf = await blob.arrayBuffer();
+    const decodeWith = rate => new Promise((res, rej) => {
+      const ctx = new OAC(1, 1, rate);
+      const p = ctx.decodeAudioData(buf.slice(0), res, rej);
+      if (p && p.catch) p.catch(rej);
+    });
+    let decoded;
+    try { decoded = await decodeWith(8000); } catch (e) { decoded = await decodeWith(22050); }
+    if (trim.sid !== id) return;
+    const data = decoded.getChannelData(0);
+    const N = 240;
+    const step = Math.max(1, Math.floor(data.length / N));
+    const peaks = new Float32Array(N);
+    let max = 0.0001;
+    for (let i = 0; i < N; i++) {
+      let m = 0;
+      const start = i * step, end = Math.min(data.length, start + step);
+      for (let j = start; j < end; j++) { const v = Math.abs(data[j]); if (v > m) m = v; }
+      peaks[i] = m;
+      if (m > max) max = m;
+    }
+    for (let i = 0; i < N; i++) peaks[i] /= max;
+    trim.peaks = peaks;
+    if (!trim.dur) trim.dur = decoded.duration;
+  } catch (e) {
+    console.warn('Forme d\'onde indisponible (la découpe reste possible) :', e);
+  }
+  if (trim.sid === id) { loading.style.display = 'none'; layoutTrim(); }
+}
+
+function layoutTrim() {
+  const box = document.getElementById('waveBox');
+  const cv = document.getElementById('waveCanvas');
+  const w = box.clientWidth, h = box.clientHeight;
+  if (!w) return;
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = Math.round(w * dpr);
+  cv.height = Math.round(h * dpr);
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, 'rgba(90,240,142,0.95)');
+  grad.addColorStop(1, 'rgba(29,185,84,0.7)');
+  ctx.fillStyle = grad;
+  const N = trim.peaks ? trim.peaks.length : 120;
+  const bw = w / N;
+  for (let i = 0; i < N; i++) {
+    const p = trim.peaks ? trim.peaks[i] : 0.06;
+    const bh = Math.max(3, p * (h - 18));
+    ctx.fillRect(i * bw + 1, (h - bh) / 2, Math.max(1, bw - 2), bh);
+  }
+  updateTrimOverlays();
+}
+
+function updateTrimOverlays() {
+  const d = trim.dur || 1;
+  const sel = document.getElementById('waveSel');
+  sel.style.left = (trim.from / d * 100) + '%';
+  sel.style.width = (Math.max(0, trim.to - trim.from) / d * 100) + '%';
+  document.getElementById('waveCuts').innerHTML = trim.cuts
+    .map(c => `<div class="wave-cut" style="left:${c[0] / d * 100}%;width:${(c[1] - c[0]) / d * 100}%"></div>`).join('');
+  document.getElementById('trimFrom').value = fmtPrecise(trim.from);
+  document.getElementById('trimTo').value = fmtPrecise(trim.to);
+  document.getElementById('trimDur').textContent = trim.dur ? fmtPrecise(trim.dur) : '0:00';
+}
+
+function setSel(which, t) {
+  const d = trim.dur;
+  if (!d) return;
+  t = Math.round(Math.max(0, Math.min(d, t)) * 100) / 100;
+  const gap = Math.min(0.2, d / 2);
+  if (which === 'from') trim.from = Math.min(t, trim.to - gap);
+  else trim.to = Math.max(t, trim.from + gap);
+}
+function onTrimField(which, val) {
+  const t = parseTime(val);
+  if (!isNaN(t)) setSel(which, t);
+  updateTrimOverlays();
+}
+
+(function initWaveDrag() {
+  const box = document.getElementById('waveBox');
+  const xToT = ev => {
+    const r = box.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width)) * trim.dur;
+  };
+  box.addEventListener('pointerdown', ev => {
+    if (!trim.dur) return;
+    const r = box.getBoundingClientRect();
+    const x = ev.clientX - r.left;
+    const xf = trim.from / trim.dur * r.width;
+    const xt = trim.to / trim.dur * r.width;
+    trim.drag = Math.abs(x - xf) <= Math.abs(x - xt) ? 'from' : 'to';
+    try { box.setPointerCapture(ev.pointerId); } catch (e) {}
+    setSel(trim.drag, xToT(ev));
+    updateTrimOverlays();
+    ev.preventDefault();
+  });
+  box.addEventListener('pointermove', ev => {
+    if (!trim.drag) return;
+    setSel(trim.drag, xToT(ev));
+    updateTrimOverlays();
+  });
+  const end = () => { trim.drag = null; };
+  box.addEventListener('pointerup', end);
+  box.addEventListener('pointercancel', end);
+})();
+window.addEventListener('resize', () => { if (trim.sid) layoutTrim(); });
+
+function setPreviewBtn(on) {
+  document.getElementById('btnTrimPreview').innerHTML = on ? SVG_PAUSE_SM + ' Arrêter' : SVG_PLAY_SM + ' Écouter';
+}
+function toggleTrimPreview() {
+  if (!trim.audio || !trim.dur) return;
+  if (trim.previewing) { stopTrimPreview(); return; }
+  if (!audio.paused) audio.pause(); // on coupe le lecteur principal pour ne pas superposer deux sons
+  trim.audio.currentTime = trim.from;
+  trim.audio.play().catch(() => {});
+  trim.previewing = true;
+  setPreviewBtn(true);
+  tickPreview();
+}
+function tickPreview() {
+  if (!trim.previewing || !trim.audio) return;
+  const t = trim.audio.currentTime;
+  const ph = document.getElementById('wavePlayhead');
+  ph.style.display = 'block';
+  ph.style.left = (t / trim.dur * 100) + '%';
+  if (t >= trim.to || trim.audio.ended) { stopTrimPreview(); return; }
+  trim.raf = requestAnimationFrame(tickPreview);
+}
+function stopTrimPreview() {
+  trim.previewing = false;
+  cancelAnimationFrame(trim.raf);
+  if (trim.audio) trim.audio.pause();
+  const ph = document.getElementById('wavePlayhead');
+  if (ph) ph.style.display = 'none';
+  setPreviewBtn(false);
+}
+
+function commitCuts() {
+  setFx(trim.sid, { cuts: trim.cuts });
+  if (trim.sid === currentSongId) {
+    currentCuts = trim.cuts.map(c => [c[0], c[1]]);
+    updateProgressCuts();
+  }
+  updateTrimOverlays();
+  renderTrimCuts();
+}
+function addCutFromSelection() {
+  if (!trim.sid || !trim.dur) return;
+  const a = trim.from, b = trim.to;
+  if (b - a < 0.2) { toast('⚠️ Sélection trop courte'); return; }
+  const next = normalizeCuts([...trim.cuts, [a, b]], trim.dur);
+  const kept = trim.dur - next.reduce((sum, c) => sum + (c[1] - c[0]), 0);
+  if (kept < 1) { toast('⚠️ Il doit rester au moins 1 seconde de musique'); return; }
+  stopTrimPreview();
+  trim.cuts = next;
+  // La sélection avance juste après la partie qu'on vient de couper, pour enchaîner facilement
+  const len = b - a;
+  trim.from = Math.min(b, Math.max(0, trim.dur - 0.3));
+  trim.to = Math.min(trim.dur, trim.from + len);
+  commitCuts();
+  toast('✂️ Partie coupée');
+}
+function renderTrimCuts() {
+  const el = document.getElementById('trimCutList');
+  if (!trim.cuts.length) {
+    el.innerHTML = '<div class="trim-empty">Aucune partie coupée : la musique se joue en entier.</div>';
+    return;
+  }
+  el.innerHTML = trim.cuts.map((c, i) => `<div class="cut-item">
+    <div class="cut-range">${fmtPrecise(c[0])} → ${fmtPrecise(c[1])}</div>
+    <div class="cut-len">${(c[1] - c[0]).toFixed(1)} s</div>
+    <button class="cut-restore" onclick="restoreCut(${i})">Rétablir</button>
+  </div>`).join('');
+}
+function restoreCut(i) {
+  trim.cuts.splice(i, 1);
+  commitCuts();
+  toast('↩ Partie rétablie');
+}
+function clearAllCuts() {
+  if (!trim.sid) return;
+  if (!trim.cuts.length) { toast('Rien à rétablir'); return; }
+  trim.cuts = [];
+  commitCuts();
+  toast('↩ Tout est rétabli');
+}
+
+function cleanupTrim() {
+  stopTrimPreview();
+  if (trim.audio) { trim.audio.removeAttribute('src'); trim.audio.load(); trim.audio = null; }
+  if (trim.url) { URL.revokeObjectURL(trim.url); trim.url = null; }
+  trim.sid = null; trim.dur = 0; trim.peaks = null; trim.drag = null;
+}
+// Quand l'éditeur se ferme (bouton, fond, ou retour du téléphone) : on nettoie et on met à jour la liste
+new MutationObserver(() => {
+  const m = document.getElementById('modal-trim');
+  if (!m.classList.contains('show') && trim.sid) {
+    cleanupTrim();
+    if (document.getElementById('modal-fx-cuts').classList.contains('show')) renderFxCuts();
+  }
+}).observe(document.getElementById('modal-trim'), { attributes: true, attributeFilter: ['class'] });
 
 // ── MINUTEUR D'ARRÊT ──
 let sleepTimerId = null;
@@ -2568,28 +3572,21 @@ let sleepTimerInterval = null;
 let sleepTimerPending = false; // true = le temps est écoulé, on attend la fin de la chanson en cours
 
 function startSleepTimer(minutes) {
-  // Si un minuteur tourne déjà, la durée choisie s'ajoute au temps restant (5 min restantes + 30 min = 35 min)
-  let totalMinutes = minutes;
-  if (sleepTimerEnd && !sleepTimerPending) {
-    const remainingMs = sleepTimerEnd - Date.now();
-    if (remainingMs > 0) totalMinutes += remainingMs / 60000;
-  }
-  const totalMs = totalMinutes * 60 * 1000;
   cancelSleepTimer();
-  sleepTimerEnd = Date.now() + totalMs;
+  sleepTimerEnd = Date.now() + minutes * 60 * 1000;
   sleepTimerPending = false;
   sleepTimerId = setTimeout(() => {
     sleepTimerPending = true;
     // On laisse la répétition en boucle native se terminer normalement pour que 'ended' se déclenche
     if (audio.loop) audio.loop = false;
     updateSleepStatus();
-  }, totalMs);
+  }, minutes * 60 * 1000);
   updateSleepStatus();
   sleepTimerInterval = setInterval(updateSleepStatus, 1000);
   const customInput = document.getElementById('sleepCustomMinutes');
   if (customInput) customInput.value = '';
   closeModal('modal-sleep');
-  toast(`⏱ Minuteur réglé sur ${formatSleepDuration(Math.round(totalMinutes))}`);
+  toast(`⏱ Minuteur réglé sur ${formatSleepDuration(minutes)}`);
 }
 
 function startCustomSleepTimer() {
@@ -2714,17 +3711,20 @@ function renderQueue() {
   let html = '';
   if (currentSongId) {
     const s = songs.find(x => x.id === currentSongId);
-    if (s) { const c = COVERS[parseInt(s.id)%COVERS.length]; html += '<div class="queue-section-label">En cours</div><div class="queue-item current"><div class="queue-item-cover '+c+'">🎵</div><div class="queue-item-name">'+escHtml(cleanName(s.name))+'</div></div>'; }
+    if (s) { const c = COVERS[parseInt(s.id)%COVERS.length]; html += '<div class="queue-section-label">En cours</div><div class="queue-item current"><div class="queue-item-cover '+c+'">🎵</div><div class="queue-item-name">'+cleanName(s.name)+'</div></div>'; }
   }
   if (manualQueue && manualQueue.length) {
     html += '<div class="queue-section-label">⏭ Jouer ensuite</div>';
-    manualQueue.forEach((sid, i) => {
+    manualQueue.forEach(sid => {
       const s = songs.find(x => x.id === sid); if (!s) return;
       const c = COVERS[parseInt(s.id)%COVERS.length];
-      html += `<div class="queue-item" style="border-left:2px solid var(--green);padding-left:6px;" onclick="playFromManualQueue(${i})"><div class="queue-item-cover ${c}">🎵</div><div class="queue-item-name">${escHtml(cleanName(s.name))}</div></div>`;
+      html += `<div class="queue-item" style="border-left:2px solid var(--green);padding-left:6px;" onclick="playSong('${sid}','${currentPlaylistId||''}')"><div class="queue-item-cover ${c}">🎵</div><div class="queue-item-name">${escHtml(cleanName(s.name))}</div></div>`;
     });
   }
-  const upcoming = getUpcoming();
+  const list = getQueue();
+  const qKey = currentPlaylistId || 'all';
+  const currentQueue = shuffleQueues[qKey] || [];
+  let upcoming = currentQueue.length ? currentQueue : (list.length ? list.slice(list.indexOf(currentSongId)+1) : []);
   if (upcoming.length) {
     html += '<div class="queue-section-label">À venir</div>';
     upcoming.forEach(sid => {
@@ -3053,7 +4053,7 @@ async function syncFromCloud() {
       } else {
         const local = playlists[idx];
         const mergedSongs = Array.from(new Set([...(local.songs || []), ...(cp.songs || [])]));
-        const merged = { ...local, ...cp, songs: mergedSongs, lastPlayed: Math.max(local.lastPlayed || 0, cp.lastPlayed || 0) };
+        const merged = { ...local, ...cp, songs: mergedSongs };
         playlists[idx] = merged;
         store('playlists', 'readwrite').put(merged);
       }
