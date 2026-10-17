@@ -4397,7 +4397,11 @@ try {
       // automatique et silencieux du token (TOKEN_REFRESHED) qui pourrait sinon interrompre
       // la lecture en cours sans raison apparente pour la personne.
       // Supabase renvoie aussi SIGNED_IN quand on revient sur l'appli avec la même session : dans ce cas, synchro silencieuse.
-      if (currentUser && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) syncFromCloud({ silent: wasSignedIn && event === 'SIGNED_IN' });
+      if (currentUser && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+        const silentSync = wasSignedIn && event === 'SIGNED_IN';
+        // D'abord on décide à qui appartiennent les musiques de l'appareil (changement de compte = on repart de zéro), puis on synchronise
+        svPrepareAccount(currentUser).then(switched => { if (!switched) syncFromCloud({ silent: silentSync }); });
+      }
     });
 
     // ── SYNCHRO AUTOMATIQUE AU RETOUR SUR L'ONGLET ──
@@ -4416,6 +4420,46 @@ try {
     setInterval(autoSyncIfStale, 120000); // filet de sécurité si l'onglet reste ouvert et visible longtemps
   }
 } catch (err) { console.warn('Supabase indisponible :', err); toast('⚠️ Init cloud échouée : ' + err.message); }
+
+// ── À QUI APPARTIENNENT LES MUSIQUES DE CET APPAREIL ──
+// sv_owner = compte dont la bibliothèque est stockée ici.
+//  - Déconnexion : on garde tout (sv_owner ne change pas).
+//  - Connexion à un AUTRE compte déjà existant : on efface la bibliothèque locale, on ne garde que celle du nouveau compte.
+//  - Création d'un compte : on garde les musiques actuelles, elles sont envoyées sur le nouveau compte.
+async function svPrepareAccount(user) {
+  try {
+    const owner = localStorage.getItem('sv_owner');
+    const signupEmail = localStorage.getItem('sv_signup_pending');
+    if (signupEmail && signupEmail === String(user.email || '').toLowerCase()) {
+      localStorage.removeItem('sv_signup_pending');
+      localStorage.setItem('sv_owner', user.id);
+      // « jamais synchronisé » : tout ce qui est ici part vers le nouveau compte (sinon la synchro le croirait supprimé ailleurs)
+      localStorage.removeItem('sv_known_song_ids');
+      localStorage.removeItem('sv_known_playlist_ids');
+      return false;
+    }
+    if (!owner) { localStorage.setItem('sv_owner', user.id); return false; }
+    if (owner === user.id) return false;
+    await svWipeLocalLibrary(user.id);
+    return true;
+  } catch (e) { console.warn('Préparation du compte échouée :', e); return false; }
+}
+async function svWipeLocalLibrary(newOwner) {
+  toast('🔄 Changement de compte...');
+  try { audio.pause(); } catch (e) {}
+  for (let i = 0; i < 30 && !db; i++) await new Promise(r => setTimeout(r, 100)); // base locale pas encore ouverte ?
+  ['sv_state', 'sv_song_fx', 'sv_known_song_ids', 'sv_known_playlist_ids', 'sv_stats', 'sv_recap_seen'].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+  svStats = { since: null, days: {}, songs: {}, pls: {}, months: {} }; svOtherStats = []; songFx = {}; // évite que pagehide ne réécrive l'ancien état
+  if (db) await new Promise(res => {
+    try {
+      const tx = db.transaction(['songs', 'playlists'], 'readwrite');
+      tx.objectStore('songs').clear(); tx.objectStore('playlists').clear();
+      tx.oncomplete = res; tx.onerror = res; tx.onabort = res;
+    } catch (e) { res(); }
+  });
+  try { localStorage.setItem('sv_owner', newOwner); } catch (e) {}
+  location.reload(); // l'appli repart propre et récupère la bibliothèque du nouveau compte depuis le cloud
+}
 
 function openAccountModal() {
   if (!cloudReady) {
@@ -4484,8 +4528,9 @@ async function submitAccountForm() {
       closeModal('modal-account');
       toast('👤 Connecté en tant que ' + email);
     } else {
+      try { localStorage.setItem('sv_signup_pending', email); } catch (e) {} // la connexion qui suit est une création de compte : on garde les musiques
       const { data, error } = await sb.auth.signUp({ email, password: pass });
-      if (error) throw error;
+      if (error) { try { localStorage.removeItem('sv_signup_pending'); } catch (e) {} throw error; }
       if (data.session) {
         // Pas de confirmation par email exigée côté Supabase : la personne est directement connectée.
         closeModal('modal-account');
@@ -4820,7 +4865,7 @@ function statsTick() {
   mo.pls[pk] = (mo.pls[pk] || 0) + dt;
   if (!statsCur || statsCur.id !== currentSongId) statsCur = { id: currentSongId, acc: 0, counted: false };
   statsCur.acc += dt;
-  if (!statsCur.counted && statsCur.acc >= 20) { statsCur.counted = true; sg.plays++; ms.plays++; } // une « écoute » = au moins 20 s
+  if (!statsCur.counted && statsCur.acc >= 90) { statsCur.counted = true; sg.plays++; ms.plays++; } // une « écoute » = au moins 1 min 30
   if (!statsSaveTimer) statsSaveTimer = setTimeout(saveStats, 5000);
   svStatsDirty = true;
   if (!svStatsPushTimer) svStatsPushTimer = setTimeout(svPushStats, 60000);
@@ -4864,7 +4909,7 @@ function renderStats() {
   </div>
   <div class="st-week">${days7.map(x => `<div class="st-col ${x.today ? 'today' : ''}"><div class="st-bar" style="height:${Math.max(3, Math.round(x.v / max * 62))}px"></div><small>${L[x.d.getDay()]}</small></div>`).join('')}</div>`;
   const top = Object.keys(S.songs).map(k => ({ s: songs.find(x => String(x.id) === k), v: S.songs[k] }))
-    .filter(x => x.s && (x.v.plays > 0 || x.v.sec >= 20)).sort((a, b) => (b.v.plays - a.v.plays) || (b.v.sec - a.v.sec)).slice(0, 5);
+    .filter(x => x.s && x.v.plays > 0).sort((a, b) => (b.v.plays - a.v.plays) || (b.v.sec - a.v.sec)).slice(0, 5);
   h += `<div class="st-h">🔥 Sons les plus écoutés</div>`;
   h += top.length ? top.map((x, i) => `<div class="st-row"><span class="st-rank">${i + 1}</span><span class="st-name">${svEsc(cleanName(x.s.name))}</span><span class="st-val">${x.v.plays} écoute${x.v.plays > 1 ? 's' : ''} · ${fmtDur(x.v.sec)}</span></div>`).join('')
     : `<div class="st-empty">Écoute quelques sons, ils apparaîtront ici.</div>`;
@@ -4896,24 +4941,23 @@ function renderStats() {
 const SV_MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 let svRecapUnseen = false;
 function svRecapName(key) { const [y, m] = key.split('-'); return 'Récap ' + SV_MONTHS[parseInt(m, 10) - 1] + ' ' + y; }
-// Mois ayant au moins un peu d'écoute, du plus récent au plus ancien (12 max)
+// Un récap n'apparaît qu'une fois le mois terminé (donc « Récap octobre 2026 » à partir du 1er novembre).
+// Premier récap : octobre 2026. Du plus récent au plus ancien (12 max).
+const SV_RECAP_FIRST = '2026-10';
 function svRecapKeys(S) {
   S = S || svStatsMerged();
-  const ks = new Set();
-  Object.keys(S.days).forEach(d => { if (S.days[d] >= 20) ks.add(d.slice(0, 7)); });
+  const cur = statsDayKey().slice(0, 7), ks = new Set();
+  Object.keys(S.days).forEach(d => {
+    const k = d.slice(0, 7);
+    if (S.days[d] >= 20 && k >= SV_RECAP_FIRST && k < cur) ks.add(k);
+  });
   return [...ks].sort().reverse().slice(0, 12);
 }
-// Récaps déjà ouverts. À la toute première fois, les mois passés sont considérés comme vus :
-// seul le mois en cours (Récap octobre 2026) apparaît comme nouveau.
+// Récaps déjà ouverts (le point vert disparaît une fois le récap ouvert)
 function svRecapSeenList() {
   let seen = null;
   try { seen = JSON.parse(localStorage.getItem('sv_recap_seen') || 'null'); } catch (e) {}
-  if (!Array.isArray(seen)) {
-    const cur = statsDayKey().slice(0, 7);
-    seen = svRecapKeys().filter(k => k < cur);
-    try { localStorage.setItem('sv_recap_seen', JSON.stringify(seen)); } catch (e) {}
-  }
-  return seen;
+  return Array.isArray(seen) ? seen : [];
 }
 function svMarkRecapSeen(key) {
   const seen = svRecapSeenList();
@@ -4935,7 +4979,7 @@ function svRecapData(key, S) {
   days.forEach(d => { total += S.days[d]; if (!best || S.days[d] > S.days[best]) best = d; });
   const mo = (S.months || {})[key] || { songs: {}, pls: {} };
   const top = Object.keys(mo.songs).map(k => ({ s: songs.find(x => String(x.id) === k), v: mo.songs[k] }))
-    .filter(x => x.s && (x.v.plays > 0 || x.v.sec >= 20)).sort((a, b) => (b.v.plays - a.v.plays) || (b.v.sec - a.v.sec)).slice(0, 3);
+    .filter(x => x.s && x.v.plays > 0).sort((a, b) => (b.v.plays - a.v.plays) || (b.v.sec - a.v.sec)).slice(0, 3);
   const pl = Object.keys(mo.pls || {}).map(k => ({ n: k === '_all' ? 'Tous les sons' : (playlists.find(x => String(x.id) === k) || {}).name, v: mo.pls[k] }))
     .filter(x => x.n && x.v >= 20).sort((a, b) => b.v - a.v)[0] || null;
   return { total, nDays: days.length, best, top, pl };
@@ -4954,7 +4998,6 @@ function openRecap(key) {
   h += r.top.length ? r.top.map((x, i) => `<div class="st-row"><span class="st-rank">${i + 1}</span><span class="st-name">${svEsc(cleanName(x.s.name))}</span><span class="st-val">${x.v.plays} écoute${x.v.plays > 1 ? 's' : ''}</span></div>`).join('')
     : `<div class="st-empty">Pas encore assez de données.</div>`;
   if (r.pl) h += `<div class="st-h" style="margin-top:14px;">🎶 Playlist n°1</div><div class="st-row"><span class="st-rank">1</span><span class="st-name">${svEsc(r.pl.n)}</span><span class="st-val">${fmtDur(r.pl.v)}</span></div>`;
-  if (key === statsDayKey().slice(0, 7)) h += `<div class="rc-partial">Récap du mois en cours : il se met à jour jusqu'à la fin du mois.</div>`;
   document.getElementById('recapBody').innerHTML = h;
   svMarkRecapSeen(key);
   openModal('modal-recap');
@@ -5069,9 +5112,9 @@ if (sb) {
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '1.5';
+const APP_VERSION = '1.6';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Retirer une musique d'une playlist se répercute maintenant sur tous tes appareils","Nouveau : bouton Lecture sur la page d'une playlist, à droite de son nom","Les boutons Lecture des playlists suivent le mode aléatoire : musique au hasard si activé, première musique sinon","Le bouton de la playlist en cours de lecture affiche l'icône pause ⏸","Nouveau : récaps mensuels dans Paramètres › Statistiques (Récap octobre 2026), avec un point vert quand un nouveau récap est disponible"];
+const APP_NOTES = ["Retirer une musique d'une playlist se répercute maintenant sur tous tes appareils", "Nouveau : bouton Lecture sur la page d'une playlist, à droite de son nom", "Les boutons Lecture des playlists suivent le mode aléatoire : musique au hasard si activé, première musique sinon", "Le bouton de la playlist en cours de lecture affiche l'icône pause ⏸", "Nouveau : récaps mensuels dans Paramètres › Statistiques (le Récap octobre 2026 arrive le 1er novembre), avec un point vert quand un nouveau récap est disponible", "Une musique compte comme une écoute à partir de 1 min 30 d'écoute", "Comptes : te connecter à un autre compte existant remplace les musiques de l'appareil par celles de ce compte ; créer un compte garde tes musiques actuelles"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
