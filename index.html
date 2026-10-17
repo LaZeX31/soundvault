@@ -1677,6 +1677,21 @@ html[data-bg="clair"] .set-row { border-color: rgba(0,0,0,0.08); }
 .st-val { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .st-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 14px; }
 .st-since { text-align: center; color: var(--muted); font-size: 11px; margin: 10px 0 4px; }
+
+/* ── RÉCAPS MENSUELS + POINTS VERTS ── */
+.set-row { position: relative; }
+.set-dot {
+  display: none; position: absolute; top: 10px; right: 12px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--green-hi);
+  box-shadow: 0 0 10px rgba(var(--green-rgb),0.8);
+}
+.set-dot.on { display: block; }
+.set-row.recap-new { border-color: rgba(var(--green-rgb),0.45); background: rgba(var(--green-rgb),0.08); }
+.rc-hero { background: var(--bg3); border-radius: 16px; padding: 18px 16px; text-align: center; margin-bottom: 12px; }
+.rc-hero b { display: block; font-family: 'Syne', sans-serif; font-size: 34px; letter-spacing: -1px; color: var(--green); }
+.rc-hero span { font-size: 12px; color: var(--muted); }
+.rc-partial { text-align: center; color: var(--muted); font-size: 11px; margin: 10px 0 0; }
 </style>
 <script>
 (function () {
@@ -1769,7 +1784,8 @@ html[data-bg="clair"] .set-row { border-color: rgba(0,0,0,0.08); }
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;">
-      <div class="section-title" id="detail-title" style="margin-bottom:0;flex:1;">Playlist</div>
+      <div class="section-title" id="detail-title" style="margin-bottom:0;flex:1;min-width:0;">Playlist</div>
+      <button class="pl-play-btn" id="btn-play-pl" style="display:none;margin-right:2px;" onclick="playPlaylistNow(this.dataset.pid)" aria-label="Lire la playlist"></button>
       <button class="btn-rename" id="btn-rename-pl" onclick="openRenamePlaylist()" title="Renommer">✏️</button>
       <button id="btn-delete-pl" onclick="deleteCurrentPlaylist()" title="Supprimer" style="background:rgba(255,79,79,0.12);border:1px solid rgba(255,79,79,0.25);color:#ff6b6b;padding:6px 10px;border-radius:10px;font-size:14px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,79,79,0.22)'" onmouseout="this.style.background='rgba(255,79,79,0.12)'">🗑</button>
     </div>
@@ -2060,8 +2076,9 @@ html[data-bg="clair"] .set-row { border-color: rgba(0,0,0,0.08); }
         <div class="set-ico g1">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         </div>
-        <div class="set-txt"><strong>Statistiques</strong><span>Temps d'écoute, sons les plus écoutés, playlists préférées</span></div>
+        <div class="set-txt"><strong>Statistiques</strong><span>Temps d'écoute, récaps mensuels, sons et playlists préférés</span></div>
         <div class="set-chev">›</div>
+        <span class="set-dot" id="setStatsDot"></span>
       </div>
     </div>
     <div class="upd-ver-line">SoundVault · version <span class="app-ver-text"></span></div>
@@ -2116,6 +2133,18 @@ html[data-bg="clair"] .set-row { border-color: rgba(0,0,0,0.08); }
     <div class="sheet-scroll" id="statsBody"></div>
     <div class="modal-actions">
       <button class="btn-primary" onclick="closeModal('modal-stats')">Retour</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RÉCAP MENSUEL -->
+<div class="modal-overlay" id="modal-recap" style="z-index:210;">
+  <div class="modal-box sheet">
+    <div class="sheet-grip"></div>
+    <div class="modal-title sheet-title" id="recapTitle">📅 Récap</div>
+    <div class="sheet-scroll" id="recapBody"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeModal('modal-recap')">Retour</button>
     </div>
   </div>
 </div>
@@ -2551,7 +2580,7 @@ function renderPlaylists() {
           <div class="playlist-meta">${p.songs.length} morceau${p.songs.length !== 1 ? 'x' : ''}</div>
         </div>
       </div>
-      ${p.songs.length ? `<button class="pl-play-btn" onclick="playPlaylistNow('${p.id}')" aria-label="Lire la playlist"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11-6.86a1 1 0 0 0 0-1.7l-11-6.86A1 1 0 0 0 8 5.14z"/></svg></button>` : ''}
+      ${p.songs.length ? `<button class="pl-play-btn" data-pid="${p.id}" onclick="playPlaylistNow('${p.id}')" aria-label="${plIsPlayingNow(p.id) ? 'Mettre en pause' : 'Lire la playlist'}">${plPlayIconSvg(plIsPlayingNow(p.id))}</button>` : ''}
     </div>`;
   }).join('');
 }
@@ -2601,12 +2630,43 @@ function filterHome(query) {
   filtered.forEach(s => initSwipe(s.id, null, document.getElementById('swrap-home-' + s.id)));
 }
 
+// Icône du bouton de playlist : ⏸ si cette playlist est en cours de lecture, ▶ sinon
+function plIsPlayingNow(pid) {
+  try { return !!(currentSongId && currentPlaylistId === pid && !audio.paused && audio.getAttribute('src')); }
+  catch (e) { return false; } // le lecteur n'est pas encore initialisé
+}
+function plPlayIconSvg(playing) {
+  return playing
+    ? '<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><rect x="6" y="5" width="4.5" height="14" rx="1.5"/><rect x="13.5" y="5" width="4.5" height="14" rx="1.5"/></svg>'
+    : '<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11-6.86a1 1 0 0 0 0-1.7l-11-6.86A1 1 0 0 0 8 5.14z"/></svg>';
+}
+// Met à jour tous les boutons de playlist (accueil + page de la playlist) sans tout redessiner
+function updatePlaylistPlayButtons() {
+  document.querySelectorAll('.pl-play-btn[data-pid]').forEach(b => {
+    const on = plIsPlayingNow(b.dataset.pid);
+    b.innerHTML = plPlayIconSvg(on);
+    b.setAttribute('aria-label', on ? 'Mettre en pause' : 'Lire la playlist');
+  });
+}
+
+// Règle commune à tous les boutons Lecture de playlist :
+//  - aléatoire activé  → une musique au hasard
+//  - aléatoire désactivé → la première musique de la playlist
+// Sur la playlist déjà en cours, le bouton fait simplement pause / reprise.
 function playPlaylistNow(pid) {
   const p = playlists.find(x => x.id === pid);
   if (!p || !p.songs.length) return;
-  const uniqueSongs = [...new Set(p.songs)];
-  shuffleQueues[pid] = fisherYatesShuffle(uniqueSongs);
-  const next = shuffleQueues[pid].shift();
+  if (currentSongId && currentPlaylistId === pid && audio.getAttribute('src')) { togglePlay(); return; }
+  const uniqueSongs = [...new Set(p.songs)].filter(id => songs.some(s => s.id === id));
+  if (!uniqueSongs.length) return;
+  let next;
+  if (shuffleMode) {
+    shuffleQueues[pid] = fisherYatesShuffle(uniqueSongs);
+    next = shuffleQueues[pid].shift();
+  } else {
+    delete shuffleQueues[pid];
+    next = uniqueSongs[0];
+  }
   playSong(next, pid);
 }
 
@@ -2618,6 +2678,10 @@ function openPlaylist(pid) {
   document.getElementById('detail-title').textContent = p.name;
   document.getElementById('btn-delete-pl').dataset.pid = pid;
   document.getElementById('btn-rename-pl').dataset.pid = pid;
+  const plBtn = document.getElementById('btn-play-pl');
+  plBtn.dataset.pid = pid;
+  plBtn.style.display = p.songs.length ? 'flex' : 'none';
+  updatePlaylistPlayButtons();
   const el = document.getElementById('detail-list');
   if (!p.songs.length) {
     el.innerHTML = `<div class="empty"><div class="icon">🎵</div><p>Playlist vide.<br>Ajoute des musiques depuis l'onglet <strong>Musiques</strong></p></div>`;
@@ -2892,12 +2956,33 @@ function addToQueueNext(sid) {
   saveState();
 }
 
+// ── SUPPRESSIONS DE PLAYLIST SYNCHRONISÉES ──
+// p.removed[sid] = date du retrait, p.added[sid] = date d'un rajout après retrait.
+// Ces deux tables voyagent avec la playlist dans le cloud : à la fusion, une musique retirée
+// sur un appareil est retirée partout (sauf si elle a été rajoutée plus tard).
+function plMarkRemoved(p, sid) {
+  if (!p.removed) p.removed = {};
+  p.removed[sid] = Date.now();
+}
+function plMarkAdded(p, sid) {
+  if (p.removed && p.removed[sid]) { if (!p.added) p.added = {}; p.added[sid] = Date.now(); }
+}
+function plIsRemoved(removed, added, sid) {
+  return ((removed && removed[sid]) || 0) > ((added && added[sid]) || 0);
+}
+function plMaxMap(a, b) {
+  const out = Object.assign({}, a || {});
+  for (const k in (b || {})) out[k] = Math.max(out[k] || 0, b[k]);
+  return out;
+}
+
 function removeFromPlaylist(pid, sid) {
   const p = playlists.find(x => x.id === pid);
   if (!p) return;
   const s = songs.find(x => x.id === sid);
   askConfirm('Retirer de la playlist', 'Retirer "' + (s ? cleanName(s.name) : 'cette musique') + '" de la playlist "' + p.name + '" ?', () => {
     p.songs = p.songs.filter(x => x !== sid);
+    plMarkRemoved(p, sid); // « pierre tombale » : sans elle, la synchro refusionnait la musique depuis un autre appareil
     safePut('playlists', p, p.name);
     // On retire aussi la musique de la file d'attente (manuelle + mélangée) de cette playlist,
     // sinon elle peut encore ressortir en "à venir" alors qu'elle n'est plus dans la playlist.
@@ -3238,8 +3323,9 @@ function confirmAdd() {
     const p = playlists.find(x => x.id === pid);
     if (!p) return;
     if (el.classList.contains('checked')) {
-      pendingSongs.forEach(sid => { if (!p.songs.includes(sid)) p.songs.push(sid); }); // pas de doublons
+      pendingSongs.forEach(sid => { if (!p.songs.includes(sid)) p.songs.push(sid); plMarkAdded(p, sid); }); // pas de doublons
     } else {
+      pendingSongs.forEach(sid => { if (p.songs.includes(sid)) plMarkRemoved(p, sid); });
       p.songs = p.songs.filter(x => !pendingSongs.includes(x));
     }
     safePut('playlists', p, p.name);
@@ -3475,6 +3561,7 @@ function setPlayIcon(playing) {
   if (!b) return;
   b.classList.toggle('playing', !!playing);
   b.setAttribute('aria-label', playing ? 'Pause' : 'Lecture');
+  updatePlaylistPlayButtons();
 }
 
 const SVG_PLAY_SM  = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11-6.86a1 1 0 0 0 0-1.7l-11-6.86A1 1 0 0 0 8 5.14z"/></svg>';
@@ -4607,8 +4694,10 @@ async function syncFromCloud(opts) {
         store('playlists', 'readwrite').put(cp);
       } else {
         const local = playlists[idx];
-        const mergedSongs = Array.from(new Set([...(local.songs || []), ...(cp.songs || [])]));
-        const merged = { ...local, ...cp, songs: mergedSongs };
+        const rmMap = plMaxMap(local.removed, cp.removed), adMap = plMaxMap(local.added, cp.added);
+        const mergedSongs = Array.from(new Set([...(local.songs || []), ...(cp.songs || [])]))
+          .filter(id => !plIsRemoved(rmMap, adMap, id)); // retiré sur un appareil = retiré partout
+        const merged = { ...local, ...cp, songs: mergedSongs, removed: rmMap, added: adMap };
         playlists[idx] = merged;
         store('playlists', 'readwrite').put(merged);
       }
@@ -4694,8 +4783,9 @@ function setThemeAccent(k) { try { localStorage.setItem('sv_theme_accent', k); }
 function setThemeBg(k) { try { localStorage.setItem('sv_theme_bg', k); } catch (e) {} svApplyTheme(); renderTheme(); svThemeChanged(); }
 
 // ── STATISTIQUES D'ÉCOUTE (stockées sur l'appareil) ──
-let svStats = { since: null, days: {}, songs: {}, pls: {} };
+let svStats = { since: null, days: {}, songs: {}, pls: {}, months: {} };
 try { const r = JSON.parse(localStorage.getItem('sv_stats') || 'null'); if (r && r.days) svStats = Object.assign(svStats, r); } catch (e) {}
+if (!svStats.months) svStats.months = {}; // sons / playlists par mois (pour les récaps mensuels)
 let statsLastTick = 0, statsCur = null, statsSaveTimer = null;
 function statsDayKey(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function saveStats() {
@@ -4703,8 +4793,11 @@ function saveStats() {
   try {
     const cut = statsDayKey(new Date(Date.now() - 400 * 86400000));
     Object.keys(svStats.days).forEach(k => { if (k < cut) delete svStats.days[k]; });
+    const mcut = statsDayKey(new Date(Date.now() - 800 * 86400000)).slice(0, 7);
+    Object.keys(svStats.months || {}).forEach(k => { if (k < mcut) delete svStats.months[k]; });
     localStorage.setItem('sv_stats', JSON.stringify(svStats));
   } catch (e) {}
+  try { svRefreshRecapDots(); } catch (e) {}
 }
 function statsTick() {
   const now = Date.now();
@@ -4719,9 +4812,15 @@ function statsTick() {
   sg.sec += dt;
   const pk = currentPlaylistId || '_all';
   svStats.pls[pk] = (svStats.pls[pk] || 0) + dt;
+  // même chose, rangée par mois (récaps mensuels)
+  if (!svStats.months) svStats.months = {};
+  const mo = svStats.months[day.slice(0, 7)] || (svStats.months[day.slice(0, 7)] = { songs: {}, pls: {} });
+  const ms = mo.songs[currentSongId] || (mo.songs[currentSongId] = { plays: 0, sec: 0 });
+  ms.sec += dt;
+  mo.pls[pk] = (mo.pls[pk] || 0) + dt;
   if (!statsCur || statsCur.id !== currentSongId) statsCur = { id: currentSongId, acc: 0, counted: false };
   statsCur.acc += dt;
-  if (!statsCur.counted && statsCur.acc >= 20) { statsCur.counted = true; sg.plays++; } // une « écoute » = au moins 20 s
+  if (!statsCur.counted && statsCur.acc >= 20) { statsCur.counted = true; sg.plays++; ms.plays++; } // une « écoute » = au moins 20 s
   if (!statsSaveTimer) statsSaveTimer = setTimeout(saveStats, 5000);
   svStatsDirty = true;
   if (!svStatsPushTimer) svStatsPushTimer = setTimeout(svPushStats, 60000);
@@ -4779,13 +4878,92 @@ function renderStats() {
     const where = !currentUser ? 'gardées sur cet appareil (connecte-toi pour les synchroniser)' : (svSyncOk === false ? 'synchro indisponible pour l\'instant' : 'synchronisées avec ton compte');
     h += `<div class="st-since">Stats comptées depuis le ${d}/${m}/${y} · ${where}</div>`;
   }
+  // Récaps mensuels : toujours au-dessus du bouton « Remettre les stats à zéro », le plus récent en premier
+  const rkeys = svRecapKeys(S), rseen = svRecapSeenList();
+  if (rkeys.length) {
+    h += `<div class="st-h" style="margin-top:14px;">📅 Récaps mensuels</div>`;
+    h += rkeys.map(k => {
+      const r = svRecapData(k, S), isNew = !rseen.includes(k);
+      return `<div class="set-row${isNew ? ' recap-new' : ''}" onclick="openRecap('${k}')"><div class="set-ico g2"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="set-txt"><strong>${svEsc(svRecapName(k))}</strong><span>${fmtDur(r.total)} · ${r.nDays} jour${r.nDays > 1 ? 's' : ''} d'écoute</span></div><div class="set-chev">›</div><span class="set-dot${isNew ? ' on' : ''}"></span></div>`;
+    }).join('');
+  }
   h += `<div class="set-row danger" style="margin-top:10px;" onclick="resetStats()"><div class="set-ico g3"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></div><div class="set-txt"><strong>Remettre les stats à zéro</strong><span>Efface le temps d'écoute et les classements</span></div><div class="set-chev">›</div></div>`;
   box.innerHTML = h;
+  svRefreshRecapDots();
+}
+
+// ── RÉCAPS MENSUELS (version allégée) ──
+const SV_MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+let svRecapUnseen = false;
+function svRecapName(key) { const [y, m] = key.split('-'); return 'Récap ' + SV_MONTHS[parseInt(m, 10) - 1] + ' ' + y; }
+// Mois ayant au moins un peu d'écoute, du plus récent au plus ancien (12 max)
+function svRecapKeys(S) {
+  S = S || svStatsMerged();
+  const ks = new Set();
+  Object.keys(S.days).forEach(d => { if (S.days[d] >= 20) ks.add(d.slice(0, 7)); });
+  return [...ks].sort().reverse().slice(0, 12);
+}
+// Récaps déjà ouverts. À la toute première fois, les mois passés sont considérés comme vus :
+// seul le mois en cours (Récap octobre 2026) apparaît comme nouveau.
+function svRecapSeenList() {
+  let seen = null;
+  try { seen = JSON.parse(localStorage.getItem('sv_recap_seen') || 'null'); } catch (e) {}
+  if (!Array.isArray(seen)) {
+    const cur = statsDayKey().slice(0, 7);
+    seen = svRecapKeys().filter(k => k < cur);
+    try { localStorage.setItem('sv_recap_seen', JSON.stringify(seen)); } catch (e) {}
+  }
+  return seen;
+}
+function svMarkRecapSeen(key) {
+  const seen = svRecapSeenList();
+  if (!seen.includes(key)) { seen.push(key); try { localStorage.setItem('sv_recap_seen', JSON.stringify(seen)); } catch (e) {} }
+}
+// Point vert : sur l'engrenage, sur « Statistiques » et sur chaque récap pas encore ouvert
+function svRefreshRecapDots() {
+  const seen = svRecapSeenList();
+  svRecapUnseen = svRecapKeys().some(k => !seen.includes(k));
+  const sd = document.getElementById('setStatsDot');
+  if (sd) sd.classList.toggle('on', svRecapUnseen);
+  let upd = false; try { upd = updateAvailable; } catch (e) {}
+  const gd = document.getElementById('gearDot');
+  if (gd) gd.classList.toggle('on', upd || svRecapUnseen);
+}
+function svRecapData(key, S) {
+  const days = Object.keys(S.days).filter(d => d.startsWith(key) && S.days[d] > 0);
+  let total = 0, best = null;
+  days.forEach(d => { total += S.days[d]; if (!best || S.days[d] > S.days[best]) best = d; });
+  const mo = (S.months || {})[key] || { songs: {}, pls: {} };
+  const top = Object.keys(mo.songs).map(k => ({ s: songs.find(x => String(x.id) === k), v: mo.songs[k] }))
+    .filter(x => x.s && (x.v.plays > 0 || x.v.sec >= 20)).sort((a, b) => (b.v.plays - a.v.plays) || (b.v.sec - a.v.sec)).slice(0, 3);
+  const pl = Object.keys(mo.pls || {}).map(k => ({ n: k === '_all' ? 'Tous les sons' : (playlists.find(x => String(x.id) === k) || {}).name, v: mo.pls[k] }))
+    .filter(x => x.n && x.v >= 20).sort((a, b) => b.v - a.v)[0] || null;
+  return { total, nDays: days.length, best, top, pl };
+}
+function openRecap(key) {
+  const S = svStatsMerged(), r = svRecapData(key, S);
+  const [y, m] = key.split('-'), month = SV_MONTHS[parseInt(m, 10) - 1];
+  document.getElementById('recapTitle').textContent = '📅 ' + svRecapName(key);
+  const bestTxt = r.best ? `${parseInt(r.best.slice(8), 10)} ${SV_MONTHS[parseInt(r.best.slice(5, 7), 10) - 1]}` : '—';
+  let h = `<div class="rc-hero"><b>${fmtDur(r.total)}</b><span>d'écoute en ${month} ${y}</span></div>
+  <div class="st-grid">
+    <div class="st-card"><b>${r.nDays}</b><span>jour${r.nDays > 1 ? 's' : ''} d'écoute</span></div>
+    <div class="st-card"><b>${r.best ? fmtDur(S.days[r.best]) : '—'}</b><span>meilleur jour (${bestTxt})</span></div>
+  </div>
+  <div class="st-h">🔥 Top 3 des sons</div>`;
+  h += r.top.length ? r.top.map((x, i) => `<div class="st-row"><span class="st-rank">${i + 1}</span><span class="st-name">${svEsc(cleanName(x.s.name))}</span><span class="st-val">${x.v.plays} écoute${x.v.plays > 1 ? 's' : ''}</span></div>`).join('')
+    : `<div class="st-empty">Pas encore assez de données.</div>`;
+  if (r.pl) h += `<div class="st-h" style="margin-top:14px;">🎶 Playlist n°1</div><div class="st-row"><span class="st-rank">1</span><span class="st-name">${svEsc(r.pl.n)}</span><span class="st-val">${fmtDur(r.pl.v)}</span></div>`;
+  if (key === statsDayKey().slice(0, 7)) h += `<div class="rc-partial">Récap du mois en cours : il se met à jour jusqu'à la fin du mois.</div>`;
+  document.getElementById('recapBody').innerHTML = h;
+  svMarkRecapSeen(key);
+  openModal('modal-recap');
+  renderStats();
 }
 function resetStats() {
   askConfirm('Remettre les stats à zéro ?', 'Le temps d\'écoute et les classements seront effacés sur tous tes appareils.', async () => {
     const ts = Date.now();
-    svStats = { since: null, days: {}, songs: {}, pls: {}, resetTs: ts }; svOtherStats = []; statsCur = null; saveStats(); renderStats();
+    svStats = { since: null, days: {}, songs: {}, pls: {}, months: {}, resetTs: ts }; svOtherStats = []; statsCur = null; saveStats(); renderStats();
     if (cloudReady && currentUser) {
       await svCloudUpsert('stats_reset', { ts });
       try { await sb.from('user_sync').delete().eq('user_id', currentUser.id).like('key', 'stats:%').neq('key', 'stats:' + SV_DEVICE_ID); } catch (e) {}
@@ -4827,9 +5005,14 @@ async function svPushStats() {
   if (await svCloudUpsert('stats:' + SV_DEVICE_ID, svStats)) svStatsDirty = false;
 }
 function svMergeStats(list) {
-  const out = { since: null, days: {}, songs: {}, pls: {} };
+  const out = { since: null, days: {}, songs: {}, pls: {}, months: {} };
   list.forEach(st => {
     if (!st) return;
+    for (const mk in (st.months || {})) {
+      const src = st.months[mk] || {}, dst = out.months[mk] || (out.months[mk] = { songs: {}, pls: {} });
+      for (const k in (src.songs || {})) { const o = dst.songs[k] || (dst.songs[k] = { plays: 0, sec: 0 }); o.plays += src.songs[k].plays || 0; o.sec += src.songs[k].sec || 0; }
+      for (const k in (src.pls || {})) dst.pls[k] = (dst.pls[k] || 0) + src.pls[k];
+    }
     if (st.since && (!out.since || st.since < out.since)) out.since = st.since;
     for (const k in (st.days || {})) out.days[k] = (out.days[k] || 0) + st.days[k];
     for (const k in (st.songs || {})) { const o = out.songs[k] || (out.songs[k] = { plays: 0, sec: 0 }); o.plays += st.songs[k].plays || 0; o.sec += st.songs[k].sec || 0; }
@@ -4866,11 +5049,12 @@ async function svSyncPull(force) {
 
     // Stats : remise à zéro demandée depuis un autre appareil ?
     const rs = (byKey['stats_reset'] && byKey['stats_reset'].ts) || 0;
-    if (rs > (svStats.resetTs || 0)) { svStats = { since: null, days: {}, songs: {}, pls: {}, resetTs: rs }; statsCur = null; svStatsDirty = true; saveStats(); }
+    if (rs > (svStats.resetTs || 0)) { svStats = { since: null, days: {}, songs: {}, pls: {}, months: {}, resetTs: rs }; statsCur = null; svStatsDirty = true; saveStats(); }
     const mine = 'stats:' + SV_DEVICE_ID;
     svOtherStats = rows.filter(r => r.key.startsWith('stats:') && r.key !== mine && r.data && (r.data.resetTs || 0) >= (svStats.resetTs || 0)).map(r => r.data);
     if (!byKey[mine] || svStatsDirty) svPushStats();
     if (document.getElementById('modal-stats').classList.contains('show')) renderStats();
+    svRefreshRecapDots();
   } catch (e) { console.warn('Synchro thème/stats échouée :', e); }
   finally { svPullBusy = false; }
 }
@@ -4885,9 +5069,9 @@ if (sb) {
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '1.4';
+const APP_VERSION = '1.5';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Nouveau : Paramètres › Thème (couleur de l'appli et fond sombre, noir pur ou clair)","Nouveau : Paramètres › Statistiques (temps d'écoute, sons et playlists les plus écoutés)","Dans la file d'attente, toucher un son lance la file à partir de lui","Dans Playlists, glisser un son trouvé par la recherche vers la gauche l'ajoute à la file d'attente","Les corrections de la 1.3 (titre du premier son, bouton retour, file d'attente) sont incluses","Le thème et les statistiques sont synchronisés entre tes appareils (via ton compte)"];
+const APP_NOTES = ["Retirer une musique d'une playlist se répercute maintenant sur tous tes appareils","Nouveau : bouton Lecture sur la page d'une playlist, à droite de son nom","Les boutons Lecture des playlists suivent le mode aléatoire : musique au hasard si activé, première musique sinon","Le bouton de la playlist en cours de lecture affiche l'icône pause ⏸","Nouveau : récaps mensuels dans Paramètres › Statistiques (Récap octobre 2026), avec un point vert quand un nouveau récap est disponible"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
@@ -4899,7 +5083,7 @@ function refreshUpdateBadge() {
   const chip = document.getElementById('setUpdChip');
   if (chip) { chip.textContent = upd ? 'Mettre à jour' : 'v' + APP_VERSION; chip.classList.toggle('green', upd); }
   const dot = document.getElementById('gearDot');
-  if (dot) dot.classList.toggle('on', upd);
+  if (dot) dot.classList.toggle('on', upd || svRecapUnseen);
 }
 function openUpdateModal() {
   const upd = updateAvailable;
@@ -4967,6 +5151,8 @@ async function applyUpdate() {
   location.reload();
 }
 refreshUpdateBadge();
+svRefreshRecapDots();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') svRefreshRecapDots(); });
 setTimeout(checkForUpdate, 3000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForUpdate(); });
 window.addEventListener('focus', checkForUpdate);
