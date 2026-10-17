@@ -1626,6 +1626,9 @@ main, .nav, header { min-width: 0; max-width: 100%; }
 
   <!-- PAGE SONGS -->
   <div class="page" id="page-songs">
+    <div class="back-bar">
+      <button class="btn-back" style="margin-bottom:0;" onclick="showPage('playlists')">← Retour</button>
+    </div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input class="search-input" id="searchInput" name="search-songs" type="search" autocomplete="off" placeholder="Rechercher une musique..." oninput="filterSongs(this.value)">
@@ -1644,6 +1647,9 @@ main, .nav, header { min-width: 0; max-width: 100%; }
 
   <!-- PAGE UPLOAD -->
   <div class="page" id="page-upload">
+    <div class="back-bar">
+      <button class="btn-back" style="margin-bottom:0;" onclick="showPage('playlists')">← Retour</button>
+    </div>
     <div class="section-title">⬇️ Ajouter une musique</div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
@@ -3974,6 +3980,7 @@ try {
     // onAuthStateChange se déclenche automatiquement une fois au chargement avec la session existante
     // (événement INITIAL_SESSION) : pas besoin d'un getSession() séparé, ça créerait un double appel.
     sb.auth.onAuthStateChange((event, session) => {
+      const wasSignedIn = !!currentUser;
       currentUser = session ? session.user : null;
       try { updateAccountUI(); } catch (uiErr) {
         console.warn('updateAccountUI a échoué :', uiErr);
@@ -3982,7 +3989,8 @@ try {
       // On ne resynchronise que lors d'une vraie connexion, jamais lors du renouvellement
       // automatique et silencieux du token (TOKEN_REFRESHED) qui pourrait sinon interrompre
       // la lecture en cours sans raison apparente pour la personne.
-      if (currentUser && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) syncFromCloud();
+      // Supabase renvoie aussi SIGNED_IN quand on revient sur l'appli avec la même session : dans ce cas, synchro silencieuse.
+      if (currentUser && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) syncFromCloud({ silent: wasSignedIn && event === 'SIGNED_IN' });
     });
 
     // ── SYNCHRO AUTOMATIQUE AU RETOUR SUR L'ONGLET ──
