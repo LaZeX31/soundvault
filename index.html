@@ -976,6 +976,27 @@ body:not(.queue-open) header {
 .upd-notes { margin: 0 0 16px 18px; font-size: 13px; line-height: 1.55; color: var(--text); }
 .upd-ver-line { text-align: center; color: var(--muted); font-size: 12px; margin: 10px 0 2px; }
 
+/* ── LIGNE « MISE À JOUR » DANS LES PARAMÈTRES ── */
+.set-ico.g4 { background: linear-gradient(135deg, #52525b, #27272a); }
+.set-row.upd-available .set-ico.g4 { background: linear-gradient(135deg, #3df27e, #14903f); }
+.set-row.upd-available { border-color: rgba(29,185,84,0.45); background: rgba(29,185,84,0.08); }
+.set-chip {
+  flex-shrink: 0; padding: 5px 11px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; font-family: 'DM Sans', sans-serif;
+  background: var(--bg4); color: var(--muted);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.set-chip.green { background: linear-gradient(145deg, #3df27e, #1db954); color: #052e14; border: none; box-shadow: 0 0 14px rgba(29,185,84,0.4); }
+.btn-primary.upd-grey { background: var(--bg4); color: var(--muted); box-shadow: none; }
+#btnSettings { position: relative; }
+.gear-dot {
+  display: none; position: absolute; top: 4px; right: 4px;
+  width: 11px; height: 11px; border-radius: 50%;
+  background: #3df27e; border: 2px solid var(--bg2, #12121a);
+  box-shadow: 0 0 10px rgba(61,242,126,0.8);
+}
+.gear-dot.on { display: block; }
+
 /* ── PASTILLE « MISE À JOUR » (à côté du nuage) ── */
 .update-badge {
   display: inline-flex; align-items: center; gap: 6px;
@@ -1644,9 +1665,8 @@ main, .nav { min-width: 0; }
 <header>
   <div class="logo">🎵 <span>Sound</span>Vault</div>
   <div style="display:flex;gap:8px;align-items:center;">
-    <button id="updateBadge" class="update-badge" onclick="openUpdateModal()" title="Version de SoundVault"><span class="ub-ico">✓</span><span class="ub-txt-long"></span><span class="ub-txt-short"></span></button>
     <span id="syncStatus" title="Synchronisé" style="display:none;font-size:16px;width:24px;text-align:center;transition:opacity 0.2s;">☁️</span>
-    <button class="btn-icon" onclick="openSettings()" title="Paramètres" aria-label="Paramètres"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    <button class="btn-icon" id="btnSettings" onclick="openSettings()" title="Paramètres" aria-label="Paramètres"><span class="gear-dot" id="gearDot"></span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     <button class="btn-add" id="btnAccount" style="width:42px;height:42px;font-size:16px;background:var(--bg4);box-shadow:none;" onclick="openAccountModal()" title="Compte">👤</button>
     <button class="btn-add" onclick="openCreatePlaylist()">+</button>
   </div>
@@ -1949,25 +1969,18 @@ main, .nav { min-width: 0; }
     <div class="sheet-grip"></div>
     <div class="modal-title sheet-title">⚙️ Paramètres</div>
     <div class="sheet-scroll">
-      <div class="set-row" onclick="openFxVolume()">
+      <div class="set-row" id="setUpdRow" onclick="openUpdateModal()">
+        <div class="set-ico g4" id="setUpdIco">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        </div>
+        <div class="set-txt"><strong>Mise à jour</strong><span id="setUpdSub">Version —</span></div>
+        <div class="set-chip" id="setUpdChip">v—</div>
+      </div>
+      <div class="set-row" onclick="openModal('modal-sound')">
         <div class="set-ico g1">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
         </div>
-        <div class="set-txt"><strong>Volume des sons</strong><span>Booste ou baisse un son (en dB) pour qu'il sonne comme les autres</span></div>
-        <div class="set-chev">›</div>
-      </div>
-      <div class="set-row" onclick="openFxCuts()">
-        <div class="set-ico g2">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
-        </div>
-        <div class="set-txt"><strong>Couper des musiques</strong><span>Retire des passages, ils restent coupés jusqu'à ce que tu les rétablisses</span></div>
-        <div class="set-chev">›</div>
-      </div>
-      <div class="set-row danger" onclick="resetAllFx()">
-        <div class="set-ico g3">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-        </div>
-        <div class="set-txt"><strong>Tout réinitialiser</strong><span>Remet tous les sons à 0 dB et rétablit toutes les coupes</span></div>
+        <div class="set-txt"><strong>Réglages des sons</strong><span>Volume de chaque son, parties coupées et remise à zéro</span></div>
         <div class="set-chev">›</div>
       </div>
     </div>
@@ -1993,8 +2006,41 @@ main, .nav { min-width: 0; }
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" id="updBtnLater" onclick="closeModal('modal-update')">Plus tard</button>
-      <button class="btn-secondary" id="updBtnCheck" onclick="manualUpdateCheck()" style="display:none;">Vérifier</button>
-      <button class="btn-primary" id="updBtnApply" onclick="applyUpdate()">Mettre à jour</button>
+      <button class="btn-primary" id="updBtnApply" onclick="updMainAction()">Mettre à jour</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RÉGLAGES DES SONS -->
+<div class="modal-overlay" id="modal-sound" style="z-index:205;">
+  <div class="modal-box sheet">
+    <div class="sheet-grip"></div>
+    <div class="modal-title sheet-title">🔊 Réglages des sons</div>
+    <div class="sheet-scroll">
+      <div class="set-row" onclick="openFxVolume()">
+        <div class="set-ico g1">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+        </div>
+        <div class="set-txt"><strong>Volume des sons</strong><span>Booste ou baisse un son (en dB) pour qu'il sonne comme les autres</span></div>
+        <div class="set-chev">›</div>
+      </div>
+      <div class="set-row" onclick="openFxCuts()">
+        <div class="set-ico g2">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+        </div>
+        <div class="set-txt"><strong>Couper des musiques</strong><span>Retire des passages, ils restent coupés jusqu'à ce que tu les rétablisses</span></div>
+        <div class="set-chev">›</div>
+      </div>
+      <div class="set-row danger" onclick="resetAllFx()">
+        <div class="set-ico g3">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        </div>
+        <div class="set-txt"><strong>Tout réinitialiser</strong><span>Remet tous les sons à 0 dB et rétablit toutes les coupes</span></div>
+        <div class="set-chev">›</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeModal('modal-sound')">Retour</button>
     </div>
   </div>
 </div>
@@ -4452,20 +4498,21 @@ if ('serviceWorker' in navigator) {
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '1.1';
+const APP_VERSION = '1.2';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Mise en page grand écran : colonne centrée sur PC","Le « / » est accepté dans le nom des musiques","Numéro de version visible, avec le détail des nouveautés"];
+const APP_NOTES = ["Le bouton de mise à jour est maintenant dans Paramètres › Mise à jour (vert quand une nouvelle version existe)","Paramètres réorganisés : « Mise à jour » et « Réglages des sons » (volume, coupes, remise à zéro)","Un point vert sur la roue des paramètres signale une mise à jour"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
-  const b = document.getElementById('updateBadge');
-  if (!b) return;
-  b.style.display = 'inline-flex';
-  b.classList.toggle('uptodate', !updateAvailable);
-  b.title = updateAvailable ? 'Une nouvelle version de SoundVault est disponible' : 'SoundVault est à jour (version ' + APP_VERSION + ')';
-  b.querySelector('.ub-ico').textContent = updateAvailable ? '↻' : '✓';
-  b.querySelector('.ub-txt-long').textContent = updateAvailable ? 'Mise à jour' : 'v' + APP_VERSION;
-  b.querySelector('.ub-txt-short').textContent = updateAvailable ? 'MàJ' : 'v' + APP_VERSION;
+  const upd = updateAvailable;
+  const row = document.getElementById('setUpdRow');
+  if (row) row.classList.toggle('upd-available', upd);
+  const sub = document.getElementById('setUpdSub');
+  if (sub) sub.textContent = upd ? ('Nouvelle version ' + ((updateInfo && updateInfo.version) || '') + ' disponible') : ('Version ' + APP_VERSION + ' · à jour');
+  const chip = document.getElementById('setUpdChip');
+  if (chip) { chip.textContent = upd ? 'Mettre à jour' : 'v' + APP_VERSION; chip.classList.toggle('green', upd); }
+  const dot = document.getElementById('gearDot');
+  if (dot) dot.classList.toggle('on', upd);
 }
 function openUpdateModal() {
   const upd = updateAvailable;
@@ -4478,18 +4525,22 @@ function openUpdateModal() {
   document.getElementById('updNotesTitle').textContent = upd ? 'Nouveautés' : 'Nouveautés de cette version';
   document.getElementById('updNotes').innerHTML = notes.map(n => '<li>' + escHtml(String(n)) + '</li>').join('');
   document.getElementById('updNotesWrap').style.display = notes.length ? 'block' : 'none';
-  document.getElementById('updBtnApply').style.display = upd ? '' : 'none';
-  document.getElementById('updBtnCheck').style.display = upd ? 'none' : '';
+  // Un seul bouton : vert « Mettre à jour » s'il y a du nouveau, gris « À jour » sinon (un clic relance une vérification)
+  const btn = document.getElementById('updBtnApply');
+  btn.textContent = upd ? 'Mettre à jour' : '✓ À jour · Vérifier';
+  btn.classList.toggle('upd-grey', !upd);
+  btn.disabled = false;
   document.getElementById('updBtnLater').textContent = upd ? 'Plus tard' : 'Fermer';
   openModal('modal-update');
 }
+function updMainAction() { if (updateAvailable) applyUpdate(); else manualUpdateCheck(); }
 async function manualUpdateCheck() {
-  const btn = document.getElementById('updBtnCheck');
+  const btn = document.getElementById('updBtnApply');
   btn.textContent = 'Vérification...'; btn.disabled = true;
   await checkForUpdate(true);
-  btn.textContent = 'Vérifier'; btn.disabled = false;
-  if (updateAvailable) openUpdateModal();
-  else toast(navigator.onLine ? '✅ Tu as déjà la dernière version' : '⚠️ Pas de connexion pour vérifier');
+  btn.disabled = false;
+  if (updateAvailable) { closeModal('modal-update'); setTimeout(openUpdateModal, 350); }
+  else { btn.textContent = '✓ À jour · Vérifier'; toast(navigator.onLine ? '✅ Tu as déjà la dernière version' : '⚠️ Pas de connexion pour vérifier'); }
 }
 async function checkForUpdate(force) {
   if (updateAvailable || !navigator.onLine) return;
@@ -4508,13 +4559,13 @@ async function checkForUpdate(force) {
       updateInfo = { version: m[1], notes };
       updateAvailable = true;
       refreshUpdateBadge();
-      toast('🆕 Version ' + m[1] + ' disponible : appuie sur « Mise à jour » en haut');
+      toast('🆕 Version ' + m[1] + ' disponible : Paramètres › Mise à jour');
     }
   } catch (e) { /* hors-ligne ou fichier local : on ignore */ }
 }
 async function applyUpdate() {
-  const b = document.getElementById('updateBadge');
-  if (b) b.classList.add('busy');
+  const ab = document.getElementById('updBtnApply');
+  if (ab) { ab.textContent = 'Mise à jour...'; ab.disabled = true; }
   try {
     if ('serviceWorker' in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
