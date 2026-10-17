@@ -940,6 +940,28 @@ body:not(.queue-open) header {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
 
+/* ── BARRE DE DÉFILEMENT (PC) : plus large, visible, arrondie ── */
+@media (hover: hover) and (pointer: fine) {
+  ::-webkit-scrollbar { width: 14px; height: 14px; }
+  ::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.03);
+    border-left: 1px solid rgba(255,255,255,0.04);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(61,242,126,0.55), rgba(29,185,84,0.4));
+    border-radius: 10px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+    min-height: 48px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #3df27e, #1db954); background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:active { background: #1db954; background-clip: padding-box; }
+  ::-webkit-scrollbar-corner { background: transparent; }
+  @supports (-moz-appearance: none) {
+    html, * { scrollbar-width: auto; scrollbar-color: rgba(29,185,84,0.55) rgba(255,255,255,0.03); }
+  }
+}
+
 /* ── VOLUME (masqué sur mobile) ── */
 .volume-wrap {
   display: flex;
@@ -1968,6 +1990,8 @@ function fisherYatesShuffle(arr) {
 }
 let manualQueue = [];
 let playHistory = [];
+let forwardStack = [];      // sons dont on est revenu avec « précédent » : « suivant » les rejoue dans l'ordre
+let navKeepForward = false; // vrai quand le changement vient de précédent/suivant (sinon on repart de zéro)
 let pendingSongs = [];
 let selectMode = false;
 let selectedIds = new Set();
@@ -2962,6 +2986,8 @@ function loadAudioSrc(songData) {
 function playSong(sid, pid) {
   const s = songs.find(x => x.id === sid);
   if (!s) return;
+  if (!navKeepForward) forwardStack = [];
+  navKeepForward = false;
   currentSongId = sid;
   currentPlaylistId = pid || null;
   if (pid) {
@@ -3076,6 +3102,11 @@ function togglePlay() {
 }
 
 function nextSong() {
+  // Si on vient de faire « précédent », on repart d'abord vers le son qu'on vient de quitter
+  while (forwardStack.length) {
+    const f = forwardStack.pop();
+    if (songs.some(x => x.id === f)) { navKeepForward = true; playSong(f, currentPlaylistId); return; }
+  }
   if (manualQueue && manualQueue.length) { playSong(manualQueue.shift(), currentPlaylistId); return; }
   const list = getQueue();
   if (!list.length) return;
@@ -3094,10 +3125,16 @@ function nextSong() {
 
 function prevSong() {
   if (audio.currentTime > 3) { audio.currentTime = 0; return; }
-  if (playHistory.length >= 2) { playHistory.pop(); const prev = playHistory[playHistory.length - 1]; playHistory.pop(); playSong(prev, currentPlaylistId); return; }
+  if (playHistory.length >= 2) {
+    if (currentSongId) forwardStack.push(currentSongId);
+    playHistory.pop(); const prev = playHistory[playHistory.length - 1]; playHistory.pop();
+    navKeepForward = true; playSong(prev, currentPlaylistId); return;
+  }
   const list = getQueue();
   if (!list.length) return;
   const idx = list.indexOf(currentSongId);
+  if (currentSongId) forwardStack.push(currentSongId);
+  navKeepForward = true;
   playSong(list[(idx - 1 + list.length) % list.length], currentPlaylistId);
 }
 
@@ -3957,7 +3994,7 @@ try {
       const now = Date.now();
       if (now - lastAutoSync < 20000) return; // pas plus d'une fois toutes les 20s
       lastAutoSync = now;
-      syncFromCloud();
+      syncFromCloud({ silent: true }); // retour sur l'appli : synchro en silence
     }
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') autoSyncIfStale(); });
     window.addEventListener('focus', autoSyncIfStale);
@@ -4120,25 +4157,47 @@ async function deleteSongFromCloud(id) {
   } catch (err) { /* déjà absent, on ignore */ }
 }
 
+// Exécute fn sur chaque élément avec n tâches en parallèle (téléchargements/envois simultanés)
+async function runPool(items, n, fn) {
+  let i = 0;
+  const workers = Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (i < items.length) { const item = items[i++]; await fn(item); }
+  });
+  await Promise.all(workers);
+}
+
 // Récupère depuis le cloud les musiques/playlists manquantes en local (ex: sur un nouvel appareil)
 let syncInProgress = false;
-async function syncFromCloud() {
+async function syncFromCloud(opts) {
+  const silent = !!(opts && opts.silent);
   if (!cloudReady || !currentUser) return;
-  if (syncInProgress) { toast('⏳ Synchro déjà en cours...'); return; }
+  if (syncInProgress) { if (!silent) toast('⏳ Synchro déjà en cours...'); return; }
   syncInProgress = true;
-  setSyncIcon('syncing');
-  const statusEl = document.getElementById('account-sync-status');
+  // Silencieux (retour sur l'appli) : ni icône qui tourne, ni texte. Visible à l'ouverture et au clic sur « Resynchroniser ».
+  if (!silent) { setSyncIcon('syncing'); toast('🔄 Synchronisation...'); }
+  const statusEl = silent ? null : document.getElementById('account-sync-status');
   if (statusEl) statusEl.textContent = 'Synchronisation...';
   const failedDownloads = [], failedUploads = [];
   try {
+    // Les deux requêtes partent en même temps (au lieu de l'une après l'autre) + un seul jeton d'accès pour toute la synchro
+    const userDataPromise = (async () => {
+      const r = await sb.from('user_data').select('playlists, fx').eq('user_id', currentUser.id).maybeSingle();
+      if (!r.error) return { data: r.data, fxColumnOk: true };
+      console.warn('Colonne "fx" introuvable dans user_data, réglages non synchronisés :', r.error);
+      const r2 = await sb.from('user_data').select('playlists').eq('user_id', currentUser.id).maybeSingle();
+      return { data: r2.data, fxColumnOk: false };
+    })();
+    userDataPromise.catch(() => {});
+    const syncHeaders = await authHeader();
     const { data: cloudSongs, error: songsErr } = await sb.from('songs').select('*').eq('user_id', currentUser.id);
     if (songsErr) throw songsErr;
     const cloudIds = new Set((cloudSongs || []).map(cs => cs.id));
     const knownSongIds = new Set(JSON.parse(localStorage.getItem('sv_known_song_ids') || '[]'));
     let added = 0, pushed = 0, renamed = 0, removedSongs = 0;
 
-    // 1) Télécharger ce qui est dans le cloud mais pas encore en local
-    //    + mettre à jour le nom si elle a été renommée sur un autre appareil
+    // 1) Télécharger ce qui est dans le cloud mais pas encore en local (4 en parallèle,
+    //    affichées au fur et à mesure) + mettre à jour le nom si renommée sur un autre appareil
+    const toDownload = [];
     for (const cs of (cloudSongs || [])) {
       const existing = songs.find(s => s.id === cs.id);
       if (existing) {
@@ -4147,24 +4206,26 @@ async function syncFromCloud() {
           store('songs', 'readwrite').put(existing);
           renamed++;
         }
-        continue;
-      }
-      let blob;
+      } else toDownload.push(cs);
+    }
+    let dlDone = 0, lastRender = 0;
+    await runPool(toDownload, 4, async cs => {
       try {
-        const headers = await authHeader();
-        const dlRes = await fetch(`${STORAGE_WORKER_URL}/song/${cs.id}`, { headers });
-        if (!dlRes.ok) { console.warn('Téléchargement échoué pour "' + cs.name + '" :', dlRes.status); failedDownloads.push(cs.name); continue; }
-        blob = await dlRes.blob();
+        const dlRes = await fetch(`${STORAGE_WORKER_URL}/song/${cs.id}`, { headers: syncHeaders });
+        if (!dlRes.ok) { console.warn('Téléchargement échoué pour "' + cs.name + '" :', dlRes.status); failedDownloads.push(cs.name); return; }
+        const blob = await dlRes.blob();
+        const song = { id: cs.id, name: cs.name, data: blob };
+        songs.push(song);
+        store('songs', 'readwrite').put(song);
+        added++;
       } catch (netErr) {
         console.warn('Téléchargement échoué (réseau) pour "' + cs.name + '" :', netErr);
         failedDownloads.push(cs.name);
-        continue;
       }
-      const song = { id: cs.id, name: cs.name, data: blob };
-      songs.push(song);
-      store('songs', 'readwrite').put(song);
-      added++;
-    }
+      dlDone++;
+      if (statusEl) statusEl.textContent = `Synchronisation... ${dlDone}/${toDownload.length}`;
+      if (Date.now() - lastRender > 400) { lastRender = Date.now(); renderSongs(); renderUploadSongs(); }
+    });
 
     // 2) Supprimer localement les musiques supprimées ailleurs (déjà vues avant, absentes du cloud maintenant)
     const songsToRemove = songs.filter(s => knownSongIds.has(s.id) && !cloudIds.has(s.id));
@@ -4177,8 +4238,8 @@ async function syncFromCloud() {
 
     // 3) Envoyer vers le cloud les musiques locales jamais synchronisées (nouvelles, ou existantes avant la 1ère connexion)
     const confirmedIds = new Set(cloudIds); // musiques dont on est sûr qu'elles existent bien dans le cloud
-    for (const s of songs) {
-      if (cloudIds.has(s.id) || knownSongIds.has(s.id)) continue;
+    const toUpload = songs.filter(s => !cloudIds.has(s.id) && !knownSongIds.has(s.id));
+    await runPool(toUpload, 3, async s => {
       try {
         await pushSongToCloud(s, true);
         pushed++;
@@ -4188,7 +4249,7 @@ async function syncFromCloud() {
         failedUploads.push(s.name);
         // pas de confirmedIds.add ici : on retentera au prochain sync au lieu de risquer une suppression à tort
       }
-    }
+    });
 
     // Mémoriser l'état "connu" pour détecter les suppressions au prochain sync
     // (uniquement les musiques confirmées côté cloud, jamais celles dont l'envoi a échoué)
@@ -4196,17 +4257,7 @@ async function syncFromCloud() {
 
     // ── PLAYLISTS : même logique (ajout / màj / suppression) ──
     const knownPlaylistIds = new Set(JSON.parse(localStorage.getItem('sv_known_playlist_ids') || '[]'));
-    let userData = null, fxColumnOk = true;
-    {
-      const r = await sb.from('user_data').select('playlists, fx').eq('user_id', currentUser.id).maybeSingle();
-      if (r.error) {
-        // colonne "fx" absente : on récupère quand même les playlists
-        fxColumnOk = false;
-        console.warn('Colonne "fx" introuvable dans user_data, réglages non synchronisés :', r.error);
-        const r2 = await sb.from('user_data').select('playlists').eq('user_id', currentUser.id).maybeSingle();
-        userData = r2.data;
-      } else userData = r.data;
-    }
+    const { data: userData, fxColumnOk } = await userDataPromise;
     const cloudPlaylists = (userData && userData.playlists) || [];
     const cloudPlIds = new Set(cloudPlaylists.map(p => p.id));
 
