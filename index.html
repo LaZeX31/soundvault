@@ -3298,12 +3298,7 @@ function togglePlay() {
 }
 
 function nextSong() {
-  // Si on vient de faire « précédent », on repart d'abord vers le son qu'on vient de quitter
-  while (forwardStack.length) {
-    const f = forwardStack.pop();
-    if (songs.some(x => x.id === f)) { navKeepForward = true; playSong(f, currentPlaylistId); return; }
-  }
-  if (manualQueue && manualQueue.length) { playSong(manualQueue.shift(), currentPlaylistId); return; }
+    if (manualQueue && manualQueue.length) { playSong(manualQueue.shift(), currentPlaylistId); return; }
   const list = getQueue();
   if (!list.length) return;
   const idx = list.indexOf(currentSongId);
@@ -3319,17 +3314,24 @@ function nextSong() {
   playSong(next, currentPlaylistId);
 }
 
+// Quand on revient en arrière, le son qu'on quitte passe en tête de la file d'attente (« Jouer ensuite »)
+function queueLeftSong() {
+  if (!currentSongId) return;
+  if (!manualQueue) manualQueue = [];
+  if (manualQueue[0] !== currentSongId) manualQueue.unshift(currentSongId);
+}
+
 function prevSong() {
   if (audio.currentTime > 3) { audio.currentTime = 0; return; }
   if (playHistory.length >= 2) {
-    if (currentSongId) forwardStack.push(currentSongId);
+    queueLeftSong();
     playHistory.pop(); const prev = playHistory[playHistory.length - 1]; playHistory.pop();
     navKeepForward = true; playSong(prev, currentPlaylistId); return;
   }
   const list = getQueue();
   if (!list.length) return;
   const idx = list.indexOf(currentSongId);
-  if (currentSongId) forwardStack.push(currentSongId);
+  queueLeftSong();
   navKeepForward = true;
   playSong(list[(idx - 1 + list.length) % list.length], currentPlaylistId);
 }
