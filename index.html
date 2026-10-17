@@ -2306,9 +2306,16 @@ function loadAll() {
 // ── PAGES ──
 let currentPage = 'playlists';
 function showPage(p) {
+  const hasPage = () => navStack.some(e => e.key === 'page') || navQueue.some(q => q[1] === 'page');
   if (p !== 'playlists') {
-    if (!awayFromHome) { pushNav(() => { awayFromHome = false; renderPageBody('playlists'); }); awayFromHome = true; }
-  } else if (awayFromHome) { history.back(); return; }
+    if (!hasPage()) pushNav(() => renderPageBody('playlists'), 'page');
+  } else {
+    // Retour à l'accueil : on referme d'un coup tout ce qui a été empilé depuis (popups comprises)
+    const qi = navQueue.findIndex(q => q[1] === 'page');
+    if (qi !== -1) navQueue.splice(qi, 1);
+    const idx = navStack.findIndex(e => e.key === 'page');
+    if (idx !== -1) { unwindNav(idx); return; }
+  }
   renderPageBody(p);
 }
 
@@ -2343,20 +2350,58 @@ function renderPageBody(p) {
 // détail, ou une popup), on empile une action "annuler" avec l'historique du navigateur. Un appui
 // sur retour dépile toujours un seul niveau, où qu'on soit dans l'appli — jamais besoin de sortir
 // pour fermer une popup ou revenir en arrière.
+// Chaque entrée = { key, undo }. L'historique du navigateur porte la profondeur (depth) :
+// au retour on referme tous les niveaux au-dessus de cette profondeur, même si plusieurs
+// retours ont été fusionnés ou lancés d'un coup (c'était la cause des bugs « de temps en temps »).
 let navStack = [];
-let awayFromHome = !!history.state?.away;
-function pushNav(undoFn) {
-  navStack.push(undoFn);
-  history.pushState({ away: true }, '');
+let navQueue = [];      // empilements demandés pendant qu'un retour d'historique est en cours
+let navBusy = false;
+let navBusyTimer = null;
+// Au (re)chargement on affiche toujours Playlists : on ne garde pas un vieil état « loin de l'accueil »
+try { if (history.state && history.state.away) history.replaceState(null, ''); } catch (e) {}
+
+function pushNav(undoFn, key) {
+  if (navBusy) { navQueue.push([undoFn, key]); return; }
+  navStack.push({ undo: undoFn, key: key || null });
+  history.pushState({ away: true, depth: navStack.length }, '');
+}
+function flushNav() {
+  navBusy = false;
+  clearTimeout(navBusyTimer);
+  const q = navQueue; navQueue = [];
+  q.forEach(([f, k]) => pushNav(f, k));
+}
+// Annule tout de suite (en synchrone) les niveaux au-dessus de targetLen, puis recule l'historique
+function unwindNav(targetLen) {
+  const n = navStack.length - targetLen;
+  if (n <= 0) return;
+  while (navStack.length > targetLen) { const e = navStack.pop(); try { e.undo(); } catch (err) {} }
+  navBusy = true;
+  clearTimeout(navBusyTimer);
+  navBusyTimer = setTimeout(flushNav, 600); // sécurité si popstate n'arrive jamais
+  history.go(-n);
+}
+// Ferme un niveau précis (popup, file d'attente…) sans jamais toucher à un autre
+function closeNav(key) {
+  const qi = navQueue.findIndex(q => q[1] === key);
+  if (qi !== -1) { try { navQueue[qi][0](); } catch (e) {} navQueue.splice(qi, 1); return true; }
+  const idx = navStack.map(e => e.key).lastIndexOf(key);
+  if (idx === -1) return false;
+  if (idx === navStack.length - 1) { unwindNav(idx); }
+  else { const e = navStack[idx]; try { e.undo(); } catch (err) {} e.undo = () => {}; } // pas tout en haut : on la ferme sans toucher aux autres
+  return true;
 }
 window.addEventListener('popstate', () => {
-  const undoFn = navStack.pop();
-  if (undoFn) undoFn();
+  const depth = (history.state && history.state.depth) || 0;
+  while (navStack.length > depth) { const e = navStack.pop(); try { e.undo(); } catch (err) {} }
+  if (navBusy) flushNav();
 });
 
 function openModal(id) {
-  document.getElementById(id).classList.add('show');
-  pushNav(() => document.getElementById(id).classList.remove('show'));
+  const el = document.getElementById(id);
+  if (el.classList.contains('show') && (navStack.some(e => e.key === id) || navQueue.some(q => q[1] === id))) return; // déjà ouverte
+  el.classList.add('show');
+  pushNav(() => el.classList.remove('show'), id);
 }
 // Popup de confirmation stylée façon app, à la place du confirm() moche du navigateur.
 function askConfirm(title, message, onConfirm) {
@@ -2369,8 +2414,7 @@ function askConfirm(title, message, onConfirm) {
   openModal('modal-confirm');
 }
 function closeModal(id) {
-  if (navStack.length) { history.back(); }
-  else { document.getElementById(id).classList.remove('show'); }
+  if (!closeNav(id)) document.getElementById(id).classList.remove('show');
 }
 
 // ── PLAYLISTS ──
@@ -2717,7 +2761,7 @@ function confirmRenameSong() {
   if (document.getElementById('page-detail')?.classList.contains('active') && document.getElementById('btn-rename-pl').dataset.pid) {
     openPlaylist(document.getElementById('btn-rename-pl').dataset.pid);
   }
-  if (currentSongId === s.id) document.getElementById('player-title').textContent = cleanName(s.name);
+  if (currentSongId === s.id) { document.getElementById('player-title').textContent = cleanName(s.name); refreshMediaSession(); }
   if (document.getElementById('queuePanel').classList.contains('open')) renderQueue();
 }
 
@@ -3201,6 +3245,11 @@ function updateMediaSession(s) {
   navigator.mediaSession.playbackState = audio.paused ? 'paused' : 'playing';
   updateMediaPosition();
 }
+// Réapplique le titre du son en cours (utile quand le navigateur ignore les infos données avant le début réel de la lecture)
+function refreshMediaSession() {
+  const cur = songs.find(x => x.id === currentSongId);
+  if (cur) updateMediaSession(cur);
+}
 function updateMediaPosition() {
   if (!('mediaSession' in navigator) || !navigator.mediaSession.setPositionState) return;
   const d = audio.duration;
@@ -3226,8 +3275,11 @@ function updateMediaPosition() {
   set('seekto',        d => { if (d && typeof d.seekTime === 'number') { audio.currentTime = d.seekTime; updateMediaPosition(); } });
   audio.addEventListener('play',  () => { navigator.mediaSession.playbackState = 'playing'; });
   audio.addEventListener('pause', () => { navigator.mediaSession.playbackState = 'paused'; });
-  audio.addEventListener('loadedmetadata', updateMediaPosition);
+  audio.addEventListener('loadedmetadata', () => { updateMediaPosition(); refreshMediaSession(); });
   audio.addEventListener('seeked', updateMediaPosition);
+  // Le 1er son lancé après l'ouverture de l'appli : le téléphone ne prenait en compte le titre qu'au 2e.
+  // On le redonne dès que la lecture démarre vraiment (et une 2e fois juste après, pour iOS).
+  audio.addEventListener('playing', () => { refreshMediaSession(); setTimeout(refreshMediaSession, 400); });
 })();
 
 function playSongDirect(sid)        { playSong(sid, null); }
@@ -4011,10 +4063,8 @@ function toggleQueue() {
   if (willOpen) {
     setQueueUI(true);
     renderQueue();
-    pushNav(() => setQueueUI(false));
-  } else if (navStack.length) {
-    history.back(); // dépile proprement (déclenche setQueueUI(false) via popstate)
-  } else {
+    pushNav(() => setQueueUI(false), 'queue');
+  } else if (!closeNav('queue')) {
     setQueueUI(false);
   }
 }
