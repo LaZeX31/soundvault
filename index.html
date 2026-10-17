@@ -940,6 +940,42 @@ body:not(.queue-open) header {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
 
+/* ── GRAND ÉCRAN : colonne centrée (téléphone et petites fenêtres inchangés) ── */
+:root { --col: 1000px; }
+@media (min-width: 1040px) {
+  header { padding-left: max(20px, calc((100% - var(--col)) / 2 + 20px)); padding-right: max(20px, calc((100% - var(--col)) / 2 + 20px)); }
+  body main, body .nav, body.queue-open main, body.queue-open .nav, body:not(.queue-open) main, body:not(.queue-open) .nav {
+    max-width: var(--col); margin-left: auto; margin-right: auto;
+  }
+  /* quand la file d'attente est ouverte, c'est tout le contenu qui se décale (et reste centré) */
+  body.queue-open header, body:not(.queue-open) header { margin-right: 0; }
+  body { transition: padding-right 0.35s cubic-bezier(0.4,0,0.2,1); }
+  body.queue-open { padding-right: min(25%, 220px); }
+  .player { padding-left: max(20px, calc((100% - var(--col)) / 2 + 20px)); padding-right: max(20px, calc((100% - var(--col)) / 2 + 20px)); }
+  #multiSelectBar { left: max(12px, calc((100% - var(--col)) / 2 + 12px)) !important; right: max(12px, calc((100% - var(--col)) / 2 + 12px)) !important; }
+  /* la barre « Retour » garde un fond sur toute la largeur de l'écran, comme l'en-tête */
+  .back-bar { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; border-bottom: none; }
+  .back-bar::before {
+    content: ''; position: absolute; top: 0; bottom: 0; left: 50%;
+    width: 100vw; transform: translateX(-50%); z-index: -1;
+    background: rgba(10,10,15,0.92);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+}
+
+/* ── FENÊTRE « MISE À JOUR » ── */
+.upd-versions { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.upd-v { flex: 1; background: var(--bg3); border-radius: 14px; padding: 10px 12px; text-align: center; }
+.upd-v small { display: block; color: var(--muted); font-size: 11px; margin-bottom: 2px; }
+.upd-v strong { font-family: 'Syne', sans-serif; font-size: 20px; }
+.upd-v.new { background: rgba(29,185,84,0.14); border: 1px solid rgba(29,185,84,0.4); }
+.upd-v.new strong { color: var(--green); }
+.upd-arrow { color: var(--muted); font-size: 18px; }
+.upd-notes-title { font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.upd-notes { margin: 0 0 16px 18px; font-size: 13px; line-height: 1.55; color: var(--text); }
+.upd-ver-line { text-align: center; color: var(--muted); font-size: 12px; margin: 10px 0 2px; }
+
 /* ── PASTILLE « MISE À JOUR » (à côté du nuage) ── */
 .update-badge {
   display: inline-flex; align-items: center; gap: 6px;
@@ -953,6 +989,13 @@ body:not(.queue-open) header {
   animation: ubPulse 2.4s ease-in-out infinite;
 }
 .update-badge .ub-ico { font-size: 14px; line-height: 1; }
+.update-badge.uptodate {
+  background: var(--bg3); color: var(--muted);
+  box-shadow: none; animation: none;
+  border: 1px solid rgba(255,255,255,0.08);
+  font-weight: 600;
+}
+.update-badge.uptodate:hover { color: var(--text); background: var(--bg4); }
 .update-badge .ub-txt-short { display: none; }
 .update-badge:active { transform: scale(0.95); }
 .update-badge.busy { opacity: 0.7; pointer-events: none; }
@@ -960,6 +1003,7 @@ body:not(.queue-open) header {
 @keyframes ubPulse { 0%,100% { box-shadow: 0 0 10px rgba(29,185,84,0.35); } 50% { box-shadow: 0 0 20px rgba(29,185,84,0.7); } }
 @media (max-width: 600px) {
   .update-badge { padding: 6px 10px; }
+  .update-badge.uptodate { padding: 5px 9px; }
   .update-badge .ub-txt-long { display: none; }
   .update-badge .ub-txt-short { display: inline; }
 }
@@ -1240,7 +1284,8 @@ body:not(.queue-open) header {
    ═══════════════════════════════════════════ */
 html { overflow-x: clip; max-width: 100%; }
 body { max-width: 100vw; position: relative; }
-main, .nav, header { min-width: 0; max-width: 100%; }
+header { min-width: 0; max-width: 100%; }
+main, .nav { min-width: 0; }
 .queue-panel:not(.open) { visibility: hidden; transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), visibility 0s linear 0.35s; }
 .queue-panel.open { visibility: visible; transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); }
 
@@ -1599,7 +1644,7 @@ main, .nav, header { min-width: 0; max-width: 100%; }
 <header>
   <div class="logo">🎵 <span>Sound</span>Vault</div>
   <div style="display:flex;gap:8px;align-items:center;">
-    <button id="updateBadge" class="update-badge" onclick="applyUpdate()" title="Une nouvelle version de SoundVault est disponible" style="display:none;"><span class="ub-ico">↻</span><span class="ub-txt-long">Mise à jour</span><span class="ub-txt-short">MàJ</span></button>
+    <button id="updateBadge" class="update-badge" onclick="openUpdateModal()" title="Version de SoundVault"><span class="ub-ico">✓</span><span class="ub-txt-long"></span><span class="ub-txt-short"></span></button>
     <span id="syncStatus" title="Synchronisé" style="display:none;font-size:16px;width:24px;text-align:center;transition:opacity 0.2s;">☁️</span>
     <button class="btn-icon" onclick="openSettings()" title="Paramètres" aria-label="Paramètres"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     <button class="btn-add" id="btnAccount" style="width:42px;height:42px;font-size:16px;background:var(--bg4);box-shadow:none;" onclick="openAccountModal()" title="Compte">👤</button>
@@ -1926,8 +1971,30 @@ main, .nav, header { min-width: 0; max-width: 100%; }
         <div class="set-chev">›</div>
       </div>
     </div>
+    <div class="upd-ver-line">SoundVault · version <span class="app-ver-text"></span></div>
     <div class="modal-actions">
       <button class="btn-primary" onclick="closeModal('modal-settings')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MISE À JOUR -->
+<div class="modal-overlay" id="modal-update" style="z-index:250;">
+  <div class="modal-box">
+    <div class="modal-title" id="updTitle">🆕 Mise à jour disponible</div>
+    <div class="upd-versions">
+      <div class="upd-v"><small>Ta version</small><strong id="updCurrent">—</strong></div>
+      <div class="upd-arrow" id="updArrow">→</div>
+      <div class="upd-v new" id="updNewBox"><small>Nouvelle version</small><strong id="updNew">—</strong></div>
+    </div>
+    <div id="updNotesWrap" style="display:none;">
+      <div class="upd-notes-title" id="updNotesTitle">Nouveautés</div>
+      <ul class="upd-notes" id="updNotes"></ul>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="updBtnLater" onclick="closeModal('modal-update')">Plus tard</button>
+      <button class="btn-secondary" id="updBtnCheck" onclick="manualUpdateCheck()" style="display:none;">Vérifier</button>
+      <button class="btn-primary" id="updBtnApply" onclick="applyUpdate()">Mettre à jour</button>
     </div>
   </div>
 </div>
@@ -4190,6 +4257,13 @@ async function deleteSongFromCloud(id) {
   } catch (err) { /* déjà absent, on ignore */ }
 }
 
+// Représentation canonique (clés triées) pour comparer deux objets sans se soucier de l'ordre
+function canon(o) {
+  if (Array.isArray(o)) return '[' + o.map(canon).join(',') + ']';
+  if (o && typeof o === 'object') return '{' + Object.keys(o).sort().map(k => JSON.stringify(k) + ':' + canon(o[k])).join(',') + '}';
+  return JSON.stringify(o === undefined ? null : o);
+}
+
 // Exécute fn sur chaque élément avec n tâches en parallèle (téléchargements/envois simultanés)
 async function runPool(items, n, fn) {
   let i = 0;
@@ -4207,7 +4281,8 @@ async function syncFromCloud(opts) {
   if (syncInProgress) { if (!silent) toast('⏳ Synchro déjà en cours...'); return; }
   syncInProgress = true;
   // Silencieux (retour sur l'appli) : ni icône qui tourne, ni texte. Visible à l'ouverture et au clic sur « Resynchroniser ».
-  if (!silent) { setSyncIcon('syncing'); toast('🔄 Synchronisation...'); }
+  if (!silent) { setSyncIcon('syncing'); toast('🔄 Vérification...'); }
+  let didWork = false;
   const statusEl = silent ? null : document.getElementById('account-sync-status');
   if (statusEl) statusEl.textContent = 'Synchronisation...';
   const failedDownloads = [], failedUploads = [];
@@ -4315,8 +4390,11 @@ async function syncFromCloud(opts) {
     const plToRemove = playlists.filter(p => knownPlaylistIds.has(p.id) && !cloudPlIds.has(p.id));
     plToRemove.forEach(p => { store('playlists', 'readwrite').delete(p.id); playlists = playlists.filter(x => x.id !== p.id); });
 
-    // Pousser l'état final (inclut les playlists locales créées avant la 1ère connexion / hors-ligne)
-    const playlistsPushOk = await pushPlaylistsToCloud();
+    // Pousser l'état final uniquement s'il diffère du cloud (vérification rapide : rien à envoyer = aucune requête)
+    const byId = (a, b) => String(a.id).localeCompare(String(b.id));
+    const plInSync = canon([...cloudPlaylists].sort(byId)) === canon([...playlists].sort(byId));
+    if (!plInSync) didWork = true;
+    const playlistsPushOk = plInSync ? true : await pushPlaylistsToCloud();
     if (playlistsPushOk) {
       localStorage.setItem('sv_known_playlist_ids', JSON.stringify(playlists.map(p => p.id)));
     }
@@ -4326,7 +4404,8 @@ async function syncFromCloud(opts) {
     // ── RÉGLAGES PAR MUSIQUE (volume + coupes) ──
     if (fxColumnOk) {
       const fxChanged = mergeFxFromCloud(userData && userData.fx);
-      await pushFxToCloud();
+      if (fxChanged) didWork = true;
+      if (canon(songFx) !== canon((userData && userData.fx) || {})) { didWork = true; await pushFxToCloud(); }
       if (fxChanged) toast('🎚 Réglages de volume/coupes synchronisés');
     }
 
@@ -4341,6 +4420,7 @@ async function syncFromCloud(opts) {
       setSyncIcon('error');
     } else {
       setSyncIcon('synced');
+      if (!silent && !didWork && !added && !pushed && !renamed && !removedSongs && !plToRemove.length) toast('☁️ À jour');
     }
   } catch (err) {
     console.warn('Sync cloud échouée :', err);
@@ -4372,23 +4452,63 @@ if ('serviceWorker' in navigator) {
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '2026-10-17-3';
-let updateAvailable = false, lastUpdateCheck = 0;
-async function checkForUpdate() {
+const APP_VERSION = '1.1';
+// Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
+const APP_NOTES = ["Mise en page grand écran : colonne centrée sur PC","Le « / » est accepté dans le nom des musiques","Numéro de version visible, avec le détail des nouveautés"];
+let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
+document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
+function refreshUpdateBadge() {
+  const b = document.getElementById('updateBadge');
+  if (!b) return;
+  b.style.display = 'inline-flex';
+  b.classList.toggle('uptodate', !updateAvailable);
+  b.title = updateAvailable ? 'Une nouvelle version de SoundVault est disponible' : 'SoundVault est à jour (version ' + APP_VERSION + ')';
+  b.querySelector('.ub-ico').textContent = updateAvailable ? '↻' : '✓';
+  b.querySelector('.ub-txt-long').textContent = updateAvailable ? 'Mise à jour' : 'v' + APP_VERSION;
+  b.querySelector('.ub-txt-short').textContent = updateAvailable ? 'MàJ' : 'v' + APP_VERSION;
+}
+function openUpdateModal() {
+  const upd = updateAvailable;
+  document.getElementById('updTitle').textContent = upd ? '🆕 Mise à jour disponible' : '✅ SoundVault est à jour';
+  document.getElementById('updCurrent').textContent = APP_VERSION;
+  document.getElementById('updNew').textContent = upd ? ((updateInfo && updateInfo.version) || '—') : APP_VERSION;
+  document.getElementById('updNewBox').style.display = upd ? '' : 'none';
+  document.getElementById('updArrow').style.display = upd ? '' : 'none';
+  const notes = upd ? ((updateInfo && updateInfo.notes) || []) : APP_NOTES;
+  document.getElementById('updNotesTitle').textContent = upd ? 'Nouveautés' : 'Nouveautés de cette version';
+  document.getElementById('updNotes').innerHTML = notes.map(n => '<li>' + escHtml(String(n)) + '</li>').join('');
+  document.getElementById('updNotesWrap').style.display = notes.length ? 'block' : 'none';
+  document.getElementById('updBtnApply').style.display = upd ? '' : 'none';
+  document.getElementById('updBtnCheck').style.display = upd ? 'none' : '';
+  document.getElementById('updBtnLater').textContent = upd ? 'Plus tard' : 'Fermer';
+  openModal('modal-update');
+}
+async function manualUpdateCheck() {
+  const btn = document.getElementById('updBtnCheck');
+  btn.textContent = 'Vérification...'; btn.disabled = true;
+  await checkForUpdate(true);
+  btn.textContent = 'Vérifier'; btn.disabled = false;
+  if (updateAvailable) openUpdateModal();
+  else toast(navigator.onLine ? '✅ Tu as déjà la dernière version' : '⚠️ Pas de connexion pour vérifier');
+}
+async function checkForUpdate(force) {
   if (updateAvailable || !navigator.onLine) return;
   const now = Date.now();
-  if (now - lastUpdateCheck < 60000) return; // pas plus d'une vérification par minute
+  if (!force && now - lastUpdateCheck < 60000) return; // pas plus d'une vérification par minute
   lastUpdateCheck = now;
   try {
     const url = location.origin + location.pathname + '?vcheck=' + now; // paramètre qui contourne le cache
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) return;
-    const m = (await res.text()).match(/const APP_VERSION = '([^']+)'/);
+    const txt = await res.text();
+    const m = txt.match(/const APP_VERSION = '([^']+)'/);
     if (m && m[1] !== APP_VERSION) {
+      let notes = [];
+      try { const nm = txt.match(/const APP_NOTES = (\[.*?\]);/); if (nm) notes = JSON.parse(nm[1]); } catch (e) {}
+      updateInfo = { version: m[1], notes };
       updateAvailable = true;
-      const b = document.getElementById('updateBadge');
-      if (b) b.style.display = 'inline-flex';
-      toast('🆕 Nouvelle version disponible : appuie sur « Mise à jour » en haut');
+      refreshUpdateBadge();
+      toast('🆕 Version ' + m[1] + ' disponible : appuie sur « Mise à jour » en haut');
     }
   } catch (e) { /* hors-ligne ou fichier local : on ignore */ }
 }
@@ -4408,6 +4528,7 @@ async function applyUpdate() {
   saveState();
   location.reload();
 }
+refreshUpdateBadge();
 setTimeout(checkForUpdate, 3000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForUpdate(); });
 window.addEventListener('focus', checkForUpdate);
