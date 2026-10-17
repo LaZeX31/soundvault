@@ -4550,9 +4550,9 @@ if ('serviceWorker' in navigator) {
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '1.2';
+const APP_VERSION = '1.3';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Le bouton de mise à jour est maintenant dans Paramètres › Mise à jour (vert quand une nouvelle version existe)","Paramètres réorganisés : « Mise à jour » et « Réglages des sons » (volume, coupes, remise à zéro)","Un point vert sur la roue des paramètres signale une mise à jour"];
+const APP_NOTES = ["Le titre du premier son s'affiche maintenant correctement sur l'écran verrouillé","Bouton retour du téléphone corrigé : il ferme toujours le bon écran ou la bonne popup","Quand tu reviens au son précédent, le son quitté passe en tête de la file d'attente"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
