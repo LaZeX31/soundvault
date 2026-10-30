@@ -1705,6 +1705,44 @@ html[data-bg="clair"] .set-row { border-color: rgba(0,0,0,0.08); }
 .rc-hero b { display: block; font-family: 'Syne', sans-serif; font-size: 34px; letter-spacing: -1px; color: var(--green); }
 .rc-hero span { font-size: 12px; color: var(--muted); }
 .rc-partial { text-align: center; color: var(--muted); font-size: 11px; margin: 10px 0 0; }
+
+/* ── DESIGN 1.8 ── */
+::selection { background: rgba(var(--green-rgb),0.35); }
+:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 18%, transparent) transparent; }
+header { padding: 14px 20px; border-bottom-color: color-mix(in srgb, var(--text) 7%, transparent); }
+.logo { font-size: 21px; letter-spacing: -0.04em; }
+header .btn-icon, header .btn-add { box-shadow: none; }
+#btnSettings { border-color: rgba(var(--green-rgb),0.4); }
+.nav { margin: 12px 20px 0; padding: 4px; gap: 4px; background: var(--bg3); border-radius: 16px; }
+.nav-btn { background: transparent; border-radius: 12px; padding: 10px 6px; }
+.nav-btn.active { background: var(--green); color: #fff; box-shadow: 0 4px 16px rgba(var(--green-rgb),0.35); }
+.section-title { font-size: 24px; letter-spacing: -0.03em; }
+.page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.page-head .section-title { margin-bottom: 0; min-width: 0; }
+.btn-text-add { flex-shrink: 0; background: rgba(var(--green-rgb),0.1); border: 1px solid rgba(var(--green-rgb),0.4); color: var(--green); border-radius: 999px; padding: 8px 14px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; transition: background 0.2s, transform 0.2s; }
+.btn-text-add:hover { background: rgba(var(--green-rgb),0.18); }
+.btn-text-add:active { transform: scale(0.96); }
+.search-input { border-radius: 16px; border-color: color-mix(in srgb, var(--text) 8%, transparent); }
+.search-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(var(--green-rgb),0.18); }
+.playlist-card { border-radius: 20px; padding: 14px 16px; border-color: color-mix(in srgb, var(--text) 6%, transparent); }
+.playlist-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,0.22); }
+.song-card { border-radius: 14px; border-color: transparent; }
+.song-card:hover { background: var(--bg4); }
+.song-card.playing { background: linear-gradient(90deg, rgba(var(--green-rgb),0.18), var(--bg3) 75%); box-shadow: inset 3px 0 0 var(--green); }
+.modal-box { border-radius: 24px; border-color: color-mix(in srgb, var(--text) 9%, transparent); box-shadow: 0 24px 70px rgba(0,0,0,0.45); }
+.modal-title { letter-spacing: -0.02em; }
+.btn-primary { border-radius: 14px; box-shadow: 0 6px 18px rgba(var(--green-rgb),0.28); }
+.btn-primary:active, .btn-secondary:active { transform: scale(0.97); }
+.set-row { border-radius: 18px; border-color: color-mix(in srgb, var(--text) 6%, transparent); }
+.set-row:hover { background: var(--bg4); }
+.player { border-radius: 24px 24px 0 0; border-top-color: color-mix(in srgb, var(--text) 8%, transparent); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+/* Bouton « Retour » : toujours visible sous l'en-tête, sans barre derrière (seul le bouton est visible, en pastille) */
+.back-bar { position: sticky; top: var(--header-h, 78px); background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; border-bottom: none; pointer-events: none; padding-top: 6px; padding-bottom: 6px; margin-bottom: 8px; }
+.back-bar::before { display: none; }
+.back-bar > * { pointer-events: auto; }
+.back-bar .btn-back { background: color-mix(in srgb, var(--bg3) 88%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 4px 18px rgba(0,0,0,0.28); border-radius: 999px; padding: 9px 16px; }
 </style>
 <script>
 (function () {
@@ -1760,9 +1798,8 @@ html[data-bg="clair"] .set-row { border-color: rgba(0,0,0,0.08); }
   <div class="logo">🎵 <span>Sound</span>Vault</div>
   <div style="display:flex;gap:8px;align-items:center;">
     <span id="syncStatus" title="Synchronisé" style="display:none;font-size:16px;width:24px;text-align:center;transition:opacity 0.2s;">☁️</span>
-    <button class="btn-icon" id="btnSettings" onclick="openSettings()" title="Paramètres" aria-label="Paramètres"><span class="gear-dot" id="gearDot"></span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     <button class="btn-add" id="btnAccount" style="width:42px;height:42px;font-size:16px;background:var(--bg4);box-shadow:none;" onclick="openAccountModal()" title="Compte">👤</button>
-    <button class="btn-add" onclick="openCreatePlaylist()">+</button>
+    <button class="btn-icon" id="btnSettings" onclick="openSettings()" title="Paramètres" aria-label="Paramètres"><span class="gear-dot" id="gearDot"></span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
   </div>
 </header>
 
@@ -1775,7 +1812,10 @@ html[data-bg="clair"] .set-row { border-color: rgba(0,0,0,0.08); }
 <main>
   <!-- PAGE PLAYLISTS -->
   <div class="page active" id="page-playlists">
-    <div class="section-title" id="pl-section-title" style="margin-top:4px;">🎶 Mes Playlists</div>
+    <div class="page-head" style="margin-top:4px;">
+    <div class="section-title" id="pl-section-title">🎶 Mes Playlists</div>
+    <button class="btn-text-add" onclick="openCreatePlaylist()">+ Nouvelle playlist</button>
+  </div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input class="search-input" id="searchHome" name="search-home" type="search" autocomplete="off" placeholder="Rechercher un son..." oninput="filterHome(this.value)">
@@ -2035,7 +2075,7 @@ html[data-bg="clair"] .set-row { border-color: rgba(0,0,0,0.08); }
       </div>
       <div class="modal-actions">
         <button class="btn-secondary" onclick="closeModal('modal-account')">Fermer</button>
-        <button class="btn-primary" onclick="syncFromCloud()">🔄 Resynchroniser</button>
+        <button class="btn-primary" onclick="syncFromCloud({ download: true })">🔄 Resynchroniser</button>
       </div>
       <div class="modal-actions" style="margin-top:8px;">
         <button class="btn-secondary" style="background:#ff4f4f;color:white;flex:1;" onclick="logoutAccount()">Se déconnecter</button>
@@ -2105,7 +2145,7 @@ html[data-bg="clair"] .set-row { border-color: rgba(0,0,0,0.08); }
         <div class="set-ico g2">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
         </div>
-        <div class="set-txt"><strong>Paramètres</strong><span>Son superposé, écran allumé, vitesse de lecture, lecture automatique</span></div>
+        <div class="set-txt"><strong>Paramètres</strong><span>Vitesse de lecture, synchronisation, compte</span></div>
         <div class="set-chev">›</div>
       </div>
     </div>
@@ -2161,6 +2201,18 @@ html[data-bg="clair"] .set-row { border-color: rgba(0,0,0,0.08); }
     <div class="sheet-scroll" id="prefsBody"></div>
     <div class="modal-actions">
       <button class="btn-primary" onclick="closeModal('modal-prefs')">Retour</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL INFO DU COMPTE -->
+<div class="modal-overlay" id="modal-accinfo" style="z-index:205;">
+  <div class="modal-box sheet">
+    <div class="sheet-grip"></div>
+    <div class="modal-title sheet-title">👤 Info du compte</div>
+    <div class="sheet-scroll" id="accInfoBody"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeModal('modal-accinfo')">Retour</button>
     </div>
   </div>
 </div>
@@ -3585,12 +3637,13 @@ function toggleRepeat()  { repeatMode  = !repeatMode;  document.getElementById('
 function handleEnded() {
   if (sleepTimerPending) {
     // Le minuteur est arrivé à échéance : on coupe ici, à la fin naturelle de la chanson.
+    svMarkUserPause();
     audio.pause();
     toast('⏱ Minuteur terminé — lecture arrêtée');
     cancelSleepTimer();
     return;
   }
-  if (!repeatMode && svPrefs.autoNext) nextSong();
+  if (!repeatMode) nextSong();
 }
 audio.addEventListener('ended', handleEnded);
 audio.addEventListener('play',   () => setPlayIcon(true));
@@ -3609,34 +3662,48 @@ const SVG_PLAY_SM  = '<svg viewBox="0 0 24 24" width="15" height="15" fill="curr
 const SVG_PAUSE_SM = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><rect x="6" y="5" width="4.5" height="14" rx="1.5"/><rect x="13.5" y="5" width="4.5" height="14" rx="1.5"/></svg>';
 
 // ── PARAMÈTRES (enregistrés sur cet appareil) ──
-const SV_PREFS_DEF = { mix: false, wake: false, autoNext: true, speed: 1 };
+const SV_PREFS_DEF = { speed: 1, syncAuto: true, dlAuto: (navigator.maxTouchPoints || 0) > 0 };
 let svPrefs = Object.assign({}, SV_PREFS_DEF);
 try { Object.assign(svPrefs, JSON.parse(localStorage.getItem('sv_prefs') || '{}') || {}); } catch (e) {}
 function savePrefs() { try { localStorage.setItem('sv_prefs', JSON.stringify(svPrefs)); } catch (e) {} }
+// Réglages identiques sur tous tes appareils (même compte) : stockés dans le cloud avec les réglages par musique.
+// Les plus récents l'emportent. (Le téléchargement automatique reste propre à chaque appareil : PC ≠ téléphone.)
+const SV_SYNC_PREFS = ['speed', 'syncAuto'];
+let svPrefsT = parseInt(localStorage.getItem('sv_prefs_t') || '0', 10) || 0;
+let svCloudPrefsSeen = null;
+function svPrefsPayload() {
+  if (svPrefsT > 0) { const o = { t: svPrefsT }; SV_SYNC_PREFS.forEach(k => { o[k] = svPrefs[k]; }); return o; }
+  return svCloudPrefsSeen; // rien changé sur cet appareil : on garde ce qui est déjà dans le cloud
+}
+function svFxPayload() { const p = svPrefsPayload(); return p ? { ...songFx, __prefs: p } : songFx; }
+function svMergePrefsFromCloud(cloudFx) {
+  const c = cloudFx && cloudFx.__prefs;
+  if (!c || typeof c !== 'object') return false;
+  svCloudPrefsSeen = c;
+  if ((c.t || 0) <= svPrefsT) return false;
+  let changed = false;
+  if (typeof c.speed === 'number' && c.speed >= 0.25 && c.speed <= 4 && c.speed !== svPrefs.speed) { svPrefs.speed = c.speed; changed = true; }
+  if (typeof c.syncAuto === 'boolean' && c.syncAuto !== svPrefs.syncAuto) { svPrefs.syncAuto = c.syncAuto; changed = true; }
+  svPrefsT = c.t;
+  try { localStorage.setItem('sv_prefs_t', String(svPrefsT)); } catch (e) {}
+  savePrefs(); applyPrefs();
+  return changed;
+}
+let svMissingCount = 0; // musiques du cloud pas encore téléchargées sur cet appareil
+function svDownloadMissing() {
+  if (!currentUser) { toast('Connecte-toi à ton compte pour synchroniser'); return; }
+  syncFromCloud({ download: true });
+}
 
 // Pause demandée par toi ou par l'appli (≠ pause imposée par le téléphone quand une autre appli prend le son)
-let svLastUserPause = 0, svResumeTries = [];
+let svLastUserPause = 0;
 function svMarkUserPause() { svLastUserPause = Date.now(); }
-audio.addEventListener('pause', () => {
-  if (!svPrefs.mix || audio.ended || !currentSongId) return;
-  const now = Date.now();
-  if (svLastUserPause > now - 1200) return;
-  svResumeTries = svResumeTries.filter(t => now - t < 10000);
-  if (svResumeTries.length >= 3) return;
-  svResumeTries.push(now);
-  setTimeout(() => {
-    if (!audio.paused || !svPrefs.mix || svLastUserPause > now - 1200) return;
-    fxResume();
-    const pr = audio.play(); if (pr && pr.catch) pr.catch(() => {});
-  }, 300);
-});
-
 // Écran allumé pendant la lecture
 let svWakeLock = null;
 async function svWakeUpdate() {
   try {
     if (!('wakeLock' in navigator)) return;
-    const want = svPrefs.wake && !audio.paused;
+    const want = false; // « Garder l'écran allumé » retiré des paramètres
     if (want && !svWakeLock && document.visibilityState === 'visible') {
       svWakeLock = await navigator.wakeLock.request('screen');
       svWakeLock.addEventListener('release', () => { svWakeLock = null; });
@@ -3648,7 +3715,7 @@ audio.addEventListener('pause', svWakeUpdate);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') svWakeUpdate(); });
 
 function applyPrefs() {
-  try { if (navigator.audioSession) navigator.audioSession.type = svPrefs.mix ? 'ambient' : 'auto'; } catch (e) {}
+  try { if (navigator.audioSession) navigator.audioSession.type = 'auto'; } catch (e) {}
   audio.defaultPlaybackRate = svPrefs.speed; audio.playbackRate = svPrefs.speed;
   try { audio.preservesPitch = true; } catch (e) {}
   svWakeUpdate();
@@ -3667,19 +3734,23 @@ function restartIfRepeat() {
 function openPrefs() { renderPrefs(); openModal('modal-prefs'); }
 function setPref(k, v) {
   svPrefs[k] = v; savePrefs(); applyPrefs(); renderPrefs();
-  if (k === 'mix') toast(v ? '🔊 Son superposé activé' : 'Son superposé désactivé');
+  if (SV_SYNC_PREFS.includes(k)) {
+    svPrefsT = Date.now();
+    try { localStorage.setItem('sv_prefs_t', String(svPrefsT)); } catch (e) {}
+    scheduleFxPush(); // envoyé au cloud : les autres appareils auront le même réglage
+  }
 }
 function togglePref(k) { setPref(k, !svPrefs[k]); }
 function renderPrefs() {
   const sw = (k, ico, g, title, sub) => `<div class="set-row" onclick="togglePref('${k}')"><div class="set-ico ${g}" style="font-size:22px;">${ico}</div><div class="set-txt"><strong>${title}</strong><span>${sub}</span></div><div class="pf-sw ${svPrefs[k] ? 'on' : ''}"></div></div>`;
   const speeds = [0.75, 1, 1.25, 1.5, 2];
   let h = '<div class="th-label">Lecture</div>';
-  h += sw('mix', '🎧', 'g1', 'Son superposé', 'Ta musique continue quand une autre appli (TikTok, vidéo…) joue un son, au lieu de se couper');
-  h += sw('autoNext', '⏭️', 'g4', 'Lecture automatique de la suite', 'Passe tout seul à la musique suivante à la fin de chaque musique');
   h += `<div class="set-row pf-static"><div class="set-ico g2" style="font-size:22px;">⏩</div><div class="set-txt"><strong>Vitesse de lecture</strong><span>Accélère ou ralentit toutes les musiques</span><div class="pf-chips">${speeds.map(v => `<div class="pf-chip ${svPrefs.speed === v ? 'on' : ''}" onclick="setPref('speed', ${v})">${String(v).replace('.', ',')}×</div>`).join('')}</div></div></div>`;
-  h += '<div class="th-label" style="margin-top:14px;">Écran</div>';
-  h += sw('wake', '💡', 'g2', 'Garder l\'écran allumé', 'L\'écran ne se met pas en veille tant qu\'une musique joue (consomme plus de batterie)');
-  h += '<div class="pf-note">Ces paramètres sont gardés sur cet appareil. Le son superposé dépend de ton téléphone et de ton navigateur : il marche mieux sur certains que sur d\'autres.</div>';
+  h += '<div class="th-label" style="margin-top:14px;">Synchronisation</div>';
+  h += sw('syncAuto', '🔄', 'g4', 'Synchro automatique', 'Vérifie le cloud à l\'ouverture et quand tu reviens sur l\'appli. Désactivée : seulement quand tu appuies sur « Resynchroniser »');
+  h += '<div class="th-label" style="margin-top:14px;">Compte</div>';
+  h += '<div class="set-row" onclick="openAccInfo()"><div class="set-ico g4" style="font-size:22px;">👤</div><div class="set-txt"><strong>Info du compte</strong><span>Mail et mot de passe</span></div><div class="set-chev">›</div></div>';
+  h += '<div class="pf-note">Ces paramètres sont les mêmes sur tous tes appareils connectés au même compte.</div>';
   document.getElementById('prefsBody').innerHTML = h;
 }
 
@@ -3714,11 +3785,11 @@ async function pushFxToCloud() {
   try {
     const now = new Date().toISOString();
     const { data, error } = await sb.from('user_data')
-      .update({ fx: songFx, updated_at: now }).eq('user_id', currentUser.id).select('user_id');
+      .update({ fx: svFxPayload(), updated_at: now }).eq('user_id', currentUser.id).select('user_id');
     if (error) { console.warn('Push réglages échoué (colonne "fx" créée dans Supabase ?) :', error); return false; }
     if (!data || !data.length) {
       const { error: e2 } = await sb.from('user_data')
-        .upsert({ user_id: currentUser.id, playlists, fx: songFx, updated_at: now }, { onConflict: 'user_id' });
+        .upsert({ user_id: currentUser.id, playlists, fx: svFxPayload(), updated_at: now }, { onConflict: 'user_id' });
       if (e2) { console.warn('Push réglages échoué :', e2); return false; }
     }
     return true;
@@ -3729,6 +3800,7 @@ function mergeFxFromCloud(cloudFx) {
   if (!cloudFx || typeof cloudFx !== 'object') return false;
   let changed = false;
   for (const id of Object.keys(cloudFx)) {
+    if (id === '__prefs') continue; // réglages de l'appli, pas une musique
     const c = cloudFx[id];
     if (!c || typeof c !== 'object') continue;
     const l = songFx[id];
@@ -4516,7 +4588,7 @@ try {
       if (currentUser && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
         const silentSync = wasSignedIn && event === 'SIGNED_IN';
         // D'abord on décide à qui appartiennent les musiques de l'appareil (changement de compte = on repart de zéro), puis on synchronise
-        svPrepareAccount(currentUser).then(switched => { if (!switched) syncFromCloud({ silent: silentSync }); });
+        svPrepareAccount(currentUser).then(switched => { if (!switched && (svPrefs.syncAuto || !localStorage.getItem('sv_known_song_ids'))) syncFromCloud({ silent: silentSync }); });
       }
     });
 
@@ -4525,7 +4597,7 @@ try {
     // sur cet appareil tant que la page n'est pas rechargée ou "Resynchroniser" cliqué.
     let lastAutoSync = 0;
     function autoSyncIfStale() {
-      if (!currentUser || syncInProgress) return;
+      if (!currentUser || syncInProgress || !svPrefs.syncAuto) return;
       const now = Date.now();
       if (now - lastAutoSync < 20000) return; // pas plus d'une fois toutes les 20s
       lastAutoSync = now;
@@ -4614,6 +4686,43 @@ function updateAccountUI() {
     btn.style.background = 'var(--bg4)';
     btn.style.boxShadow = 'none';
   }
+}
+
+// ── INFO DU COMPTE ──
+function openAccInfo() { renderAccInfo(); openModal('modal-accinfo'); }
+function renderAccInfo() {
+  const el = document.getElementById('accInfoBody');
+  if (!currentUser) {
+    el.innerHTML = '<div class="pf-note" style="margin-top:0;">Tu n\'es pas connecté. Connecte-toi pour retrouver tes musiques sur tous tes appareils.</div>'
+      + '<button class="btn-primary" style="width:100%;margin-top:12px;" onclick="closeModal(\'modal-accinfo\'); closeModal(\'modal-prefs\'); openModal(\'modal-account\')">Se connecter</button>';
+    return;
+  }
+  el.innerHTML = '<div class="th-label">Adresse mail</div>'
+    + '<div class="set-row" style="cursor:default;"><div class="set-ico g1" style="font-size:22px;">✉️</div><div class="set-txt"><strong style="word-break:break-all;">' + escHtml(currentUser.email || '—') + '</strong></div></div>'
+    + '<div class="th-label" style="margin-top:14px;">Mot de passe</div>'
+    + '<div class="set-row" style="cursor:default;"><div class="set-ico g2" style="font-size:22px;">🔒</div><div class="set-txt"><strong>••••••••</strong><span>Par sécurité, le mot de passe n\'est jamais enregistré ni affiché. Tu peux le changer ci-dessous.</span></div></div>'
+    + '<input class="modal-input" id="accNewPass" type="password" placeholder="Nouveau mot de passe (6 caractères min.)" maxlength="60" autocomplete="new-password" style="margin-top:10px;">'
+    + '<input class="modal-input" id="accNewPass2" type="password" placeholder="Confirme le nouveau mot de passe" maxlength="60" autocomplete="new-password">'
+    + '<div id="accInfoMsg" style="display:none;font-size:12px;margin-top:8px;"></div>'
+    + '<button class="btn-primary" style="width:100%;margin-top:10px;" onclick="changePassword()">Changer le mot de passe</button>';
+}
+async function changePassword() {
+  const p1 = document.getElementById('accNewPass').value;
+  const p2 = document.getElementById('accNewPass2').value;
+  const msg = document.getElementById('accInfoMsg');
+  const show = (t, ok) => { msg.textContent = t; msg.style.display = 'block'; msg.style.color = ok ? 'var(--green)' : '#ff6b6b'; };
+  if (!cloudReady || !currentUser) { show('Connecte-toi d\'abord.', false); return; }
+  if (p1.length < 6) { show('6 caractères minimum.', false); return; }
+  if (p1 !== p2) { show('Les deux mots de passe ne sont pas identiques.', false); return; }
+  try {
+    const { error } = await sb.auth.updateUser({ password: p1 });
+    if (error) {
+      show(/different|same/i.test(error.message || '') ? 'Le nouveau mot de passe doit être différent de l\'ancien.' : 'Échec : ' + (error.message || 'erreur inconnue'), false);
+      return;
+    }
+    document.getElementById('accNewPass').value = ''; document.getElementById('accNewPass2').value = '';
+    show('✅ Mot de passe changé', true);
+  } catch (e) { show('Échec : ' + (e.message || 'problème de connexion'), false); }
 }
 
 async function submitAccountForm() {
@@ -4782,8 +4891,9 @@ async function syncFromCloud(opts) {
     // 1) Télécharger ce qui est dans le cloud mais pas encore en local (4 en parallèle,
     //    affichées au fur et à mesure) + mettre à jour le nom si renommée sur un autre appareil
     const toDownload = [];
+    const localById = new Map(songs.map(s => [s.id, s])); // recherche instantanée (au lieu de parcourir toute la liste à chaque fois)
     for (const cs of (cloudSongs || [])) {
-      const existing = songs.find(s => s.id === cs.id);
+      const existing = localById.get(cs.id);
       if (existing) {
         if (existing.name !== cs.name) {
           existing.name = cs.name;
@@ -4792,8 +4902,12 @@ async function syncFromCloud(opts) {
         }
       } else toDownload.push(cs);
     }
+    // Téléchargement : seulement si le réglage est activé, ou si tu l'as demandé toi-même (bouton)
+    const allowDownload = !!(opts && opts.download) || svPrefs.dlAuto;
+    const dlList = allowDownload ? toDownload : [];
+    svMissingCount = allowDownload ? 0 : toDownload.length;
     let dlDone = 0, lastRender = 0;
-    await runPool(toDownload, 4, async cs => {
+    await runPool(dlList, 6, async cs => {
       try {
         const dlRes = await fetch(`${STORAGE_WORKER_URL}/song/${cs.id}`, { headers: syncHeaders });
         if (!dlRes.ok) { console.warn('Téléchargement échoué pour "' + cs.name + '" :', dlRes.status); failedDownloads.push(cs.name); return; }
@@ -4810,9 +4924,10 @@ async function syncFromCloud(opts) {
         failedDownloads.push(cs.name);
       }
       dlDone++;
-      if (statusEl) statusEl.textContent = `Synchronisation... ${dlDone}/${toDownload.length}`;
+      if (statusEl) statusEl.textContent = `Synchronisation... ${dlDone}/${dlList.length}`;
       if (Date.now() - lastRender > 400) { lastRender = Date.now(); renderSongs(); renderUploadSongs(); }
     });
+    if (allowDownload) svMissingCount = failedDownloads.length;
 
     // 2) Supprimer localement les musiques supprimées ailleurs (déjà vues avant, absentes du cloud maintenant)
     const songsToRemove = songs.filter(s => knownSongIds.has(s.id) && !cloudIds.has(s.id));
@@ -4826,7 +4941,7 @@ async function syncFromCloud(opts) {
     // 3) Envoyer vers le cloud les musiques locales jamais synchronisées (nouvelles, ou existantes avant la 1ère connexion)
     const confirmedIds = new Set(cloudIds); // musiques dont on est sûr qu'elles existent bien dans le cloud
     const toUpload = songs.filter(s => !cloudIds.has(s.id) && !knownSongIds.has(s.id));
-    await runPool(toUpload, 3, async s => {
+    await runPool(toUpload, 4, async s => {
       try {
         await pushSongToCloud(s, true);
         pushed++;
@@ -4884,13 +4999,18 @@ async function syncFromCloud(opts) {
 
     // ── RÉGLAGES PAR MUSIQUE (volume + coupes) ──
     if (fxColumnOk) {
-      const fxChanged = mergeFxFromCloud(userData && userData.fx);
-      if (fxChanged) didWork = true;
-      if (canon(songFx) !== canon((userData && userData.fx) || {})) { didWork = true; await pushFxToCloud(); }
+      const cloudFx = (userData && userData.fx) || {};
+      const fxChanged = mergeFxFromCloud(cloudFx);
+      const prefsChanged = svMergePrefsFromCloud(cloudFx);
+      const { __prefs: cloudPrefsRaw, ...cloudFxOnly } = cloudFx;
+      const prefsNeedPush = svPrefsT > ((cloudPrefsRaw && cloudPrefsRaw.t) || 0);
+      if (fxChanged || prefsChanged) didWork = true;
+      if (canon(songFx) !== canon(cloudFxOnly) || prefsNeedPush) { didWork = true; await pushFxToCloud(); }
       if (fxChanged) toast('🎚 Réglages de volume/coupes synchronisés');
     }
 
     renderSongs(); renderUploadSongs(); renderPlaylists();
+    try { if (document.getElementById('modal-prefs').classList.contains('show')) renderPrefs(); } catch (e) {}
     if (statusEl) statusEl.textContent = 'Synchronisé';
     if (added > 0) toast(`☁️ ${added} musique(s) récupérée(s)`);
     if (pushed > 0) toast(`☁️ ${pushed} musique(s) envoyée(s) vers le cloud`);
@@ -5234,9 +5354,9 @@ if (sb) {
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '1.7';
+const APP_VERSION = '1.8';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Nouveau : menu Paramètres dans l'engrenage (son superposé, écran allumé, vitesse de lecture, lecture automatique de la suite)", "Son superposé : la musique continue quand une autre appli (TikTok…) joue un son", "Avec la répétition, passer à la musique suivante ou précédente relance la musique en cours", "Une écoute n'est comptée que si tu as vraiment écouté la moitié de la musique", "Onglet Ajouter entièrement repensé", "Statistiques : la phrase « Stats comptées depuis… » est retirée"];
+const APP_NOTES = ["Nouveau design : navigation en onglets, cartes et fenêtres plus douces, musique en cours mise en valeur", "L'engrenage passe en haut à droite, et « + Nouvelle playlist » est dans l'onglet Playlists", "Correction : les musiques ne s'affichent plus en double et se suppriment correctement", "Nouveau : Info du compte (mail et changement du mot de passe)", "Tes paramètres sont les mêmes sur ton PC et ton téléphone (même compte)", "Synchronisation : tu peux désactiver la synchro automatique (Paramètres)", "Synchro plus rapide : téléchargements et envois en parallèle", "Nouveau : menu Paramètres dans l'engrenage (vitesse de lecture, synchronisation)", "Avec la répétition, passer à la musique suivante ou précédente relance la musique en cours", "Une écoute n'est comptée que si tu as vraiment écouté la moitié de la musique", "Onglet Ajouter entièrement repensé", "Statistiques : la phrase « Stats comptées depuis… » est retirée"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
