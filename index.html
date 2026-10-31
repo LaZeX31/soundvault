@@ -5811,9 +5811,9 @@ if (sb) {
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '2.0';
+const APP_VERSION = '2.1';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Nouveau : le Blind test (Paramètres › Blind test) — devine le son à partir d'un extrait, en 4 choix ou en écrivant, avec chrono et score sur 100", "Nouveau design : navigation en onglets, cartes et fenêtres plus douces, musique en cours mise en valeur", "L'engrenage passe en haut à droite, et « + Nouvelle playlist » est dans l'onglet Playlists", "Correction : les musiques ne s'affichent plus en double et se suppriment correctement", "Nouveau : Info du compte (mail et changement du mot de passe)", "Tes paramètres sont les mêmes sur ton PC et ton téléphone (même compte)", "Synchronisation : tu peux désactiver la synchro automatique (Paramètres)", "Synchro plus rapide : téléchargements et envois en parallèle", "Nouveau : menu Paramètres dans l'engrenage (vitesse de lecture, synchronisation)", "Avec la répétition, passer à la musique suivante ou précédente relance la musique en cours", "Une écoute n'est comptée que si tu as vraiment écouté la moitié de la musique", "Onglet Ajouter entièrement repensé", "Statistiques : la phrase « Stats comptées depuis… » est retirée", "Récaps mensuels entièrement refaits : calendrier du mois, moments forts, meilleur jour, top 5 des sons, podium des playlists", "Nouveau : partage ton récap en image (récap entier ou carte résumé)", "Récap : comparaison avec le mois d’avant, semaine type, moment préféré de la journée et part de ton son du mois", "Récap : passe d’un mois à l’autre avec les flèches"];
+const APP_NOTES = ["Blind test : en 4 choix, un clic sur un son valide directement et on passe tout seul à la question suivante", "Nouveau : le Blind test (Paramètres › Blind test) — devine le son à partir d'un extrait, en 4 choix ou en écrivant, avec chrono et score sur 100", "Nouveau design : navigation en onglets, cartes et fenêtres plus douces, musique en cours mise en valeur", "L'engrenage passe en haut à droite, et « + Nouvelle playlist » est dans l'onglet Playlists", "Correction : les musiques ne s'affichent plus en double et se suppriment correctement", "Nouveau : Info du compte (mail et changement du mot de passe)", "Tes paramètres sont les mêmes sur ton PC et ton téléphone (même compte)", "Synchronisation : tu peux désactiver la synchro automatique (Paramètres)", "Synchro plus rapide : téléchargements et envois en parallèle", "Nouveau : menu Paramètres dans l'engrenage (vitesse de lecture, synchronisation)", "Avec la répétition, passer à la musique suivante ou précédente relance la musique en cours", "Une écoute n'est comptée que si tu as vraiment écouté la moitié de la musique", "Onglet Ajouter entièrement repensé", "Statistiques : la phrase « Stats comptées depuis… » est retirée", "Récaps mensuels entièrement refaits : calendrier du mois, moments forts, meilleur jour, top 5 des sons, podium des playlists", "Nouveau : partage ton récap en image (récap entier ou carte résumé)", "Récap : comparaison avec le mois d’avant, semaine type, moment préféré de la journée et part de ton son du mois", "Récap : passe d’un mois à l’autre avec les flèches"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
@@ -6068,7 +6068,7 @@ function blindRound() {
     body +
     '<div class="bt-fb" id="btFb"></div>' +
     '<div class="bt-row" id="btFoot"><button class="btn-secondary" onclick="blindReplay()">↻ Réécouter</button>' +
-    '<button class="btn-primary" onclick="blindValidate()">Valider</button></div>';
+    (b.mode === 'write' ? '<button class="btn-primary" onclick="blindValidate()">Valider</button>' : '') + '</div>';
   if (b.mode === 'write') setTimeout(() => { const inp = document.getElementById('btInput'); if (inp) inp.focus(); }, 60);
 
   // Son : on lance la lecture tout de suite (dans le geste de l'utilisateur, sinon le téléphone la bloque),
@@ -6118,11 +6118,11 @@ function blindReplay() {
   blindAudio.play().catch(() => {});
 }
 
-// 4 choix : un clic sélectionne (on peut changer), « Valider » confirme
+// 4 choix : un clic sur un son valide directement
 function blindChoose(k) {
   const b = blind; if (!b || b.answered || !b.choices) return;
   b.selIdx = k;
-  document.querySelectorAll('#blindBody .bt-choice').forEach((btn, j) => btn.classList.toggle('sel', j === k));
+  blindResolve(b.choices[k].id === b.cur.id, k);
 }
 
 // ── Écriture : propositions façon barre de recherche ──
@@ -6217,10 +6217,16 @@ function blindResolve(good, k, timeUp, none) {
   const last = b.i + 1 >= b.order.length;
   const foot = document.getElementById('btFoot');
   if (foot) foot.innerHTML = '<button class="btn-primary" onclick="blindNext()">' + (last ? 'Voir le score' : 'Suivant →') + '</button>';
+  // 4 choix : on laisse voir la réponse un court instant, puis on enchaîne tout seul
+  if (b.choices) {
+    const token = b.tok;
+    b.autoT = setTimeout(() => { if (blind === b && b.tok === token && b.answered) blindNext(); }, 1500);
+  }
 }
 
 function blindNext() {
   const b = blind; if (!b) return;
+  if (b.autoT) { clearTimeout(b.autoT); b.autoT = null; }
   b.i++;
   if (b.i >= b.order.length) blindEnd(); else blindRound();
 }
