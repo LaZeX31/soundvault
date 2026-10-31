@@ -1841,6 +1841,75 @@ header .btn-icon, header .btn-add { box-shadow: none; }
 .sh-tabs button { flex: 1; border: 0; border-radius: 12px; padding: 9px; font: 600 13px 'DM Sans', sans-serif; background: var(--bg3); color: var(--muted); cursor: pointer; }
 .sh-tabs button.on { background: rgba(var(--green-rgb),.2); color: var(--green-hi); }
 @media (prefers-reduced-motion: reduce) { .rc-bar, .rc-day.on { animation: none; } }
+
+/* ── BLIND TEST ── */
+.bt-top{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600}
+.bt-bar{height:6px;border-radius:99px;background:var(--bg4);overflow:hidden;margin-bottom:16px}
+.bt-bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--green),var(--accent));transition:width .12s linear}
+.bt-q{text-align:center;font-size:20px;font-weight:700;letter-spacing:-.02em;margin:4px 0 12px}
+.bt-vis{display:flex;justify-content:center;align-items:flex-end;gap:5px;height:44px;margin-bottom:16px}
+.bt-vis b{width:7px;border-radius:4px;background:linear-gradient(180deg,var(--accent),var(--green));height:10px;animation:btEq 0.9s ease-in-out infinite}
+.bt-vis b:nth-child(2){animation-delay:.15s}.bt-vis b:nth-child(3){animation-delay:.3s}.bt-vis b:nth-child(4){animation-delay:.45s}.bt-vis b:nth-child(5){animation-delay:.6s}
+.bt-vis.off b{animation:none;height:10px;opacity:.4}
+@keyframes btEq{0%,100%{height:8px}50%{height:40px}}
+@media (prefers-reduced-motion: reduce){.bt-vis b{animation:none;height:22px}}
+.bt-choice{display:block;width:100%;text-align:left;padding:14px 16px;margin-bottom:10px;border-radius:14px;border:1px solid color-mix(in srgb,var(--text) 10%,transparent);background:var(--bg4);color:var(--text);font:600 15px 'DM Sans',sans-serif;cursor:pointer}
+.bt-choice.ok{border-color:var(--green);background:rgba(var(--green-rgb),.18)}
+.bt-choice.ko{border-color:#ff4f4f;background:rgba(255,79,79,.15)}
+.bt-choice:disabled{cursor:default}
+.bt-label{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:14px 0 8px}
+.bt-chips{display:flex;gap:8px;flex-wrap:wrap}
+.bt-chip{padding:9px 16px;border-radius:12px;border:1px solid color-mix(in srgb,var(--text) 10%,transparent);background:var(--bg4);color:var(--text);font:600 14px 'DM Sans',sans-serif;cursor:pointer}
+.bt-chip.on{background:rgba(var(--green-rgb),.18);border-color:var(--green);color:var(--green)}
+.bt-big{text-align:center;font-size:54px;font-weight:800;letter-spacing:-.03em;margin:6px 0 2px}
+.bt-sub{text-align:center;color:var(--muted);font-size:14px;margin-bottom:14px}
+.bt-fb{text-align:center;font-size:14px;font-weight:600;margin:4px 0 12px;min-height:20px}
+.bt-row{display:flex;gap:10px;margin-top:6px}.bt-row .btn-primary,.bt-row .btn-secondary{flex:1}
+.bt-src{max-height:230px;overflow-y:auto;-webkit-overflow-scrolling:touch;border-radius:14px;border:1px solid color-mix(in srgb,var(--text) 10%,transparent);background:var(--bg4)}
+.bt-src-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid color-mix(in srgb,var(--text) 7%,transparent);font:600 14px 'DM Sans',sans-serif;color:var(--text);cursor:pointer}
+.bt-src-row:last-child{border-bottom:none}
+.bt-src-row span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bt-src-row small{color:var(--muted);font-weight:600;flex-shrink:0}
+.bt-src-row.on{background:rgba(var(--green-rgb),.16);color:var(--green)}
+.bt-src-row.on small{color:var(--green)}
+.bt-src-row.dis{opacity:.4;cursor:default}
+.bt-step{display:flex;align-items:center;gap:10px}
+.bt-step button{width:46px;height:46px;border-radius:14px;border:1px solid color-mix(in srgb,var(--text) 10%,transparent);background:var(--bg4);color:var(--text);font:700 22px 'DM Sans',sans-serif;cursor:pointer}
+.bt-step input{width:90px;height:46px;text-align:center;font:700 18px 'DM Sans',sans-serif;border-radius:14px;border:1px solid color-mix(in srgb,var(--text) 10%,transparent);background:var(--bg4);color:var(--text);outline:none;-moz-appearance:textfield}
+.bt-step input:focus{border-color:var(--green)}
+.bt-step input::-webkit-outer-spin-button,.bt-step input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.bt-tile{width:40px;height:40px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.bt-tile.all{background:linear-gradient(135deg,var(--green),var(--accent))}
+.bt-opt-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left}
+.bt-opt-t strong{font-size:15px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bt-opt-t small{font-size:12px;font-weight:600;color:var(--muted)}
+.bt-pick-btn{display:flex;align-items:center;gap:12px;width:100%;padding:10px 14px 10px 10px;border-radius:18px;border:1px solid color-mix(in srgb,var(--text) 10%,transparent);background:var(--bg4);cursor:pointer;font-family:'DM Sans',sans-serif;transition:border-color .2s,box-shadow .2s}
+.bt-pick-btn > svg{color:var(--muted);flex-shrink:0;transition:transform .25s,color .2s}
+.bt-dd.open .bt-pick-btn{border-color:var(--green);box-shadow:0 0 0 3px rgba(var(--green-rgb),.15)}
+.bt-dd.open .bt-pick-btn > svg{transform:rotate(180deg);color:var(--green)}
+.bt-pick-list{position:relative;margin-top:8px;max-height:280px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px;border-radius:18px;border:1px solid color-mix(in srgb,var(--text) 10%,transparent);background:var(--bg4);animation:btDrop .18s ease-out}
+@keyframes btDrop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.bt-pick-sep{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:12px 10px 6px}
+.bt-opt{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:14px;cursor:pointer;transition:background .15s}
+.bt-opt:hover{background:color-mix(in srgb,var(--text) 6%,transparent)}
+.bt-opt .bt-tile{width:36px;height:36px;border-radius:10px;box-shadow:none}
+.bt-opt-ck{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#04130a}
+.bt-opt.on{background:rgba(var(--green-rgb),.14)}
+.bt-opt.on .bt-opt-t strong{color:var(--green)}
+.bt-opt.on .bt-opt-ck{background:var(--green)}
+.bt-opt.dis{opacity:.4;cursor:default}
+.bt-opt.dis:hover{background:transparent}
+@media (prefers-reduced-motion: reduce){.bt-pick-list{animation:none}}
+.bt-write{display:flex;gap:10px;margin-bottom:6px}
+.bt-write .modal-input{margin-bottom:0;flex:1;min-width:0}
+.bt-write .btn-primary{flex:0 0 auto;padding:0 20px}
+.bt-chrono{text-align:center;font-size:46px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1;margin:2px 0 4px}
+.bt-chrono.low{color:#ff6b6b}
+.bt-pts{text-align:center;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:10px;font-variant-numeric:tabular-nums}
+.bt-sug{margin-bottom:6px}
+.bt-sug .bt-src{max-height:230px}
+.bt-choice.sel{border-color:var(--accent);background:rgba(167,139,250,.16)}
+.bt-write .modal-input.sel{border-color:var(--green)}
 </style>
 <script>
 (function () {
@@ -2232,6 +2301,13 @@ header .btn-icon, header .btn-add { box-shadow: none; }
         <div class="set-chev">›</div>
         <span class="set-dot" id="setStatsDot"></span>
       </div>
+      <div class="set-row" onclick="openBlindTest()">
+        <div class="set-ico g2">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+        </div>
+        <div class="set-txt"><strong>Blind test</strong><span>Devine le son à partir d'un extrait</span></div>
+        <div class="set-chev">›</div>
+      </div>
       <div class="set-row" onclick="openPrefs()">
         <div class="set-ico g2">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
@@ -2328,6 +2404,18 @@ header .btn-icon, header .btn-add { box-shadow: none; }
     <div class="sheet-scroll" id="recapBody"></div>
     <div class="modal-actions">
       <button class="btn-primary" onclick="closeModal('modal-recap')">Retour</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BLIND TEST -->
+<div class="modal-overlay" id="modal-blind" style="z-index:215;">
+  <div class="modal-box sheet">
+    <div class="sheet-grip"></div>
+    <div class="modal-title sheet-title">🎧 Blind test</div>
+    <div class="sheet-scroll" id="blindBody"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeModal('modal-blind')">Fermer</button>
     </div>
   </div>
 </div>
@@ -5723,9 +5811,9 @@ if (sb) {
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '1.9';
+const APP_VERSION = '2.0';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Nouveau design : navigation en onglets, cartes et fenêtres plus douces, musique en cours mise en valeur", "L'engrenage passe en haut à droite, et « + Nouvelle playlist » est dans l'onglet Playlists", "Correction : les musiques ne s'affichent plus en double et se suppriment correctement", "Nouveau : Info du compte (mail et changement du mot de passe)", "Tes paramètres sont les mêmes sur ton PC et ton téléphone (même compte)", "Synchronisation : tu peux désactiver la synchro automatique (Paramètres)", "Synchro plus rapide : téléchargements et envois en parallèle", "Nouveau : menu Paramètres dans l'engrenage (vitesse de lecture, synchronisation)", "Avec la répétition, passer à la musique suivante ou précédente relance la musique en cours", "Une écoute n'est comptée que si tu as vraiment écouté la moitié de la musique", "Onglet Ajouter entièrement repensé", "Statistiques : la phrase « Stats comptées depuis… » est retirée", "Récaps mensuels entièrement refaits : calendrier du mois, moments forts, meilleur jour, top 5 des sons, podium des playlists", "Nouveau : partage ton récap en image (récap entier ou carte résumé)", "Récap : comparaison avec le mois d’avant, semaine type, moment préféré de la journée et part de ton son du mois", "Récap : passe d’un mois à l’autre avec les flèches"];
+const APP_NOTES = ["Nouveau : le Blind test (Paramètres › Blind test) — devine le son à partir d'un extrait, en 4 choix ou en écrivant, avec chrono et score sur 100", "Nouveau design : navigation en onglets, cartes et fenêtres plus douces, musique en cours mise en valeur", "L'engrenage passe en haut à droite, et « + Nouvelle playlist » est dans l'onglet Playlists", "Correction : les musiques ne s'affichent plus en double et se suppriment correctement", "Nouveau : Info du compte (mail et changement du mot de passe)", "Tes paramètres sont les mêmes sur ton PC et ton téléphone (même compte)", "Synchronisation : tu peux désactiver la synchro automatique (Paramètres)", "Synchro plus rapide : téléchargements et envois en parallèle", "Nouveau : menu Paramètres dans l'engrenage (vitesse de lecture, synchronisation)", "Avec la répétition, passer à la musique suivante ou précédente relance la musique en cours", "Une écoute n'est comptée que si tu as vraiment écouté la moitié de la musique", "Onglet Ajouter entièrement repensé", "Statistiques : la phrase « Stats comptées depuis… » est retirée", "Récaps mensuels entièrement refaits : calendrier du mois, moments forts, meilleur jour, top 5 des sons, podium des playlists", "Nouveau : partage ton récap en image (récap entier ou carte résumé)", "Récap : comparaison avec le mois d’avant, semaine type, moment préféré de la journée et part de ton son du mois", "Récap : passe d’un mois à l’autre avec les flèches"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
@@ -5811,6 +5899,355 @@ setTimeout(checkForUpdate, 3000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForUpdate(); });
 window.addEventListener('focus', checkForUpdate);
 setInterval(checkForUpdate, 600000);
+
+// ── BLIND TEST ──
+const blindAudio = new Audio();
+blindAudio.preload = 'auto';
+let blind = null, blindCfg = { src: 'all', rounds: 10, mode: 'qcm', len: 10, dd: false }, blindTick = null, blindUrl = null;
+
+function blindPool(src) {
+  const ids = src === 'all' ? songs.map(s => s.id) : ((playlists.find(p => String(p.id) === String(src)) || {}).songs || []);
+  const seenId = new Set(), seenName = new Set(), out = [];
+  ids.forEach(id => {
+    if (seenId.has(id)) return; seenId.add(id);
+    const s = songs.find(x => x.id === id);
+    if (!s || !s.data) return;
+    const k = cleanName(s.name).trim().toLowerCase();
+    if (seenName.has(k)) return; seenName.add(k);
+    out.push(s);
+  });
+  return out;
+}
+function blindBestKey(mode) { return mode === 'write' ? 'sv_blind_best2_write' : 'sv_blind_best2'; }
+function blindBest(mode) { try { return parseInt(localStorage.getItem(blindBestKey(mode)) || '0', 10) || 0; } catch (e) { return 0; } }
+
+// ── Comparaison des titres écrits (sans accents, ponctuation, mots parasites ; tolère les fautes) ──
+function blindNorm(s) {
+  const noise = new Set(['official', 'officiel', 'video', 'audio', 'lyrics', 'lyric', 'paroles', 'clip', 'hd', 'hq']);
+  const base = String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const clean = x => x.replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(w => w && !noise.has(w)).join(' ');
+  return clean(base.replace(/[\(\[][^\)\]]*[\)\]]/g, ' ')) || clean(base);
+}
+function blindStop() {
+  if (blindTick) { clearInterval(blindTick); blindTick = null; }
+  try { blindAudio.pause(); } catch (e) {}
+  blindAudio.onloadedmetadata = null;
+  blindAudio.onseeked = null;
+  blindAudio.muted = false;
+  if (blindUrl) { URL.revokeObjectURL(blindUrl); blindUrl = null; }
+  blindAudio.removeAttribute('src');
+  try { blindAudio.load(); } catch (e) {}
+}
+
+function openBlindTest() {
+  blindStop(); blind = null; blindCfg.dd = false;
+  blindRenderSetup();
+  openModal('modal-blind');
+}
+
+function blindSet(k, v) { blindCfg[k] = v; blindRenderSetup(); }
+function blindToggleDd() { blindCfg.dd = !blindCfg.dd; blindRenderSetup(); }
+function blindPickSrc(el) { if (el.classList.contains('dis')) return; blindCfg.src = el.dataset.src; blindCfg.dd = false; blindRenderSetup(); }
+function blindRoundsMax() { return Math.max(1, blindPool(blindCfg.src).length); }
+function blindRoundsEff() { return Math.max(1, Math.min(blindCfg.rounds, blindRoundsMax())); }
+function blindStartLabel() { const n = blindRoundsEff(); return 'Lancer (' + n + ' extrait' + (n > 1 ? 's' : '') + ')'; }
+function blindTypeRounds(v) {
+  const n = parseInt(v, 10);
+  if (isFinite(n) && n > 0) blindCfg.rounds = n;
+  const b = document.getElementById('blindGo'); if (b) b.textContent = blindStartLabel();
+}
+function blindSetRounds(v) {
+  let n = parseInt(v, 10); if (!isFinite(n)) n = blindRoundsEff();
+  blindCfg.rounds = Math.max(1, Math.min(blindRoundsMax(), n));
+  blindRenderSetup();
+}
+
+function blindRenderSetup() {
+  const el = document.getElementById('blindBody');
+  const total = blindPool('all').length;
+  if (total < 2) {
+    el.innerHTML = '<div class="empty"><div class="icon">🎧</div><p>Il faut au moins 2 musiques<br>pour lancer un blind test.</p></div>';
+    return;
+  }
+  const plCounts = playlists.map(p => ({ p, n: blindPool(String(p.id)).length }));
+  if (blindCfg.src !== 'all' && !plCounts.some(x => String(x.p.id) === String(blindCfg.src) && x.n >= 2)) blindCfg.src = 'all';
+  const cnt = n => n + ' son' + (n > 1 ? 's' : '');
+  const ICON_ALL = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>';
+  const ICON_PL = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
+  const ICON_CK = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const ICON_CHEV = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+  const tile = p => p
+    ? '<div class="bt-tile ' + COVERS[(parseInt(p.id) || 0) % COVERS.length] + '">' + ICON_PL + '</div>'
+    : '<div class="bt-tile all">' + ICON_ALL + '</div>';
+  const opt = (p, label, n, ok) => {
+    const src = p ? String(p.id) : 'all', on = String(blindCfg.src) === src;
+    return '<div class="bt-opt' + (on ? ' on' : '') + (ok ? '' : ' dis') + '" data-src="' + escHtml(src) + '" onclick="blindPickSrc(this)">' + tile(p) +
+      '<div class="bt-opt-t"><strong>' + escHtml(label) + '</strong><small>' + (ok ? cnt(n) : (n ? 'Pas assez de sons (' + n + ')' : 'Aucun son')) + '</small></div>' +
+      '<span class="bt-opt-ck">' + (on ? ICON_CK : '') + '</span></div>';
+  };
+  const curP = blindCfg.src === 'all' ? null : (plCounts.find(y => String(y.p.id) === String(blindCfg.src)) || {}).p || null;
+  const cur = curP ? { p: curP, name: curP.name, n: (plCounts.find(y => y.p === curP) || {}).n || 0 } : { p: null, name: 'Toutes les musiques', n: total };
+  const list =
+    opt(null, 'Toutes les musiques', total, true) +
+    (plCounts.length ? '<div class="bt-pick-sep">Playlists</div>' : '') +
+    plCounts.map(x => opt(x.p, x.p.name, x.n, x.n >= 2)).join('');
+  const max = blindRoundsMax(), eff = blindRoundsEff();
+  const lens = [1, 3, 5, 10, 20];
+  const best = blindBest(blindCfg.mode);
+  el.innerHTML =
+    '<div class="bt-sub">Un extrait démarre à un endroit au hasard : trouve le bon titre le plus vite possible.</div>' +
+    '<div class="bt-label">Source</div>' +
+    '<div class="bt-dd' + (blindCfg.dd ? ' open' : '') + '">' +
+      '<button class="bt-pick-btn" onclick="blindToggleDd()">' + tile(cur.p) +
+        '<div class="bt-opt-t"><strong>' + escHtml(cur.name) + '</strong><small>' + cnt(cur.n) + '</small></div>' + ICON_CHEV + '</button>' +
+      (blindCfg.dd ? '<div class="bt-pick-list" id="btPickList">' + list + '</div>' : '') +
+    '</div>' +
+    '<div class="bt-label">Réponse</div>' +
+    '<div class="bt-chips">' +
+      '<button class="bt-chip' + (blindCfg.mode === 'qcm' ? ' on' : '') + '" onclick="blindSet(\'mode\',\'qcm\')">4 choix</button>' +
+      '<button class="bt-chip' + (blindCfg.mode === 'write' ? ' on' : '') + '" onclick="blindSet(\'mode\',\'write\')">Écrire le titre</button>' +
+    '</div>' +
+    '<div class="bt-label">Nombre d\'extraits (max ' + max + ')</div>' +
+    '<div class="bt-step">' +
+      '<button onclick="blindSetRounds(blindRoundsEff()-1)" aria-label="Moins">−</button>' +
+      '<input type="number" inputmode="numeric" min="1" max="' + max + '" value="' + eff + '" oninput="blindTypeRounds(this.value)" onchange="blindSetRounds(this.value)">' +
+      '<button onclick="blindSetRounds(blindRoundsEff()+1)" aria-label="Plus">+</button>' +
+      '<button class="bt-chip" style="width:auto;height:46px;font-size:14px;padding:0 14px;" onclick="blindSetRounds(' + max + ')">Max</button>' +
+    '</div>' +
+    '<div class="bt-label">Durée de l\'extrait</div>' +
+    '<div class="bt-chips">' + lens.map(v => '<button class="bt-chip' + (blindCfg.len === v ? ' on' : '') + '" onclick="blindSet(\'len\',' + v + ')">' + v + ' s</button>').join('') + '</div>' +
+    (best ? '<div class="bt-sub" style="margin-top:16px;">🏆 Meilleur score : <strong>' + best + ' / 100</strong></div>' : '') +
+    '<div class="bt-row" style="margin-top:18px;"><button class="btn-primary" id="blindGo" onclick="blindStart()">' + blindStartLabel() + '</button></div>';
+  const pl = document.getElementById('btPickList'), on = pl && pl.querySelector('.bt-opt.on');
+  if (pl && on) pl.scrollTop = Math.max(0, on.offsetTop - 70);
+}
+
+function blindStart() {
+  const pool = blindPool(blindCfg.src);
+  if (pool.length < 2) { toast('Pas assez de musiques'); return; }
+  try { if (!audio.paused) { svMarkUserPause(); audio.pause(); setPlayIcon(false); } } catch (e) {}
+  // Un même son ne peut pas tomber deux fois : on tire sans remise dans la source
+  const order = fisherYatesShuffle(pool.slice()).slice(0, blindRoundsEff());
+  blind = { pool, order, mode: blindCfg.mode, i: 0, score: 0, streak: 0, ok: 0, answered: false };
+  blindRound();
+}
+
+// 100 pts tant qu'il reste 9 s sur 10 (la 1re seconde), puis ça descend jusqu'à 0 quand le chrono finit
+function blindPts(elapsed, len) {
+  const grace = Math.min(1, len * 0.1);
+  if (elapsed <= grace) return 100;
+  return Math.max(1, Math.round(100 * (len - elapsed) / (len - grace)));
+}
+
+function blindRound() {
+  blindStop();
+  const b = blind; if (!b) return;
+  b.answered = false; b.t0 = null; b.sugList = []; b.sel = null; b.selIdx = null;
+  b.tok = (b.tok || 0) + 1;
+  const token = b.tok;
+  b.cur = b.order[b.i];
+  const len = blindCfg.len;
+  let body;
+  if (b.mode === 'write') {
+    body =
+      '<div class="bt-write"><input class="modal-input" id="btInput" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Écris, puis choisis un son…" oninput="blindSuggest(this.value)" onkeydown="if(event.key===\'Enter\')blindValidate()"></div>' +
+      '<div class="bt-sug" id="btSug"></div>';
+    b.choices = null;
+  } else {
+    const others = fisherYatesShuffle(b.pool.filter(s => s.id !== b.cur.id)).slice(0, Math.min(3, b.pool.length - 1));
+    b.choices = fisherYatesShuffle([b.cur].concat(others)).map(s => ({ id: s.id, name: cleanName(s.name) }));
+    body = b.choices.map((c, k) => '<button class="bt-choice" onclick="blindChoose(' + k + ')">' + escHtml(c.name) + '</button>').join('');
+  }
+  const el = document.getElementById('blindBody');
+  el.innerHTML =
+    '<div class="bt-top"><span>Extrait ' + (b.i + 1) + '/' + b.order.length + '</span><span>🔥 ' + b.streak + '</span><span>⭐ ' + b.score + '</span></div>' +
+    '<div class="bt-chrono" id="btChrono">' + len.toFixed(1) + '</div>' +
+    '<div class="bt-pts" id="btPts">100 pts</div>' +
+    '<div class="bt-bar"><i id="btBar"></i></div>' +
+    '<div class="bt-vis" id="btVis"><b></b><b></b><b></b><b></b><b></b></div>' +
+    body +
+    '<div class="bt-fb" id="btFb"></div>' +
+    '<div class="bt-row" id="btFoot"><button class="btn-secondary" onclick="blindReplay()">↻ Réécouter</button>' +
+    '<button class="btn-primary" onclick="blindValidate()">Valider</button></div>';
+  if (b.mode === 'write') setTimeout(() => { const inp = document.getElementById('btInput'); if (inp) inp.focus(); }, 60);
+
+  // Son : on lance la lecture tout de suite (dans le geste de l'utilisateur, sinon le téléphone la bloque),
+  // en muet, puis on saute à l'extrait et on remet le son. Le chrono démarre à ce moment-là.
+  const s = b.cur;
+  blindUrl = (s.data instanceof Blob) ? URL.createObjectURL(s.data) : null;
+  blindAudio.src = blindUrl || s.data;
+  try { blindAudio.volume = audio.volume; } catch (e) {}
+  const go = () => {
+    if (b.tok !== token || b.answered) return;
+    blindAudio.onseeked = null;
+    blindAudio.muted = false;
+    if (b.t0 === null) b.t0 = performance.now();
+    const v = document.getElementById('btVis'); if (v) v.classList.remove('off');
+    if (blindAudio.paused) blindAudio.play().catch(() => {});
+  };
+  blindAudio.muted = true;
+  blindAudio.play().catch(() => {});
+  blindAudio.onloadedmetadata = () => {
+    const d = isFinite(blindAudio.duration) && blindAudio.duration > 0 ? blindAudio.duration : 0;
+    let st = 0;
+    if (d > len + 10) { const lo = d * 0.1, hi = d - len - 5; st = lo + Math.random() * Math.max(0, hi - lo); }
+    else if (d > len) st = Math.random() * (d - len);
+    b.start = st;
+    blindAudio.onseeked = go;
+    try { blindAudio.currentTime = st; } catch (e) { go(); }
+  };
+  // Sécurité : si le téléphone ne prévient pas la fin du saut, le chrono démarre quand même
+  setTimeout(() => { if (b.tok === token && b.t0 === null) go(); }, 1500);
+
+  // Chrono : il descend de la durée choisie jusqu'à 0 ; à 0 le temps est écoulé
+  blindTick = setInterval(() => {
+    if (!blind || b.answered) return;
+    const elapsed = b.t0 === null ? 0 : (performance.now() - b.t0) / 1000;
+    const remaining = Math.max(0, len - elapsed);
+    const bar = document.getElementById('btBar'); if (bar) bar.style.width = (remaining / len * 100) + '%';
+    const ch = document.getElementById('btChrono');
+    if (ch) { ch.textContent = remaining.toFixed(1); ch.classList.toggle('low', remaining <= len * 0.3); }
+    const pt = document.getElementById('btPts'); if (pt) pt.textContent = blindPts(Math.min(elapsed, len), len) + ' pts';
+    if (b.t0 !== null && remaining <= 0) blindResolve(false, undefined, true);
+  }, 50);
+}
+
+function blindReplay() {
+  const b = blind; if (!b || b.answered) return;
+  try { blindAudio.currentTime = b.start || 0; } catch (e) {}
+  blindAudio.play().catch(() => {});
+}
+
+// 4 choix : un clic sélectionne (on peut changer), « Valider » confirme
+function blindChoose(k) {
+  const b = blind; if (!b || b.answered || !b.choices) return;
+  b.selIdx = k;
+  document.querySelectorAll('#blindBody .bt-choice').forEach((btn, j) => btn.classList.toggle('sel', j === k));
+}
+
+// ── Écriture : propositions façon barre de recherche ──
+function blindSimple(s) { return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+function blindSuggest(v) {
+  const b = blind, box = document.getElementById('btSug');
+  if (!b || !box || b.answered) return;
+  const inp = document.getElementById('btInput');
+  // si on modifie le texte après avoir choisi un son, le choix est annulé
+  if (b.sel && blindSimple(v) !== blindSimple(cleanName(b.sel.name))) { b.sel = null; if (inp) inp.classList.remove('sel'); }
+  const q = blindSimple(v);
+  if (!q || b.sel) { b.sugList = []; box.innerHTML = ''; return; }
+  const found = [];
+  b.pool.forEach(s => {
+    const t = blindSimple(cleanName(s.name));
+    const idx = t.indexOf(q);
+    if (idx === -1) return;
+    found.push({ s, t, rank: idx === 0 ? 0 : (t[idx - 1] === ' ' ? 1 : 2) });
+  });
+  found.sort((x, y) => x.rank - y.rank || x.t.length - y.t.length);
+  const top = found.slice(0, 6);
+  b.sugList = top.map(x => x.s);
+  box.innerHTML = top.length
+    ? '<div class="bt-src">' + top.map(x => '<div class="bt-src-row" data-id="' + escHtml(String(x.s.id)) + '" onclick="blindPickSug(this)"><span>' + escHtml(cleanName(x.s.name)) + '</span></div>').join('') + '</div>'
+    : '';
+}
+// Cliquer une proposition = choisir ce son (il faut ensuite valider)
+function blindPickSug(el) {
+  const b = blind; if (!b || b.answered) return;
+  const s = b.pool.find(x => String(x.id) === el.dataset.id); if (!s) return;
+  b.sel = s;
+  const inp = document.getElementById('btInput');
+  if (inp) { inp.value = cleanName(s.name); inp.classList.add('sel'); }
+  const box = document.getElementById('btSug'); if (box) box.innerHTML = '';
+  b.sugList = [];
+}
+
+// Valider : rien de choisi = 0
+function blindValidate() {
+  const b = blind; if (!b || b.answered) return;
+  if (b.choices) {
+    if (b.selIdx === null) { blindResolve(false, undefined, false, true); return; }
+    blindResolve(b.choices[b.selIdx].id === b.cur.id, b.selIdx);
+    return;
+  }
+  let chosen = b.sel;
+  if (!chosen) {
+    // titre tapé en entier, identique à un son de la source = ce son est choisi
+    const inp = document.getElementById('btInput');
+    const nv = blindNorm(inp ? inp.value : '');
+    if (nv) chosen = b.pool.find(s => blindNorm(s.name) === nv) || null;
+  }
+  if (!chosen) { blindResolve(false, undefined, false, true); return; }
+  blindResolve(chosen.id === b.cur.id);
+}
+
+function blindResolve(good, k, timeUp, none) {
+  const b = blind; if (!b || b.answered) return;
+  b.answered = true;
+  const len = blindCfg.len;
+  const elapsed = b.t0 === null ? 0 : (performance.now() - b.t0) / 1000;
+  const remaining = Math.max(0, len - elapsed);
+  // Score de la question : 0 à 100, plus on valide vite plus c'est haut
+  let pts = 0;
+  if (good && !timeUp) {
+    pts = blindPts(Math.min(elapsed, len), len);
+    b.score += pts; b.streak++; b.ok++;
+  } else b.streak = 0;
+  const ch = document.getElementById('btChrono');
+  if (ch && timeUp) { ch.textContent = '0.0'; ch.classList.add('low'); }
+  const pt = document.getElementById('btPts'); if (pt) pt.textContent = good && !timeUp ? '+' + pts + ' / 100' : '0 / 100';
+  const bar = document.getElementById('btBar'); if (bar && timeUp) bar.style.width = '0%';
+  if (b.choices) {
+    document.querySelectorAll('#blindBody .bt-choice').forEach((btn, j) => {
+      btn.disabled = true; btn.classList.remove('sel');
+      if (b.choices[j].id === b.cur.id) btn.classList.add('ok');
+      else if (j === k) btn.classList.add('ko');
+    });
+  } else {
+    const inp = document.getElementById('btInput'), sg = document.getElementById('btSug');
+    if (inp) { inp.disabled = true; inp.blur(); }
+    if (sg) sg.innerHTML = '';
+  }
+  const title = escHtml(cleanName(b.cur.name));
+  const fb = document.getElementById('btFb');
+  if (fb) fb.innerHTML = good && !timeUp
+    ? '<span style="color:var(--green)">Bonne réponse ! +' + pts + '</span>' + (b.choices ? '' : '<br><span style="color:var(--muted);font-weight:500;">« ' + title + ' »</span>')
+    : '<span style="color:#ff6b6b">' + (timeUp ? 'Temps écoulé ! c\'était' : none ? 'Aucun son choisi… c\'était' : 'Raté… c\'était') + ' « ' + title + ' »</span>';
+  blindAudio.muted = false;
+  if (blindAudio.paused) blindAudio.play().catch(() => {});
+  const v = document.getElementById('btVis'); if (v) v.classList.remove('off');
+  const last = b.i + 1 >= b.order.length;
+  const foot = document.getElementById('btFoot');
+  if (foot) foot.innerHTML = '<button class="btn-primary" onclick="blindNext()">' + (last ? 'Voir le score' : 'Suivant →') + '</button>';
+}
+
+function blindNext() {
+  const b = blind; if (!b) return;
+  b.i++;
+  if (b.i >= b.order.length) blindEnd(); else blindRound();
+}
+
+function blindEnd() {
+  const b = blind; blindStop();
+  const n = b.order.length;
+  const avg = Math.round(b.score / n);   // score final sur 100
+  const prev = blindBest(b.mode);
+  const record = avg > prev;
+  if (record) { try { localStorage.setItem(blindBestKey(b.mode), String(avg)); } catch (e) {} }
+  const emoji = avg >= 90 ? '🏆' : avg >= 60 ? '🔥' : avg >= 30 ? '👍' : '😅';
+  document.getElementById('blindBody').innerHTML =
+    '<div class="bt-big">' + emoji + '</div>' +
+    '<div class="bt-big" style="font-size:44px;">' + avg + '<span style="font-size:20px;color:var(--muted);font-weight:600;"> / 100</span></div>' +
+    '<div class="bt-sub">' + b.ok + ' bonne' + (b.ok > 1 ? 's' : '') + ' réponse' + (b.ok > 1 ? 's' : '') + ' sur ' + n + ' · ' + b.score + ' pts au total' +
+    (record ? '<br><strong style="color:var(--green)">Nouveau record !</strong>' : (prev ? '<br>Record : ' + prev + ' / 100' : '')) + '</div>' +
+    '<div class="bt-row"><button class="btn-secondary" onclick="blindRenderSetup()">Réglages</button><button class="btn-primary" onclick="blindStart()">Rejouer</button></div>';
+}
+
+// Ferme le blind test (retour, geste, bouton) → on coupe l'extrait
+(function () {
+  const m = document.getElementById('modal-blind');
+  if (!m || !window.MutationObserver) return;
+  new MutationObserver(() => { if (!m.classList.contains('show')) { blindStop(); blind = null; } })
+    .observe(m, { attributes: true, attributeFilter: ['class'] });
+})();
 </script>
 </body>
 </html>
