@@ -1743,6 +1743,104 @@ header .btn-icon, header .btn-add { box-shadow: none; }
 .back-bar::before { display: none; }
 .back-bar > * { pointer-events: auto; }
 .back-bar .btn-back { background: color-mix(in srgb, var(--bg3) 88%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 4px 18px rgba(0,0,0,0.28); border-radius: 999px; padding: 9px 16px; }
+
+/* ── RÉCAP MENSUEL COMPLET ── */
+/* animation d'ouverture du récap : les sections apparaissent au fil du défilement */
+#recapBody .rc-pre { opacity: 0; }
+#recapBody .rc-in { animation: rcIn .6s cubic-bezier(.2,.8,.3,1) both; }
+@keyframes rcIn { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@keyframes rcUp { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+#recapBody .rc-in .st-bar { transform-origin: bottom; animation: rcUp .8s cubic-bezier(.2,.8,.3,1) both; animation-delay: .25s; }
+#recapBody .rc-in.rc-pod > div { transform-origin: bottom; animation: rcUp .8s cubic-bezier(.2,.8,.3,1) both; }
+#recapBody .rc-in.rc-pod > div:nth-child(1) { animation-delay: .35s; }
+#recapBody .rc-in.rc-pod > div:nth-child(2) { animation-delay: .5s; }
+#recapBody .rc-in.rc-pod > div:nth-child(3) { animation-delay: .2s; }
+#recapBody .rc-pre .rc-bar { animation: none; transform: scaleX(0); }
+#recapBody .rc-in .rc-bar { animation: rcGrow .8s ease-out both; animation-delay: .3s; }
+#recapBody .rc-pre .rc-day.on { animation: none; }
+@media (prefers-reduced-motion: reduce) { #recapBody .rc-in, #recapBody .rc-in .st-bar, #recapBody .rc-in.rc-pod > div, #recapBody .rc-in .rc-bar { animation: none; } #recapBody .rc-pre { opacity: 1; } }
+
+.rc-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.rc-nav button { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--bg3); color: var(--text); font-size: 20px; line-height: 1; cursor: pointer; }
+.rc-nav button:disabled { opacity: 0.25; cursor: default; }
+.rc-nav span { font-size: 12px; color: var(--muted); }
+.rc-chip { display: inline-block; margin-top: 10px; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; background: rgba(var(--green-rgb),0.16); color: var(--green-hi); }
+.rc-chip.down { background: rgba(255,133,133,0.14); color: #ff8585; }
+.rc-fun { display: block; margin-top: 8px; font-size: 12px; color: var(--muted); }
+.rc-cap { font-size: 12px; color: var(--muted); margin: -2px 2px 14px; line-height: 1.45; }
+.rc-hero { position: relative; overflow: hidden; background: linear-gradient(160deg, rgba(var(--green-rgb),0.18), rgba(167,139,250,0.08) 70%), var(--bg3); }
+.rc-hero .rc-sub { display: block; margin-top: 4px; font-family: 'Syne', sans-serif; font-weight: 600; font-size: 16px; letter-spacing: .2px; color: color-mix(in srgb, var(--text) 75%, transparent); }
+.rc-badge { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 12px; border-radius: 16px; background: linear-gradient(135deg, rgba(167,139,250,0.2), rgba(167,139,250,0.04)); border: 1px solid rgba(167,139,250,0.28); }
+.rc-badge i { font-style: normal; font-size: 30px; }
+.rc-badge b { display: block; font-family: 'Syne', sans-serif; font-size: 15px; }
+.rc-badge span { font-size: 12px; color: var(--muted); }
+.rc-bar { height: 4px; border-radius: 2px; background: var(--green); margin-top: 6px; transform-origin: left; animation: rcGrow .7s ease-out both; }
+@keyframes rcGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.rc-row { flex-direction: column; align-items: stretch; gap: 0; }
+.rc-row > div { display: flex; align-items: center; gap: 10px; }
+.rc-share { display: block; width: 100%; margin-top: 14px; padding: 13px; font-weight: 600; }
+.rc-cal { background: var(--bg3); border-radius: 16px; padding: 12px 10px 10px; margin-bottom: 10px; }
+.rc-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px; }
+.rc-grid small { text-align: center; font-size: 10px; color: var(--muted); padding-bottom: 2px; }
+.rc-day { position: relative; aspect-ratio: 1; border: 0; border-radius: 9px; background: color-mix(in srgb, var(--text) 6%, transparent); color: var(--muted); font: 600 12px 'DM Sans', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; cursor: default; padding: 0; }
+.rc-day em { font-style: normal; font-size: 8.5px; font-weight: 500; opacity: .85; }
+.rc-day.on { cursor: pointer; animation: rcPop .4s cubic-bezier(.2,.8,.3,1.3) both; animation-delay: calc(var(--i) * 16ms); }
+.rc-day.l1 { background: rgba(var(--green-rgb),.26); color: var(--text); }
+.rc-day.l2 { background: rgba(var(--green-rgb),.5); color: var(--text); }
+.rc-day.l3 { background: rgba(var(--green-rgb),.76); color: #04210f; }
+.rc-day.l4 { background: var(--green-hi); color: #04210f; }
+.rc-day.void { background: transparent; }
+.rc-day.best::after { content: '★'; position: absolute; top: 1px; right: 3px; font-size: 9px; color: #04210f; }
+.rc-day.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+@keyframes rcPop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: scale(1); } }
+.rc-leg { display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 10px; color: var(--muted); margin-top: 8px; }
+.rc-leg i { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+.rc-daybox { background: var(--bg3); border-radius: 16px; padding: 14px; margin-bottom: 16px; }
+.rc-daybox .dh { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.rc-daybox .dh b { font-family: 'Syne', sans-serif; font-size: 15px; }
+.rc-daybox .dh strong { font-family: 'Syne', sans-serif; font-size: 22px; color: var(--green); }
+.rc-daybox .st-row { background: var(--bg4); }
+.rc-daybox .dt { font-size: 12px; color: var(--muted); margin: 2px 0 6px; }
+.rc-hint { text-align: center; font-size: 11px; color: var(--muted); margin: 0 0 12px; }
+#dayPanel:empty { display: none; }
+.rc-fold { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; border: 1px solid rgba(var(--green-rgb),.35); background: linear-gradient(160deg, rgba(var(--green-rgb),.12), transparent 70%), var(--bg3); color: var(--text); border-radius: 16px; padding: 12px 14px; margin-bottom: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+.rc-fold .fi { font-size: 26px; }
+.rc-fold div { flex: 1; }
+.rc-fold b { display: block; font-family: 'Syne', sans-serif; font-size: 14px; }
+.rc-fold small { font-size: 12px; color: var(--muted); }
+.rc-fold i { font-style: normal; font-size: 24px; color: var(--muted); transition: transform .2s; }
+.rc-fold.open i { transform: rotate(90deg); }
+#bestBox .rc-daybox { margin-top: -4px; }
+.rc-best { border: 1px solid rgba(var(--green-rgb),.35); background: linear-gradient(160deg, rgba(var(--green-rgb),.12), transparent 70%), var(--bg3); }
+.rc-mom { display: flex; align-items: center; gap: 12px; background: var(--bg3); border-radius: 14px; padding: 11px 13px; margin-bottom: 8px; }
+.rc-mom i { font-style: normal; font-size: 24px; }
+.rc-mom b { display: block; font-family: 'Syne', sans-serif; font-size: 14px; }
+.rc-mom span { font-size: 12px; color: var(--muted); }
+.rc-crown { background: linear-gradient(160deg, rgba(var(--green-rgb),.2), rgba(167,139,250,.08)), var(--bg3); border: 1px solid rgba(var(--green-rgb),.3); border-radius: 18px; padding: 16px; margin-bottom: 10px; text-align: center; }
+.rc-crown small { font-size: 12px; color: var(--muted); }
+.rc-crown b { display: block; font-family: 'Syne', sans-serif; font-size: 22px; margin: 4px 0 2px; }
+.rc-crown span { font-size: 13px; color: var(--green-hi); font-weight: 600; }
+.rc-pod { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 16px; }
+.rc-pod > div { flex: 1; min-width: 0; border-radius: 16px 16px 6px 6px; background: var(--bg3); text-align: center; padding: 10px 6px; display: flex; flex-direction: column; gap: 3px; }
+.rc-pod > div.p1 { background: linear-gradient(180deg, rgba(var(--green-rgb),.35), rgba(var(--green-rgb),.08)); }
+.rc-pod i { font-style: normal; font-size: 24px; }
+.rc-pod b { font-family: 'Syne', sans-serif; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc-pod span { font-size: 11px; color: var(--muted); }
+.sh-ov { position: fixed; inset: 0; background: rgba(0,0,0,.78); display: none; align-items: center; justify-content: center; z-index: 230; padding: 14px; }
+.sh-ov.show { display: flex; }
+.sh-box { background: var(--bg2); border-radius: 24px; width: 100%; max-width: 440px; max-height: 94vh; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255,255,255,.09); }
+.sh-box h4 { font-family: 'Syne', sans-serif; font-size: 16px; padding: 16px 18px 10px; }
+.sh-scroll { overflow-y: auto; padding: 0 14px; flex: 1; }
+.sh-scroll img { width: 100%; display: block; border-radius: 16px; }
+.sh-act { display: flex; gap: 8px; padding: 12px 14px; }
+.sh-act button { flex: 1; border: 0; border-radius: 14px; padding: 13px; font: 700 14px 'DM Sans', sans-serif; cursor: pointer; }
+.sh-act .go { background: var(--green); color: #04210f; }
+.sh-act .no { background: var(--bg3); color: var(--text); }
+.sh-hint { font-size: 11px; color: var(--muted); text-align: center; padding: 0 14px 8px; }
+.sh-tabs { display: flex; gap: 6px; padding: 0 14px 10px; }
+.sh-tabs button { flex: 1; border: 0; border-radius: 12px; padding: 9px; font: 600 13px 'DM Sans', sans-serif; background: var(--bg3); color: var(--muted); cursor: pointer; }
+.sh-tabs button.on { background: rgba(var(--green-rgb),.2); color: var(--green-hi); }
+@media (prefers-reduced-motion: reduce) { .rc-bar, .rc-day.on { animation: none; } }
 </style>
 <script>
 (function () {
@@ -2126,13 +2224,6 @@ header .btn-icon, header .btn-add { box-shadow: none; }
         <div class="set-txt"><strong>Réglages des sons</strong><span>Volume de chaque son, parties coupées et remise à zéro</span></div>
         <div class="set-chev">›</div>
       </div>
-      <div class="set-row" onclick="openTheme()">
-        <div class="set-ico g2">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.5-.7 1.5-1.5 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.8.7-1.5 1.5-1.5H16c3.3 0 6-2.7 6-6 0-4.9-4.5-9-10-9z"/></svg>
-        </div>
-        <div class="set-txt"><strong>Thème</strong><span>Couleur de l'appli et fond (sombre, noir pur ou clair)</span></div>
-        <div class="set-chev">›</div>
-      </div>
       <div class="set-row" onclick="openStats()">
         <div class="set-ico g1">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -2177,7 +2268,7 @@ header .btn-icon, header .btn-add { box-shadow: none; }
 </div>
 
 <!-- MODAL THÈME -->
-<div class="modal-overlay" id="modal-theme" style="z-index:205;">
+<div class="modal-overlay" id="modal-theme" style="z-index:215;">
   <div class="modal-box sheet">
     <div class="sheet-grip"></div>
     <div class="modal-title sheet-title">🎨 Thème</div>
@@ -2341,6 +2432,8 @@ header .btn-icon, header .btn-add { box-shadow: none; }
     </div>
   </div>
 </div>
+
+<div class="sh-ov" id="shareModal" onclick="if(event.target===this)closeShare()"><div class="sh-box"><h4>📤 Partager mon récap</h4><div class="sh-tabs"><button id="tabFull" class="on" onclick="openShare('full')">Récap entier</button><button id="tabSum" onclick="openShare('sum')">Carte résumé</button></div><div class="sh-scroll"><img id="shareImg" alt="Récap à partager"></div><div class="sh-hint" id="shareHint">Choisis l’image à envoyer.</div><div class="sh-act"><button class="no" onclick="closeShare()">Fermer</button><button class="go" onclick="sendShare()">Envoyer l’image</button></div></div></div>
 
 <div class="toast" id="toast"></div>
 <audio id="audioEl"></audio>
@@ -3744,7 +3837,9 @@ function togglePref(k) { setPref(k, !svPrefs[k]); }
 function renderPrefs() {
   const sw = (k, ico, g, title, sub) => `<div class="set-row" onclick="togglePref('${k}')"><div class="set-ico ${g}" style="font-size:22px;">${ico}</div><div class="set-txt"><strong>${title}</strong><span>${sub}</span></div><div class="pf-sw ${svPrefs[k] ? 'on' : ''}"></div></div>`;
   const speeds = [0.75, 1, 1.25, 1.5, 2];
-  let h = '<div class="th-label">Lecture</div>';
+  let h = '<div class="th-label">Apparence</div>';
+  h += '<div class="set-row" onclick="openTheme()"><div class="set-ico g2" style="font-size:22px;">🎨</div><div class="set-txt"><strong>Thème</strong><span>Couleur et fond (sombre, noir pur ou clair)</span></div><div class="set-chev">›</div></div>';
+  h += '<div class="th-label" style="margin-top:14px;">Lecture</div>';
   h += `<div class="set-row pf-static"><div class="set-ico g2" style="font-size:22px;">⏩</div><div class="set-txt"><strong>Vitesse de lecture</strong><span>Accélère ou ralentit toutes les musiques</span><div class="pf-chips">${speeds.map(v => `<div class="pf-chip ${svPrefs.speed === v ? 'on' : ''}" onclick="setPref('speed', ${v})">${String(v).replace('.', ',')}×</div>`).join('')}</div></div></div>`;
   h += '<div class="th-label" style="margin-top:14px;">Synchronisation</div>';
   h += sw('syncAuto', '🔄', 'g4', 'Synchro automatique', 'Vérifie le cloud à l\'ouverture et quand tu reviens sur l\'appli. Désactivée : seulement quand tu appuies sur « Resynchroniser »');
@@ -5070,6 +5165,7 @@ function setThemeBg(k) { try { localStorage.setItem('sv_theme_bg', k); } catch (
 let svStats = { since: null, days: {}, songs: {}, pls: {}, months: {} };
 try { const r = JSON.parse(localStorage.getItem('sv_stats') || 'null'); if (r && r.days) svStats = Object.assign(svStats, r); } catch (e) {}
 if (!svStats.months) svStats.months = {}; // sons / playlists par mois (pour les récaps mensuels)
+if (!svStats.dd) svStats.dd = {}; // sons / playlists par jour (détail d'un jour dans les récaps)
 let statsLastTick = 0, statsCur = null, statsSaveTimer = null;
 function statsDayKey(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function saveStats() {
@@ -5077,6 +5173,7 @@ function saveStats() {
   try {
     const cut = statsDayKey(new Date(Date.now() - 400 * 86400000));
     Object.keys(svStats.days).forEach(k => { if (k < cut) delete svStats.days[k]; });
+    Object.keys(svStats.dd || {}).forEach(k => { if (k < cut) delete svStats.dd[k]; });
     const mcut = statsDayKey(new Date(Date.now() - 800 * 86400000)).slice(0, 7);
     Object.keys(svStats.months || {}).forEach(k => { if (k < mcut) delete svStats.months[k]; });
     localStorage.setItem('sv_stats', JSON.stringify(svStats));
@@ -5103,6 +5200,14 @@ function statsTick() {
   const ms = mo.songs[currentSongId] || (mo.songs[currentSongId] = { plays: 0, sec: 0 });
   ms.sec += dt;
   mo.pls[pk] = (mo.pls[pk] || 0) + dt;
+  if (!mo.hrs) mo.hrs = new Array(24).fill(0);
+  mo.hrs[new Date().getHours()] += dt; // heure d'écoute (moment préféré)
+  // et par jour (détail d'un jour dans le récap)
+  if (!svStats.dd) svStats.dd = {};
+  const dd = svStats.dd[day] || (svStats.dd[day] = { songs: {}, pls: {} });
+  const ds = dd.songs[currentSongId] || (dd.songs[currentSongId] = { plays: 0, sec: 0 });
+  ds.sec += dt;
+  dd.pls[pk] = (dd.pls[pk] || 0) + dt;
   if (!statsCur || statsCur.id !== currentSongId) statsCur = { id: currentSongId, acc: 0, counted: false };
   const dur = audio.duration, pos = audio.currentTime;
   // Répétition : la musique repart du début toute seule → nouvelle écoute à compter
@@ -5112,7 +5217,7 @@ function statsTick() {
   // une « écoute » = au moins la moitié de la musique (hors parties coupées) vraiment écoutée
   let eff = (isFinite(dur) && dur > 0) ? dur : 0;
   if (eff) (currentCuts || []).forEach(c => { eff -= Math.max(0, Math.min(c[1], dur) - Math.min(c[0], dur)); });
-  if (!statsCur.counted && eff > 0 && statsCur.acc >= eff / 2) { statsCur.counted = true; sg.plays++; ms.plays++; }
+  if (!statsCur.counted && eff > 0 && statsCur.acc >= eff / 2) { statsCur.counted = true; sg.plays++; ms.plays++; ds.plays++; }
   if (!statsSaveTimer) statsSaveTimer = setTimeout(saveStats, 5000);
   svStatsDirty = true;
   if (!svStatsPushTimer) svStatsPushTimer = setTimeout(svPushStats, 60000);
@@ -5226,24 +5331,282 @@ function svRecapData(key, S) {
     .filter(x => x.n && x.v >= 20).sort((a, b) => b.v - a.v)[0] || null;
   return { total, nDays: days.length, best, top, pl };
 }
+const RC_PER = ['Nuit', 'Matin', 'Après-midi', 'Soirée'], RC_PER_TXT = ['la nuit', 'le matin', 'l’après-midi', 'le soir'];
+const RC_WD = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+function rcDayKey(R, d) { return R.key + '-' + String(d).padStart(2, '0'); }
+function rcPlTxt(plays, sec) { return (plays > 0 ? plays + ' écoute' + (plays > 1 ? 's' : '') + ' · ' : '') + fmtDur(sec); }
+function rcShort(sec) { const m = Math.round(sec / 60); return m < 60 ? m + 'm' : Math.floor(m / 60) + 'h' + String(m % 60).padStart(2, '0'); }
+// Toutes les données d'un récap (mois terminé) à partir des stats fusionnées de tous les appareils
+function rcBuild(key, S) {
+  const [Y, M] = key.split('-').map(Number), DIM = new Date(Y, M, 0).getDate(), MONTH = SV_MONTHS[M - 1];
+  const SEC = {};
+  for (let d = 1; d <= DIM; d++) { const v = S.days[key + '-' + String(d).padStart(2, '0')]; if (v > 0) SEC[d] = v; }
+  const days = Object.keys(SEC).map(Number).sort((a, b) => a - b);
+  const total = days.reduce((t, d) => t + SEC[d], 0);
+  const best = days.reduce((a, b) => SEC[b] > SEC[a] ? b : a, days[0]);
+  const mx = SEC[best], lead = (new Date(Y, M - 1, 1).getDay() + 6) % 7;
+  const mo = (S.months || {})[key] || { songs: {}, pls: {} };
+  const nameOf = id => { const s = songs.find(x => String(x.id) === String(id)); return s ? cleanName(s.name) : null; };
+  const topS = Object.keys(mo.songs).map(k => ({ n: nameOf(k), v: mo.songs[k] })).filter(x => x.n && x.v.plays > 0)
+    .sort((a, b) => (b.v.plays - a.v.plays) || (b.v.sec - a.v.sec)).slice(0, 5).map(x => [x.n, x.v.plays, x.v.sec]);
+  const nPlays = Object.keys(mo.songs).reduce((t, k) => t + (mo.songs[k].plays || 0), 0);
+  const nSongs = Object.keys(mo.songs).filter(k => nameOf(k) && mo.songs[k].sec >= 5).length;
+  const plName = k => k === '_all' ? 'Tous les sons' : (playlists.find(x => String(x.id) === k) || {}).name;
+  const pls = Object.keys(mo.pls || {}).map(k => [plName(k), mo.pls[k]]).filter(x => x[0] && x[1] >= 20).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  // moments forts
+  let streak = 0, sStart = 0, cs = 0, cst = 0;
+  for (let d = 1; d <= DIM; d++) { if (SEC[d]) { if (!cs) cst = d; cs++; if (cs > streak) { streak = cs; sStart = cst; } } else cs = 0; }
+  let pLen = 0, pStart = 0, cp = 0, cpt = 0;
+  for (let d = days[0]; d <= days[days.length - 1]; d++) { if (!SEC[d]) { if (!cp) cpt = d; cp++; if (cp > pLen) { pLen = cp; pStart = cpt; } } else cp = 0; }
+  const wk = {};
+  days.forEach(d => { const w = Math.floor((lead + d - 1) / 7); wk[w] = (wk[w] || 0) + SEC[d]; });
+  const bwI = Object.keys(wk).reduce((a, b) => wk[b] > wk[a] ? b : a), bwA = Math.max(1, bwI * 7 - lead + 1), bwB = Math.min(DIM, bwI * 7 - lead + 7);
+  const rng = (a, b) => a === b ? a + ' ' + MONTH : a + ' → ' + b + ' ' + MONTH;
+  const MOM = [['🔥', streak + ' jour' + (streak > 1 ? 's' : '') + ' d’affilée', 'Ta plus longue série · ' + rng(sStart, sStart + streak - 1)],
+    ['📅', fmtDur(wk[bwI]) + ' sur une semaine', 'Ta meilleure semaine · ' + rng(bwA, bwB)]];
+  if (pLen > 0) MOM.push(['😴', pLen + ' jour' + (pLen > 1 ? 's' : '') + ' de pause', 'Ta plus longue pause · ' + rng(pStart, pStart + pLen - 1)]);
+  const ratio = days.length / DIM;
+  const badge = ratio >= .8 ? ['📆', 'Régulier', 'Tu as écouté presque tous les jours du mois']
+    : ratio >= .5 ? ['🎧', 'Assidu', 'Tu as écouté plus d’un jour sur deux']
+    : ratio >= .25 ? ['🎵', 'Occasionnel', 'Tu écoutes de temps en temps, à ton rythme']
+    : ['🌙', 'Discret', 'Quelques écoutes seulement ce mois-ci'];
+  // comparaison avec le mois d'avant, semaine type, équivalence amusante
+  const pk = M === 1 ? (Y - 1) + '-12' : Y + '-' + String(M - 1).padStart(2, '0');
+  let prev = 0; Object.keys(S.days).forEach(k => { if (k.startsWith(pk)) prev += S.days[k]; });
+  const wd = [0, 0, 0, 0, 0, 0, 0]; days.forEach(d => { wd[(new Date(Y, M - 1, d).getDay() + 6) % 7] += SEC[d]; });
+  const fav = wd.indexOf(Math.max(...wd));
+  const pct = prev >= 60 ? Math.round((total - prev) / prev * 100) : null;
+  const chip = pct === null ? null : [(pct >= 0 ? '▲ +' : '▼ −') + Math.abs(pct) + ' % vs ' + SV_MONTHS[(M + 10) % 12], pct >= 0];
+  const hrs = mo.hrs || [], hs = hrs.reduce((a, b) => a + (b || 0), 0);
+  const sl = (a, b) => hrs.slice(a, b).reduce((t, v) => t + (v || 0), 0);
+  const per = hs >= 60 ? [sl(0, 6), sl(6, 12), sl(12, 18), sl(18, 24)] : null, favP = per ? per.indexOf(Math.max(...per)) : 0;
+  const R = { key, Y, M, DIM, MONTH, SEC, days, total, best, mx, lead, topS, nPlays, nSongs, pls, streak, MOM, badge, wd, fav, chip, per, favP };
+  // détail d'un jour (sons / playlists du jour) : disponible seulement pour les jours suivis avec le détail
+  R.det = d => {
+    const dd = ((S.dd || {})[rcDayKey(R, d)]);
+    if (!dd) return null;
+    const sg = Object.keys(dd.songs || {}).map(k => ({ n: nameOf(k), v: dd.songs[k] })).filter(x => x.n && x.v.sec >= 5);
+    if (!sg.length) return null;
+    const songsL = sg.sort((a, b) => (b.v.sec - a.v.sec)).slice(0, 5).map(x => [x.n, x.v.plays || 0, x.v.sec]);
+    const plsL = Object.keys(dd.pls || {}).map(k => [plName(k), dd.pls[k]]).filter(x => x[0] && x[1] >= 5).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    const np = Object.keys(dd.songs).reduce((t, k) => t + (dd.songs[k].plays || 0), 0);
+    return { songs: songsL, pls: plsL, np, nSongs: sg.length };
+  };
+  // cartes de chiffres d'un jour : [valeur, légende]
+  R.mini = d => {
+    const x = R.det(d), avg = total / days.length, diff = SEC[d] - avg;
+    const dc = [(diff >= 0 ? '+' : '−') + fmtDur(Math.abs(diff)), (diff >= 0 ? 'de plus' : 'de moins') + ' que ta moyenne'];
+    if (!x) return [dc, [Math.round(SEC[d] / total * 100) + ' %', 'du temps d’écoute du mois']];
+    const m = [[x.np, 'écoutes ce jour-là'], [x.nSongs, 'sons différents'], dc];
+    if (x.pls.length) m.push([fmtDur(x.pls[0][1]), 'sur ta playlist n°1']);
+    return m;
+  };
+  return R;
+}
+let rcCur = null, rcOpenDay = null;
+function rcDayBox(d, isBest) {
+  const R = rcCur, x = R.det(d), mini = R.mini(d);
+  let h = `<div class="rc-daybox${isBest ? ' rc-best' : ''}"><div class="dh"><b>${isBest ? '🏆 Meilleur jour · ' : ''}${d} ${R.MONTH}</b><strong>${fmtDur(R.SEC[d])}</strong></div>
+<div class="st-grid" style="margin-bottom:12px">${mini.map(c => `<div class="st-card"><b>${c[0]}</b><span>${c[1]}</span></div>`).join('')}</div>`;
+  if (!x) return h + '<div class="st-empty" style="padding:6px;">Le détail des sons de ce jour n’était pas encore suivi.</div></div>';
+  if (x.pls.length) h += '<div class="dt">🎶 Playlists du jour</div>' + x.pls.map((y, i) => `<div class="st-row"><span class="st-rank">${i + 1}</span><span class="st-name">${svEsc(y[0])}</span><span class="st-val">${fmtDur(y[1])}</span></div>`).join('');
+  const m0 = Math.max(1, ...x.songs.map(y => y[2]));
+  h += '<div class="dt" style="margin-top:12px">🔥 Top 5 des sons du jour</div>' + x.songs.map((y, i) => `<div class="st-row rc-row"><div><span class="st-rank">${i + 1}</span><span class="st-name">${svEsc(y[0])}</span><span class="st-val">${rcPlTxt(y[1], y[2])}</span></div><div class="rc-bar" style="width:${Math.max(6, Math.round(y[2] / m0 * 100))}%"></div></div>`).join('');
+  return h + '</div>';
+}
+function rcToggleBest(b) { const x = document.getElementById('bestBox'); x.hidden = !x.hidden; b.classList.toggle('open', !x.hidden); }
+function rcPick(d) {
+  rcOpenDay = (rcOpenDay === d) ? null : d;
+  document.querySelectorAll('#recapBody .rc-day').forEach(e => e.classList.toggle('sel', rcOpenDay !== null && e.dataset.d == rcOpenDay));
+  document.getElementById('dayPanel').innerHTML = rcOpenDay === null ? '' : rcDayBox(d, d == rcCur.best);
+}
+function rcHtml(R) {
+  const { DIM, MONTH, Y, SEC, days, total, best, mx, lead, topS, nPlays, nSongs, pls, streak, MOM, badge, wd, fav, chip, per, favP } = R;
+  let cal = '<div class="rc-grid">' + ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map(x => '<small>' + x + '</small>').join('');
+  for (let i = 0; i < lead; i++) cal += '<div class="rc-day void"></div>';
+  for (let d = 1; d <= DIM; d++) {
+    const v = SEC[d] || 0, lv = !v ? '' : v >= mx * .75 ? ' l4' : v >= mx * .5 ? ' l3' : v >= mx * .25 ? ' l2' : ' l1';
+    cal += `<button class="rc-day${lv}${v ? ' on' : ''}${d == best ? ' best' : ''}" style="--i:${d}" data-d="${d}" ${v ? `onclick="rcPick(${d})"` : 'disabled'}>${d}${v ? `<em>${rcShort(v)}</em>` : ''}</button>`;
+  }
+  cal += '</div><div class="rc-leg">Moins <i style="background:color-mix(in srgb,var(--text) 6%,transparent)"></i><i style="background:rgba(var(--green-rgb),.26)"></i><i style="background:rgba(var(--green-rgb),.5)"></i><i style="background:rgba(var(--green-rgb),.76)"></i><i style="background:var(--green-hi)"></i> Plus</div>';
+  const podOrder = [[1, '🥈', 'p2', 112], [0, '🥇', 'p1', 150], [2, '🥉', 'p3', 86]].filter(o => pls[o[0]]);
+  let h = `<div class="rc-hero"><b id="heroTime">${fmtDur(total)}</b><span class="rc-sub">d’écoute en ${MONTH} ${Y}</span>${chip ? `<span class="rc-chip${chip[1] ? '' : ' down'}">${chip[0]}</span>` : ''}</div>
+<div class="rc-badge"><i>${badge[0]}</i><div><b>${badge[1]}</b><span>${badge[2]}</span></div></div>
+<div class="st-grid">
+<div class="st-card"><b>${days.length}<small style="font-size:12px;color:var(--muted);font-weight:400;"> / ${DIM}</small></b><span>jours d’écoute</span></div>
+<div class="st-card"><b>${fmtDur(total / days.length)}</b><span>par jour d’écoute</span></div>
+<div class="st-card"><b>${streak} j</b><span>plus longue série d’affilée</span></div>
+<div class="st-card"><b>${DIM - days.length}</b><span>jours sans écoute</span></div>
+<div class="st-card"><b>${nPlays}</b><span>écoutes au total</span></div>
+<div class="st-card"><b>${nSongs}</b><span>sons différents</span></div></div>
+<button class="rc-fold" onclick="rcToggleBest(this)"><span class="fi">🏆</span><div><b>Meilleur jour · ${best} ${MONTH}</b><small>${fmtDur(SEC[best])} · touche pour voir le détail</small></div><i>›</i></button><div id="bestBox" hidden>${rcDayBox(best, true)}</div>
+<div class="st-h">🗓️ Ton mois jour par jour</div><div class="rc-cal">${cal}</div>
+<div class="rc-hint">Touche un jour pour voir son détail</div><div id="dayPanel"></div>
+<div class="st-h">📊 Ta semaine type</div><div class="st-week">${wd.map((v, i) => `<div class="st-col ${i === fav ? 'today' : ''}"><div class="st-bar" style="height:${Math.max(3, Math.round(v / Math.max(1, ...wd) * 62))}px"></div><small>${'LMMJVSD'[i]}</small></div>`).join('')}</div><div class="rc-cap">Ton jour préféré : <b>${RC_WD[fav]}</b> · ${fmtDur(wd[fav])} d’écoute au total.</div>
+${per?`<div class="st-h">🕐 Ton moment préféré</div><div class="st-week">${per.map((v,i)=>`<div class="st-col ${i===favP?'today':''}"><div class="st-bar" style="height:${Math.max(3,Math.round(v/Math.max(1,...per)*62))}px"></div><small>${RC_PER[i]}</small></div>`).join('')}</div><div class="rc-cap">Tu écoutes surtout <b>${RC_PER_TXT[favP]}</b> · ${Math.round(per[favP]/per.reduce((a,b)=>a+b,0)*100)} % de ton temps d’écoute.</div>`:''}
+<div class="st-h">✨ Moments forts</div>${MOM.map(m => `<div class="rc-mom"><i>${m[0]}</i><div><b>${m[1]}</b><span>${m[2]}</span></div></div>`).join('')}`;
+  if (topS.length) {
+    h += `<div class="st-h" style="margin-top:16px">🔥 Top 5 des sons</div>
+<div class="rc-crown"><small>👑 Son du mois</small><b>${svEsc(topS[0][0])}</b><span>${rcPlTxt(topS[0][1], topS[0][2]) + ' · ' + Math.round(topS[0][2] / total * 100) + ' % du temps'}</span></div>
+${topS.slice(1).map((x, i) => `<div class="st-row rc-row"><div><span class="st-rank">${i + 2}</span><span class="st-name">${svEsc(x[0])}</span><span class="st-val">${rcPlTxt(x[1], x[2])}</span></div><div class="rc-bar" style="width:${Math.max(6, Math.round(x[1] / topS[0][1] * 100))}%;animation-delay:${i * .08}s"></div></div>`).join('')}`;
+  }
+  if (pls.length) h += `<div class="st-h" style="margin-top:16px">🎶 Tes ${pls.length > 1 ? pls.length + ' playlists' : 'playlist'} du mois</div>
+<div class="rc-pod">${podOrder.map(o => `<div class="${o[2]}" style="height:${o[3]}px"><i>${o[1]}</i><b>${svEsc(pls[o[0]][0])}</b><span>${fmtDur(pls[o[0]][1])}</span></div>`).join('')}</div>`;
+  return h + `<button class="btn-secondary rc-share" onclick="openShare('full')">📤 Partager mon récap</button>`;
+}
+function rcReveal(box, scroller) {
+  try {
+    if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const kids = [...box.children].slice(1); // le 1er bloc (temps total) est déjà visible
+    kids.forEach(k => k.classList.add('rc-pre'));
+    const io = new IntersectionObserver(es => {
+      let i = 0;
+      es.forEach(e => {
+        if (!e.isIntersecting) return;
+        const k = e.target; io.unobserve(k);
+        k.style.animationDelay = (i++ * 90) + 'ms';
+        k.classList.remove('rc-pre'); k.classList.add('rc-in');
+      });
+    }, { root: scroller, threshold: 0.06 });
+    kids.forEach(k => io.observe(k));
+  } catch (e) { box.querySelectorAll('.rc-pre').forEach(k => k.classList.remove('rc-pre')); }
+}
 function openRecap(key) {
-  const S = svStatsMerged(), r = svRecapData(key, S);
-  const [y, m] = key.split('-'), month = SV_MONTHS[parseInt(m, 10) - 1];
+  const S = svStatsMerged();
+  rcCur = rcBuild(key, S); rcOpenDay = null; shareCanvas = null;
   document.getElementById('recapTitle').textContent = '📅 ' + svRecapName(key);
-  const bestTxt = r.best ? `${parseInt(r.best.slice(8), 10)} ${SV_MONTHS[parseInt(r.best.slice(5, 7), 10) - 1]}` : '—';
-  let h = `<div class="rc-hero"><b>${fmtDur(r.total)}</b><span>d'écoute en ${month} ${y}</span></div>
-  <div class="st-grid">
-    <div class="st-card"><b>${r.nDays}</b><span>jour${r.nDays > 1 ? 's' : ''} d'écoute</span></div>
-    <div class="st-card"><b>${r.best ? fmtDur(S.days[r.best]) : '—'}</b><span>meilleur jour (${bestTxt})</span></div>
-  </div>
-  <div class="st-h">🔥 Top 3 des sons</div>`;
-  h += r.top.length ? r.top.map((x, i) => `<div class="st-row"><span class="st-rank">${i + 1}</span><span class="st-name">${svEsc(cleanName(x.s.name))}</span><span class="st-val">${x.v.plays} écoute${x.v.plays > 1 ? 's' : ''}</span></div>`).join('')
-    : `<div class="st-empty">Pas encore assez de données.</div>`;
-  if (r.pl) h += `<div class="st-h" style="margin-top:14px;">🎶 Playlist n°1</div><div class="st-row"><span class="st-rank">1</span><span class="st-name">${svEsc(r.pl.n)}</span><span class="st-val">${fmtDur(r.pl.v)}</span></div>`;
-  document.getElementById('recapBody').innerHTML = h;
+  const R = rcCur;
+  if (!R.days.length) { document.getElementById('recapBody').innerHTML = '<div class="st-empty">Pas encore assez de données.</div>'; }
+  else {
+    const keys = svRecapKeys(S), ix = keys.indexOf(key);
+    const nav = keys.length > 1 ? `<div class="rc-nav"><button ${ix < keys.length - 1 ? `onclick="openRecap('${keys[ix + 1]}')"` : 'disabled'} aria-label="Récap précédent">‹</button><span>Récap ${keys.length - ix} sur ${keys.length}</span><button ${ix > 0 ? `onclick="openRecap('${keys[ix - 1]}')"` : 'disabled'} aria-label="Récap suivant">›</button></div>` : '';
+    document.getElementById('recapBody').innerHTML = nav + rcHtml(R);
+    try {
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const el = document.getElementById('heroTime'), t0 = performance.now();
+        (function f(t) { const k = Math.min(1, (t - t0) / 900); el.textContent = fmtDur(R.total * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(f); })(t0);
+      }
+    } catch (e) {}
+  }
+  document.getElementById('recapBody').scrollTop = 0;
+  rcReveal(document.getElementById('recapBody'), document.getElementById('recapBody'));
   svMarkRecapSeen(key);
   openModal('modal-recap');
   renderStats();
+}
+
+// ── IMAGE À PARTAGER (récap entier ou carte résumé) ──
+const CC = { bg: '#0a0a0f', b3: '#1a1a24', b4: '#222230', g: '#1db954', gh: '#3df27e', t: '#f0f0ff', m: '#6b6b80', a: '#a78bfa' };
+const FS = (w, n) => w + ' ' + n + 'px Syne, sans-serif', FD = (w, n) => w + ' ' + n + "px 'DM Sans', sans-serif";
+function rr(x, X, Y, W, H, r, f) { x.beginPath(); if (x.roundRect) x.roundRect(X, Y, W, H, r); else x.rect(X, Y, W, H); x.fillStyle = f; x.fill(); }
+function tx(x, s, X, Y, font, col, al, mw) { x.font = font; x.fillStyle = col; x.textAlign = al || 'left'; x.textBaseline = 'alphabetic'; s = String(s); if (mw && x.measureText(s).width > mw) { while (s.length > 1 && x.measureText(s + '…').width > mw) s = s.slice(0, -1); s += '…'; } x.fillText(s, X, Y); }
+function drawRecap(x, R) {
+  const { DIM, MONTH, Y, SEC, days, total, best, mx, lead, topS, nPlays, nSongs, pls, streak, MOM, badge, wd, fav, chip, per, favP } = R;
+  const W = 1080, P = 48, IW = W - 2 * P; let y = P;
+  const hd = t => { tx(x, t, P, y + 30, FS('700', 34), CC.t); y += 58; };
+  const row = (X, Y2, RW, i, name, val, bg) => { rr(x, X, Y2, RW, 58, 18, bg || CC.b3); tx(x, i, X + 22, Y2 + 38, FS('700', 24), CC.g); tx(x, name, X + 60, Y2 + 38, FD('500', 24), CC.t, 'left', RW - 330); tx(x, val, X + RW - 22, Y2 + 38, FD('500', 21), CC.m, 'right'); };
+  tx(x, 'SoundVault · récap mensuel', P, y + 20, FD('600', 24), CC.m); y += 46;
+  tx(x, '📅 Récap ' + MONTH + ' ' + Y, P, y + 44, FS('800', 54), CC.t); y += 90;
+  const sumLine = [chip && chip[0]].filter(Boolean).join('  ·  '), HH = sumLine ? 250 : 200; rr(x, P, y, IW, HH, 32, CC.b3); const gr = x.createLinearGradient(P, y, P + IW, y + HH); gr.addColorStop(0, 'rgba(29,185,84,.22)'); gr.addColorStop(1, 'rgba(167,139,250,.08)'); rr(x, P, y, IW, HH, 32, gr);
+  tx(x, fmtDur(total), W / 2, y + 112, FS('800', 108), CC.g, 'center'); tx(x, 'd’écoute en ' + MONTH + ' ' + Y, W / 2, y + 164, FS('600', 32), 'rgba(240,240,255,.75)', 'center'); if (sumLine) tx(x, sumLine, W / 2, y + 220, FD('600', 26), chip && !chip[1] ? '#ff8585' : CC.gh, 'center', IW - 40); y += HH + 26;
+  rr(x, P, y, IW, 112, 28, 'rgba(167,139,250,.14)'); tx(x, badge[0], P + 30, y + 72, FD('400', 50), CC.t); tx(x, badge[1], P + 120, y + 50, FS('700', 32), CC.t); tx(x, badge[2], P + 120, y + 90, FD('500', 24), CC.m, 'left', IW - 150); y += 112 + 26;
+  const st = [[days.length + ' / ' + DIM, 'jours d’écoute'], [fmtDur(total / days.length), 'par jour d’écoute'], [streak + ' j', 'plus longue série'], [DIM - days.length, 'jours sans écoute'], [nPlays, 'écoutes au total'], [nSongs, 'sons différents']];
+  const cw = (IW - 32) / 3; st.forEach((c, i) => { const X = P + (i % 3) * (cw + 16), Y2 = y + Math.floor(i / 3) * 146; rr(x, X, Y2, cw, 130, 24, CC.b3); tx(x, c[0], X + 22, Y2 + 58, FS('800', 40), CC.g, 'left', cw - 30); tx(x, c[1], X + 22, Y2 + 96, FD('500', 21), CC.m, 'left', cw - 30); }); y += 2 * 146 + 14;
+  hd('🗓️ Ton mois jour par jour');
+  const rows = Math.ceil((lead + DIM) / 7), cs2 = (IW - 48 - 6 * 10) / 7, CH = 24 + 34 + rows * (cs2 + 10) + 16;
+  rr(x, P, y, IW, CH, 28, CC.b3); ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].forEach((n, i) => tx(x, n, P + 24 + i * (cs2 + 10) + cs2 / 2, y + 46, FD('500', 20), CC.m, 'center'));
+  for (let d = 1; d <= DIM; d++) {
+    const k = lead + d - 1, X = P + 24 + (k % 7) * (cs2 + 10), Y2 = y + 58 + Math.floor(k / 7) * (cs2 + 10), v = SEC[d] || 0;
+    const col = !v ? 'rgba(240,240,255,.06)' : v >= mx * .75 ? CC.gh : v >= mx * .5 ? 'rgba(29,185,84,.78)' : v >= mx * .25 ? 'rgba(29,185,84,.5)' : 'rgba(29,185,84,.26)';
+    rr(x, X, Y2, cs2, cs2, 14, col); const dark = v >= mx * .5;
+    tx(x, d, X + cs2 / 2, Y2 + cs2 / 2 + (v ? 0 : 9), FD('700', 26), v ? (dark ? '#04210f' : CC.t) : CC.m, 'center');
+    if (v) tx(x, rcShort(v), X + cs2 / 2, Y2 + cs2 - 14, FD('500', 17), dark ? '#04210f' : CC.t, 'center');
+    if (d === best) tx(x, '★', X + cs2 - 8, Y2 + 22, FD('700', 20), '#04210f', 'right');
+  }
+  y += CH + 30;
+  hd('📊 Ta semaine type');
+  rr(x, P, y, IW, 260, 28, CC.b3); tx(x, 'Ton jour préféré : ' + RC_WD[fav], P + 28, y + 40, FD('500', 24), CC.m);
+  { const wmax = Math.max(1, ...wd), bw2 = (IW - 48 - 6 * 14) / 7; wd.forEach((v, i) => { const X = P + 24 + i * (bw2 + 14), bh = Math.max(6, Math.round(v / wmax * 130)); rr(x, X, y + 192 - bh, bw2, bh, 10, i === fav ? CC.gh : 'rgba(29,185,84,.5)'); tx(x, 'LMMJVSD'[i], X + bw2 / 2, y + 232, FD('600', 22), CC.m, 'center'); }); }
+  y += 260 + 30;
+  if(per){hd('🕐 Ton moment préféré');
+   rr(x,P,y,IW,260,28,CC.b3);tx(x,'Tu écoutes surtout '+RC_PER_TXT[favP],P+28,y+40,FD('500',24),CC.m);
+   {const pm=Math.max(1,...per),bw3=(IW-48-3*24)/4;per.forEach((v,i)=>{const X=P+24+i*(bw3+24),bh=Math.max(6,Math.round(v/pm*130));rr(x,X,y+192-bh,bw3,bh,12,i===favP?CC.gh:'rgba(29,185,84,.5)');tx(x,RC_PER[i],X+bw3/2,y+232,FD('600',22),CC.m,'center');});}
+   y+=260+30;}
+  hd('✨ Moments forts');
+  MOM.forEach(m => { rr(x, P, y, IW, 100, 22, CC.b3); tx(x, m[0], P + 28, y + 64, FD('400', 44), CC.t); tx(x, m[1], P + 104, y + 46, FS('700', 28), CC.t, 'left', IW - 130); tx(x, m[2], P + 104, y + 80, FD('500', 22), CC.m, 'left', IW - 130); y += 112; });
+  y += 18;
+  // meilleur jour
+  hd('🏆 Meilleur jour · ' + best + ' ' + MONTH);
+  const dd = R.det(best), mini = R.mini(best), nPl = dd ? dd.pls.length : 0, nSg = dd ? dd.songs.length : 0;
+  const BH = 28 + 72 + 138 + (nPl ? 44 + nPl * 68 + 22 : 0) + (nSg ? 44 + nSg * 68 : 0) + 16;
+  rr(x, P, y, IW, BH, 28, CC.b3); x.save(); x.strokeStyle = 'rgba(29,185,84,.45)'; x.lineWidth = 3; x.beginPath(); if (x.roundRect) x.roundRect(P + 1.5, y + 1.5, IW - 3, BH - 3, 27); x.stroke(); x.restore();
+  let by = y + 28; const bx = P + 28, bw = IW - 56;
+  tx(x, best + ' ' + MONTH, bx, by + 44, FS('700', 34), CC.t); tx(x, fmtDur(SEC[best]), bx + bw, by + 48, FS('800', 52), CC.g, 'right'); by += 72;
+  const mw = (bw - (mini.length - 1) * 12) / mini.length; mini.forEach((c, i) => { const X = bx + i * (mw + 12); rr(x, X, by, mw, 126, 20, CC.b4); tx(x, c[0], X + 14, by + 50, FS('800', 30), CC.g, 'left', mw - 20); tx(x, c[1], X + 14, by + 84, FD('500', 17), CC.m, 'left', mw - 20); }); by += 138;
+  if (nPl) { tx(x, '🎶 Playlists du jour', bx, by + 30, FD('600', 24), CC.m); by += 44; dd.pls.forEach((q, i) => { row(bx, by, bw, i + 1, q[0], fmtDur(q[1]), CC.b4); by += 68; }); by += 22; }
+  if (nSg) { tx(x, '🔥 Top 5 des sons du jour', bx, by + 30, FD('600', 24), CC.m); by += 44; dd.songs.forEach((q, i) => { row(bx, by, bw, i + 1, q[0], rcPlTxt(q[1], q[2]), CC.b4); by += 68; }); }
+  y += BH + 30;
+  if (topS.length) {
+    hd('🔥 Top 5 des sons');
+    rr(x, P, y, IW, 190, 28, CC.b3); const g2 = x.createLinearGradient(P, y, P + IW, y + 190); g2.addColorStop(0, 'rgba(29,185,84,.28)'); g2.addColorStop(1, 'rgba(167,139,250,.1)'); rr(x, P, y, IW, 190, 28, g2);
+    tx(x, '👑 Son du mois', W / 2, y + 48, FD('600', 24), CC.m, 'center'); tx(x, topS[0][0], W / 2, y + 106, FS('800', 46), CC.t, 'center', IW - 60); tx(x, rcPlTxt(topS[0][1], topS[0][2]) + ' · ' + Math.round(topS[0][2] / total * 100) + ' % du temps', W / 2, y + 152, FD('600', 28), CC.gh, 'center'); y += 190 + 14;
+    topS.slice(1).forEach((q, i) => { rr(x, P, y, IW, 84, 20, CC.b3); tx(x, i + 2, P + 22, y + 40, FS('700', 24), CC.g); tx(x, q[0], P + 60, y + 40, FD('500', 24), CC.t, 'left', IW - 420); tx(x, rcPlTxt(q[1], q[2]), P + IW - 22, y + 40, FD('500', 21), CC.m, 'right'); rr(x, P + 22, y + 58, (IW - 44) * Math.max(.06, q[1] / topS[0][1]), 7, 4, CC.g); y += 94; });
+    y += 20;
+  }
+  if (pls.length) {
+    hd('🎶 Tes ' + (pls.length > 1 ? pls.length + ' playlists' : 'playlist') + ' du mois');
+    const pw = (IW - 32) / 3, base = y + 300;
+    [[1, '🥈', 'p2'], [0, '🥇', 'p1'], [2, '🥉', 'p3']].forEach((o, k) => {
+      if (!pls[o[0]]) return;
+      const X = P + k * (pw + 16), ph = [230, 300, 170][k] * 0.85 + (k == 1 ? 20 : 0), Y2 = base - ph;
+      if (o[2] === 'p1') { const pg = x.createLinearGradient(X, Y2, X, base); pg.addColorStop(0, 'rgba(29,185,84,.55)'); pg.addColorStop(1, 'rgba(29,185,84,.1)'); rr(x, X, Y2, pw, ph, 26, pg); } else rr(x, X, Y2, pw, ph, 26, CC.b3);
+      tx(x, o[1], X + pw / 2, Y2 + 62, FD('400', 52), CC.t, 'center'); tx(x, pls[o[0]][0], X + pw / 2, Y2 + 112, FS('700', 26), CC.t, 'center', pw - 24); tx(x, fmtDur(pls[o[0]][1]), X + pw / 2, Y2 + 150, FD('500', 23), CC.m, 'center');
+    });
+    y = base + 30;
+  }
+  tx(x, 'Fait avec SoundVault 🎧', W / 2, y + 24, FD('500', 22), CC.m, 'center'); y += P + 30;
+  return y;
+}
+function drawSummary(x, R) {
+  const { DIM, MONTH, Y, SEC, days, total, best, topS, nPlays, pls, streak, chip } = R;
+  const W = 1080, H = 1350, P = 64, IW = W - 2 * P;
+  const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#10241a'); g.addColorStop(.5, CC.bg); g.addColorStop(1, '#17122a'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  tx(x, 'SoundVault', P, P + 34, FS('800', 34), CC.g); tx(x, 'RÉCAP ' + MONTH.toUpperCase() + ' ' + Y, W - P, P + 32, FD('700', 24), CC.m, 'right');
+  tx(x, fmtDur(total), W / 2, 310, FS('800', 176), CC.gh, 'center', IW); tx(x, 'd’écoute en ' + MONTH + ' ' + Y, W / 2, 376, FS('600', 38), 'rgba(240,240,255,.78)', 'center');
+  if (chip) tx(x, chip[0], W / 2, 414, FD('700', 26), chip[1] ? CC.gh : '#ff8585', 'center');
+  const st = [[days.length + ' / ' + DIM, 'jours d’écoute'], [streak + ' j', 'de série max'], [nPlays, 'écoutes']]; const cw = (IW - 32) / 3;
+  st.forEach((c, i) => { const X = P + i * (cw + 16); rr(x, X, 430, cw, 140, 26, 'rgba(255,255,255,.06)'); tx(x, c[0], X + cw / 2, 500, FS('800', 44), CC.g, 'center', cw - 20); tx(x, c[1], X + cw / 2, 540, FD('500', 22), CC.m, 'center', cw - 20); });
+  if (topS.length) {
+    tx(x, '🔥 Top ' + Math.min(3, topS.length) + ' des sons', P, 636, FS('700', 32), CC.t);
+    topS.slice(0, 3).forEach((q, i) => { const Y2 = 662 + i * 92; rr(x, P, Y2, IW, 78, 22, i === 0 ? 'rgba(29,185,84,.2)' : 'rgba(255,255,255,.06)'); tx(x, i === 0 ? '👑' : i + 1, P + 36, Y2 + 50, i === 0 ? FD('400', 34) : FS('700', 28), CC.g, 'center'); tx(x, q[0], P + 76, Y2 + 50, FD('600', 28), CC.t, 'left', IW - 380); tx(x, q[1] + ' écoute' + (q[1] > 1 ? 's' : ''), P + IW - 24, Y2 + 50, FD('500', 24), CC.m, 'right'); });
+  }
+  const hw = (IW - 16) / 2;
+  rr(x, P, 974, hw, 190, 28, 'rgba(255,255,255,.06)'); tx(x, '🎶 Playlist n°1', P + 26, 1020, FD('600', 24), CC.m); tx(x, pls[0] ? pls[0][0] : '—', P + 26, 1080, FS('800', 36), CC.t, 'left', hw - 50); if (pls[0]) tx(x, fmtDur(pls[0][1]), P + 26, 1130, FD('600', 28), CC.gh);
+  rr(x, P + hw + 16, 974, hw, 190, 28, 'rgba(29,185,84,.18)'); tx(x, '🏆 Meilleur jour', P + hw + 42, 1020, FD('600', 24), CC.m); tx(x, best + ' ' + MONTH, P + hw + 42, 1080, FS('800', 36), CC.t, 'left', hw - 50); tx(x, fmtDur(SEC[best]), P + hw + 42, 1130, FD('600', 28), CC.gh);
+  tx(x, 'Fait avec SoundVault 🎧', W / 2, H - 64, FD('500', 24), CC.m, 'center');
+  return H;
+}
+let shareCanvas = null, shareMode = 'full';
+async function openShare(mode) {
+  if (!rcCur) return;
+  shareMode = mode || 'full';
+  try { await document.fonts.load('800 40px Syne'); await document.fonts.load("500 20px 'DM Sans'"); await document.fonts.load("700 20px 'DM Sans'"); } catch (e) {}
+  const c = document.createElement('canvas'); c.width = 1080;
+  if (shareMode === 'sum') { c.height = 1350; drawSummary(c.getContext('2d'), rcCur); }
+  else { const pr = document.createElement('canvas'); pr.width = 1080; pr.height = 10; const H = drawRecap(pr.getContext('2d'), rcCur); c.height = H; const x = c.getContext('2d'); x.fillStyle = CC.bg; x.fillRect(0, 0, 1080, H); drawRecap(x, rcCur); }
+  shareCanvas = c; document.getElementById('shareImg').src = c.toDataURL('image/png');
+  document.getElementById('tabFull').classList.toggle('on', shareMode === 'full'); document.getElementById('tabSum').classList.toggle('on', shareMode === 'sum');
+  document.getElementById('shareHint').textContent = shareMode === 'sum' ? 'Une carte compacte, parfaite pour une story.' : 'L’image contient tout le récap, de haut en bas.';
+  openModal('shareModal');
+}
+function closeShare() { closeModal('shareModal'); }
+function sendShare() {
+  if (!shareCanvas || !rcCur) return;
+  shareCanvas.toBlob(b => {
+    const f = new File([b], 'recap-' + rcCur.MONTH + '-' + rcCur.Y + (shareMode === 'sum' ? '-resume' : '') + '.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [f] })) { navigator.share({ files: [f], title: 'Mon récap SoundVault' }).catch(() => {}); }
+    else document.getElementById('shareHint').textContent = 'Ton navigateur ne peut pas envoyer l’image directement : appuie longtemps sur l’image pour l’enregistrer.';
+  }, 'image/png');
 }
 function resetStats() {
   askConfirm('Remettre les stats à zéro ?', 'Le temps d\'écoute et les classements seront effacés sur tous tes appareils.', async () => {
@@ -5290,13 +5653,19 @@ async function svPushStats() {
   if (await svCloudUpsert('stats:' + SV_DEVICE_ID, svStats)) svStatsDirty = false;
 }
 function svMergeStats(list) {
-  const out = { since: null, days: {}, songs: {}, pls: {}, months: {} };
+  const out = { since: null, days: {}, songs: {}, pls: {}, months: {}, dd: {} };
   list.forEach(st => {
     if (!st) return;
+    for (const dk in (st.dd || {})) {
+      const src = st.dd[dk] || {}, dst = out.dd[dk] || (out.dd[dk] = { songs: {}, pls: {} });
+      for (const k in (src.songs || {})) { const o = dst.songs[k] || (dst.songs[k] = { plays: 0, sec: 0 }); o.plays += src.songs[k].plays || 0; o.sec += src.songs[k].sec || 0; }
+      for (const k in (src.pls || {})) dst.pls[k] = (dst.pls[k] || 0) + src.pls[k];
+    }
     for (const mk in (st.months || {})) {
       const src = st.months[mk] || {}, dst = out.months[mk] || (out.months[mk] = { songs: {}, pls: {} });
       for (const k in (src.songs || {})) { const o = dst.songs[k] || (dst.songs[k] = { plays: 0, sec: 0 }); o.plays += src.songs[k].plays || 0; o.sec += src.songs[k].sec || 0; }
       for (const k in (src.pls || {})) dst.pls[k] = (dst.pls[k] || 0) + src.pls[k];
+      if (src.hrs) { dst.hrs = dst.hrs || new Array(24).fill(0); src.hrs.forEach((v, i) => { dst.hrs[i] += v || 0; }); }
     }
     if (st.since && (!out.since || st.since < out.since)) out.since = st.since;
     for (const k in (st.days || {})) out.days[k] = (out.days[k] || 0) + st.days[k];
@@ -5354,9 +5723,9 @@ if (sb) {
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '1.8';
+const APP_VERSION = '1.9';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Nouveau design : navigation en onglets, cartes et fenêtres plus douces, musique en cours mise en valeur", "L'engrenage passe en haut à droite, et « + Nouvelle playlist » est dans l'onglet Playlists", "Correction : les musiques ne s'affichent plus en double et se suppriment correctement", "Nouveau : Info du compte (mail et changement du mot de passe)", "Tes paramètres sont les mêmes sur ton PC et ton téléphone (même compte)", "Synchronisation : tu peux désactiver la synchro automatique (Paramètres)", "Synchro plus rapide : téléchargements et envois en parallèle", "Nouveau : menu Paramètres dans l'engrenage (vitesse de lecture, synchronisation)", "Avec la répétition, passer à la musique suivante ou précédente relance la musique en cours", "Une écoute n'est comptée que si tu as vraiment écouté la moitié de la musique", "Onglet Ajouter entièrement repensé", "Statistiques : la phrase « Stats comptées depuis… » est retirée"];
+const APP_NOTES = ["Nouveau design : navigation en onglets, cartes et fenêtres plus douces, musique en cours mise en valeur", "L'engrenage passe en haut à droite, et « + Nouvelle playlist » est dans l'onglet Playlists", "Correction : les musiques ne s'affichent plus en double et se suppriment correctement", "Nouveau : Info du compte (mail et changement du mot de passe)", "Tes paramètres sont les mêmes sur ton PC et ton téléphone (même compte)", "Synchronisation : tu peux désactiver la synchro automatique (Paramètres)", "Synchro plus rapide : téléchargements et envois en parallèle", "Nouveau : menu Paramètres dans l'engrenage (vitesse de lecture, synchronisation)", "Avec la répétition, passer à la musique suivante ou précédente relance la musique en cours", "Une écoute n'est comptée que si tu as vraiment écouté la moitié de la musique", "Onglet Ajouter entièrement repensé", "Statistiques : la phrase « Stats comptées depuis… » est retirée", "Récaps mensuels entièrement refaits : calendrier du mois, moments forts, meilleur jour, top 5 des sons, podium des playlists", "Nouveau : partage ton récap en image (récap entier ou carte résumé)", "Récap : comparaison avec le mois d’avant, semaine type, moment préféré de la journée et part de ton son du mois", "Récap : passe d’un mois à l’autre avec les flèches"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
