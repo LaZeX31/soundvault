@@ -14,7 +14,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <!-- Supabase (compte + synchro cloud) -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<!-- À modifier si nouvelle version de Supabase (numéro fixé exprès pour que la connexion ne casse pas toute seule) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.81.1/dist/umd/supabase.js"></script>
 <style>
 :root {
   --green: #1db954;
@@ -1842,6 +1843,44 @@ header .btn-icon, header .btn-add { box-shadow: none; }
 .sh-tabs button.on { background: rgba(var(--green-rgb),.2); color: var(--green-hi); }
 @media (prefers-reduced-motion: reduce) { .rc-bar, .rc-day.on { animation: none; } }
 
+/* ── ŒIL MOT DE PASSE ── */
+.pw-wrap{position:relative;margin-bottom:10px}
+.pw-wrap .modal-input{margin-bottom:0;padding-right:48px}
+.pw-eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:40px;height:40px;border:0;border-radius:10px;background:transparent;color:var(--text);font-size:18px;cursor:pointer}
+.pw-eye:focus-visible{outline:2px solid var(--green)}
+.gm-rec{display:block;margin-top:4px;font-size:12px;color:var(--green)}
+/* ── MUSIQUE MYSTÈRE ── */
+.mm-steps{display:grid;grid-template-columns:.7fr 1fr 1fr 1fr 1.5fr 2.3fr;gap:5px;margin:4px 0 20px}
+.mm-seg{height:40px;border-radius:9px;background:var(--bg4);display:grid;place-items:center;font-size:11.5px;font-weight:700;color:var(--muted);position:relative;overflow:hidden}
+.mm-seg.open{background:rgba(var(--green-rgb),.22);color:var(--text)}.mm-seg.cur{outline:2px solid var(--green)}
+.mm-seg i{position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--green-hi)}
+.mm-player{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:18px}
+.mm-disc{position:relative;width:168px;height:168px;display:grid;place-items:center}
+.mm-ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.mm-ring circle{fill:none;stroke-width:5}.mm-ring .bg{stroke:var(--bg4)}
+.mm-ring .fg{stroke:var(--green-hi);stroke-linecap:round;stroke-dasharray:440;stroke-dashoffset:440}
+.mm-vinyl{position:absolute;width:132px;height:132px;border-radius:50%;background:repeating-radial-gradient(circle at 50% 50%,#12121a 0 2px,#1d1d28 2px 4px);box-shadow:0 14px 36px rgba(0,0,0,.45),inset 0 0 0 2px rgba(255,255,255,.08)}
+.mm-disc.go .mm-vinyl{animation:mmSpin 2.4s linear infinite}@keyframes mmSpin{to{transform:rotate(360deg)}}
+.mm-play{position:relative;width:56px;height:56px;border-radius:50%;border:0;cursor:pointer;font-size:20px;color:#052e14;padding-left:3px;background:linear-gradient(145deg,var(--green-hi),var(--green));box-shadow:0 0 22px rgba(var(--green-rgb),.55)}
+.mm-play:disabled{opacity:.4;cursor:default;box-shadow:none}
+.mm-disc.go .mm-play{animation:mmGlow 1.2s ease-in-out infinite}@keyframes mmGlow{50%{box-shadow:0 0 36px rgba(var(--green-rgb),.9)}}
+.mm-hint{display:flex;gap:8px;justify-content:center;font-size:13px;color:var(--muted)}.mm-hint b{color:var(--text)}
+.mm-pill{background:var(--bg3);padding:6px 13px;border-radius:99px}.mm-pill.g{background:rgba(var(--green-rgb),.18)}
+.mm-slots{display:grid;gap:6px;margin-bottom:14px}
+.mm-slot{height:38px;border-radius:11px;border:1px dashed rgba(255,255,255,.14);display:flex;align-items:center;padding:0 12px;font-size:13.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-slot.ko{border:1px solid rgba(255,90,90,.45);background:rgba(255,90,90,.1)}
+.mm-slot.skip{border:1px solid transparent;background:var(--bg3);color:var(--muted)}
+.mm-slot.ok{border:1px solid var(--green);background:rgba(var(--green-rgb),.18);font-weight:700}
+.mm-slot.ok,.mm-slot.ko,.mm-slot.skip{animation:mmPop .25s ease}@keyframes mmPop{from{transform:scale(.96);opacity:.4}}
+.mm-field{position:relative}.mm-field .modal-input{margin-bottom:0}.mm-field .modal-input.sel{border-color:var(--green)}
+.mm-sug{position:absolute;left:0;right:0;bottom:calc(100% + 6px);background:var(--bg2);border:1px solid rgba(255,255,255,.12);border-radius:14px;overflow:hidden;z-index:5;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.mm-sug div{padding:12px 14px;font-size:14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.06)}.mm-sug div:last-child{border:0}
+.mm-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.mm-end{text-align:center;padding:6px 0 4px}
+.mm-cover{width:96px;height:96px;margin:0 auto 12px;border-radius:24px;display:grid;place-items:center;font-size:42px;background:linear-gradient(145deg,var(--accent),var(--green));box-shadow:0 14px 34px rgba(var(--green-rgb),.3)}
+.mm-sq{font-size:20px;letter-spacing:3px;margin-bottom:6px}.mm-t{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin:6px 0 4px}.mm-s{font-size:13px;color:var(--muted);margin-bottom:12px}
+@media (prefers-reduced-motion:reduce){.mm-disc.go .mm-vinyl,.mm-disc.go .mm-play,.mm-slot{animation:none}}
+
 /* ── BLIND TEST ── */
 .bt-top{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600}
 .bt-bar{height:6px;border-radius:99px;background:var(--bg4);overflow:hidden;margin-bottom:16px}
@@ -2214,8 +2253,8 @@ header .btn-icon, header .btn-add { box-shadow: none; }
   <div class="modal-box">
     <div class="modal-title">🔒 Nouveau mot de passe</div>
     <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Choisis ton nouveau mot de passe SoundVault.</div>
-    <input class="modal-input" id="newPass1" type="password" placeholder="Nouveau mot de passe (6 caractères min.)" maxlength="60" autocomplete="new-password">
-    <input class="modal-input" id="newPass2" type="password" placeholder="Confirme le nouveau mot de passe" maxlength="60" autocomplete="new-password" onkeydown="if(event.key==='Enter')submitNewPassword()">
+    <div class="pw-wrap"><input class="modal-input" id="newPass1" type="password" placeholder="Nouveau mot de passe (6 caractères min.)" maxlength="60" autocomplete="new-password"><button type="button" class="pw-eye" onclick="togglePw('newPass1',this)" aria-label="Afficher le mot de passe">👁</button></div>
+    <div class="pw-wrap"><input class="modal-input" id="newPass2" type="password" placeholder="Confirme le nouveau mot de passe" maxlength="60" autocomplete="new-password" onkeydown="if(event.key==='Enter')submitNewPassword()"><button type="button" class="pw-eye" onclick="togglePw('newPass2',this)" aria-label="Afficher le mot de passe">👁</button></div>
     <div id="newPassMsg" style="display:none;font-size:13px;margin:-4px 0 12px;"></div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('modal-newpass')">Plus tard</button>
@@ -2237,7 +2276,7 @@ header .btn-icon, header .btn-add { box-shadow: none; }
       </div>
       <form id="account-form" autocomplete="on" onsubmit="event.preventDefault(); submitAccountForm(); return false;">
         <input class="modal-input" id="accountEmail" type="email" placeholder="Adresse email" maxlength="100" autocomplete="email">
-        <input class="modal-input" id="accountPassword" type="password" placeholder="Mot de passe (6 caractères min.)" maxlength="60" autocomplete="current-password">
+        <div class="pw-wrap"><input class="modal-input" id="accountPassword" type="password" placeholder="Mot de passe (6 caractères min.)" maxlength="60" autocomplete="current-password"><button type="button" class="pw-eye" onclick="togglePw('accountPassword',this)" aria-label="Afficher le mot de passe">👁</button></div>
         <div id="account-forgot" style="text-align:right;margin:-4px 0 12px;"><a href="#" onclick="event.preventDefault(); forgotPassword();" style="color:var(--green);font-size:13px;text-decoration:none;">Mot de passe oublié ?</a></div>
         <div id="account-error" style="color:#ff6b6b;font-size:13px;margin:-4px 0 12px;display:none;"></div>
         <div class="modal-actions">
@@ -2317,11 +2356,11 @@ header .btn-icon, header .btn-add { box-shadow: none; }
         <div class="set-chev">›</div>
         <span class="set-dot" id="setStatsDot"></span>
       </div>
-      <div class="set-row" onclick="openBlindTest()">
+      <div class="set-row" onclick="openGames()">
         <div class="set-ico g2">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
         </div>
-        <div class="set-txt"><strong>Blind test</strong><span>Devine le son à partir d'un extrait</span></div>
+        <div class="set-txt"><strong>Jeux</strong><span>Blind test et Musique mystère</span></div>
         <div class="set-chev">›</div>
       </div>
       <div class="set-row" onclick="openPrefs()">
@@ -2433,6 +2472,29 @@ header .btn-icon, header .btn-add { box-shadow: none; }
     <div class="modal-actions">
       <button class="btn-primary" onclick="closeModal('modal-blind')">Fermer</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL JEUX -->
+<div class="modal-overlay" id="modal-games" style="z-index:212;">
+  <div class="modal-box sheet">
+    <div class="sheet-grip"></div>
+    <div class="modal-title sheet-title">🎮 Jeux</div>
+    <div class="sheet-scroll">
+      <div class="set-row" onclick="openBlindTest()"><div class="set-ico g2" style="font-size:22px;">🎧</div><div class="set-txt"><strong>Blind test</strong><span>Devine le son à partir d'un extrait de 10 secondes, en 4 choix</span><span class="gm-rec" id="gmBlindRec"></span></div><div class="set-chev">›</div></div>
+      <div class="set-row" onclick="openMystery()"><div class="set-ico g4" style="font-size:22px;">🕵️</div><div class="set-txt"><strong>Musique mystère</strong><span>0,1 s d'écoute, puis 1, 2, 3, 5 et 10 s : trouve le titre en 6 essais</span><span class="gm-rec" id="gmMmRec"></span></div><div class="set-chev">›</div></div>
+    </div>
+    <div class="modal-actions"><button class="btn-primary" onclick="closeModal('modal-games')">Fermer</button></div>
+  </div>
+</div>
+
+<!-- MODAL MUSIQUE MYSTÈRE -->
+<div class="modal-overlay" id="modal-mystery" style="z-index:215;">
+  <div class="modal-box sheet">
+    <div class="sheet-grip"></div>
+    <div class="modal-title sheet-title">🕵️ Musique mystère</div>
+    <div class="sheet-scroll" id="mysteryBody"></div>
+    <div class="modal-actions"><button class="btn-primary" onclick="closeModal('modal-mystery')">Fermer</button></div>
   </div>
 </div>
 
@@ -4905,9 +4967,13 @@ function renderAccInfo() {
     + '<div class="th-label" style="margin-top:14px;">Mot de passe</div>'
     + '<div class="set-row" style="cursor:default;"><div class="set-ico g2" style="font-size:22px;">🔒</div><div class="set-txt"><strong>••••••••</strong><span>Par sécurité, le mot de passe n\'est jamais enregistré ni affiché.</span></div></div>'
     + (legacy
-      ? '<div class="pf-note">Ce compte n\'a pas de vraie adresse mail : le changement se fait directement ici.</div>'
-        + '<input class="modal-input" id="accNewPass" type="password" placeholder="Nouveau mot de passe (6 caractères min.)" maxlength="60" autocomplete="new-password" style="margin-top:10px;">'
-        + '<input class="modal-input" id="accNewPass2" type="password" placeholder="Confirme le nouveau mot de passe" maxlength="60" autocomplete="new-password">'
+      ? '<div class="pf-note">Ce compte n\'a pas de vraie adresse mail. Ajoutes-en une pour pouvoir utiliser « Mot de passe oublié ».</div>'
+        + '<input class="modal-input" id="accNewMail" type="email" placeholder="Ta vraie adresse mail" maxlength="100" autocomplete="email" style="margin-top:10px;">'
+        + '<div id="accMailMsg" style="display:none;font-size:12px;margin-top:8px;"></div>'
+        + '<button class="btn-primary" id="accAddMailBtn" style="width:100%;margin-top:10px;" onclick="addMail()">📧 Ajouter mon adresse mail</button>'
+        + '<div class="pf-note" style="margin-top:14px;">En attendant, tu peux changer ton mot de passe directement ici.</div>'
+        + '<div class="pw-wrap" style="margin-top:10px;"><input class="modal-input" id="accNewPass" type="password" placeholder="Nouveau mot de passe (6 caractères min.)" maxlength="60" autocomplete="new-password"><button type="button" class="pw-eye" onclick="togglePw(\'accNewPass\',this)" aria-label="Afficher le mot de passe">👁</button></div>'
+        + '<div class="pw-wrap"><input class="modal-input" id="accNewPass2" type="password" placeholder="Confirme le nouveau mot de passe" maxlength="60" autocomplete="new-password"><button type="button" class="pw-eye" onclick="togglePw(\'accNewPass2\',this)" aria-label="Afficher le mot de passe">👁</button></div>'
         + '<div id="accInfoMsg" style="display:none;font-size:12px;margin-top:8px;"></div>'
         + '<button class="btn-primary" style="width:100%;margin-top:10px;" onclick="changePassword()">Changer le mot de passe</button>'
       : '<div class="pf-note">Pour changer ton mot de passe, on t\'envoie un mail avec un lien. Il sera envoyé à <strong style="word-break:break-all;">' + escHtml(currentUser.email || '') + '</strong>.</div>'
@@ -4932,6 +4998,36 @@ async function changePassword() {
     document.getElementById('accNewPass').value = ''; document.getElementById('accNewPass2').value = '';
     show('✅ Mot de passe changé', true);
   } catch (e) { show('Échec : ' + (e.message || 'problème de connexion'), false); }
+}
+
+
+// Œil : afficher / masquer un mot de passe
+function togglePw(id, btn) {
+  const i = document.getElementById(id); if (!i) return;
+  const show = i.type === 'password';
+  i.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁';
+  btn.setAttribute('aria-label', show ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
+}
+// Ancien compte (pseudo) : ajoute une vraie adresse mail, Supabase envoie un mail de confirmation
+async function addMail() {
+  const inp = document.getElementById('accNewMail'), msg = document.getElementById('accMailMsg'), btn = document.getElementById('accAddMailBtn');
+  const show = (t, ok) => { msg.textContent = t; msg.style.display = 'block'; msg.style.color = ok ? 'var(--green)' : '#ff6b6b'; };
+  const email = (inp.value || '').trim().toLowerCase();
+  if (!cloudReady || !currentUser) { show('Connecte-toi d\'abord.', false); return; }
+  if (!email.includes('@') || !email.includes('.') || /@soundvault\.local$/.test(email)) { show('Écris une vraie adresse mail.', false); return; }
+  btn.disabled = true; const label = btn.textContent; btn.textContent = 'Envoi…';
+  try {
+    const { error } = await sb.auth.updateUser({ email }, { emailRedirectTo: svAppUrl() });
+    if (error) throw error;
+    show('📧 Un mail de confirmation vient d\'être envoyé à ' + email + '. Clique sur le lien pour valider ton adresse.', true);
+  } catch (err) {
+    const m = String(err && err.message || '').toLowerCase();
+    if (m.includes('security purposes') || m.includes('rate limit')) show('Trop de demandes : patiente une minute puis réessaie.', false);
+    else if (m.includes('already') || m.includes('registered')) show('Cette adresse est déjà utilisée par un autre compte.', false);
+    else show(translateSupabaseError(err || {}), false);
+  }
+  btn.disabled = false; btn.textContent = label;
 }
 
 // ── MOT DE PASSE PAR MAIL ──
@@ -5909,9 +6005,9 @@ if (sb) {
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '2.3';
+const APP_VERSION = '2.5';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Nouveau : « Mot de passe oublié ? » sur l'écran de connexion, et le mot de passe se change par un lien reçu par mail (Info du compte)", "Blind test : la durée de l'extrait est fixée à 10 secondes", "Blind test : quand le temps est écoulé, on peut encore choisir un son (0 pt) et on ne passe à la suite qu'après avoir validé", "Blind test : en 4 choix, un clic sur un son valide directement et on passe tout seul à la question suivante", "Nouveau : le Blind test (Paramètres › Blind test) — devine le son à partir d'un extrait, en 4 choix ou en écrivant, avec chrono et score sur 100", "Nouveau design : navigation en onglets, cartes et fenêtres plus douces, musique en cours mise en valeur", "L'engrenage passe en haut à droite, et « + Nouvelle playlist » est dans l'onglet Playlists", "Correction : les musiques ne s'affichent plus en double et se suppriment correctement", "Nouveau : Info du compte (mail et changement du mot de passe)", "Tes paramètres sont les mêmes sur ton PC et ton téléphone (même compte)", "Synchronisation : tu peux désactiver la synchro automatique (Paramètres)", "Synchro plus rapide : téléchargements et envois en parallèle", "Nouveau : menu Paramètres dans l'engrenage (vitesse de lecture, synchronisation)", "Avec la répétition, passer à la musique suivante ou précédente relance la musique en cours", "Une écoute n'est comptée que si tu as vraiment écouté la moitié de la musique", "Onglet Ajouter entièrement repensé", "Statistiques : la phrase « Stats comptées depuis… » est retirée", "Récaps mensuels entièrement refaits : calendrier du mois, moments forts, meilleur jour, top 5 des sons, podium des playlists", "Nouveau : partage ton récap en image (récap entier ou carte résumé)", "Récap : comparaison avec le mois d’avant, semaine type, moment préféré de la journée et part de ton son du mois", "Récap : passe d’un mois à l’autre avec les flèches"];
+const APP_NOTES = ["Musique mystère : tu choisis la source (toute la bibliothèque ou une playlist)", "Jeux : tes records s'affichent directement dans le menu Jeux", "Connexion : un œil pour afficher ou masquer le mot de passe", "Comptes : une adresse mail est obligatoire à l'inscription, et les anciens comptes peuvent ajouter la leur dans Info du compte", "Le rond vert du récap mensuel apparaît même si l'appli reste ouverte pendant le changement de mois", "Fiabilité : la version de la synchro est fixée pour éviter les pannes surprises"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
@@ -5993,6 +6089,8 @@ async function applyUpdate() {
 refreshUpdateBadge();
 svRefreshRecapDots();
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') svRefreshRecapDots(); });
+window.addEventListener('pageshow', () => svRefreshRecapDots());
+setInterval(svRefreshRecapDots, 60000); // si l'appli reste ouverte pendant le changement de mois, le rond vert apparaît quand même
 setTimeout(checkForUpdate, 3000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForUpdate(); });
 window.addEventListener('focus', checkForUpdate);
@@ -6001,7 +6099,7 @@ setInterval(checkForUpdate, 600000);
 // ── BLIND TEST ──
 const blindAudio = new Audio();
 blindAudio.preload = 'auto';
-let blind = null, blindCfg = { src: 'all', rounds: 10, mode: 'qcm', len: 10, dd: false } /* durée fixe : 10 s */, blindTick = null, blindUrl = null;
+let blind = null, blindCfg = { src: 'all', rounds: 10, mode: 'qcm', len: 10, dd: false } /* 4 choix seulement, durée fixe : 10 s */, blindTick = null, blindUrl = null;
 
 function blindPool(src) {
   const ids = src === 'all' ? songs.map(s => s.id) : ((playlists.find(p => String(p.id) === String(src)) || {}).songs || []);
@@ -6099,11 +6197,6 @@ function blindRenderSetup() {
         '<div class="bt-opt-t"><strong>' + escHtml(cur.name) + '</strong><small>' + cnt(cur.n) + '</small></div>' + ICON_CHEV + '</button>' +
       (blindCfg.dd ? '<div class="bt-pick-list" id="btPickList">' + list + '</div>' : '') +
     '</div>' +
-    '<div class="bt-label">Réponse</div>' +
-    '<div class="bt-chips">' +
-      '<button class="bt-chip' + (blindCfg.mode === 'qcm' ? ' on' : '') + '" onclick="blindSet(\'mode\',\'qcm\')">4 choix</button>' +
-      '<button class="bt-chip' + (blindCfg.mode === 'write' ? ' on' : '') + '" onclick="blindSet(\'mode\',\'write\')">Écrire le titre</button>' +
-    '</div>' +
     '<div class="bt-label">Nombre d\'extraits (max ' + max + ')</div>' +
     '<div class="bt-step">' +
       '<button onclick="blindSetRounds(blindRoundsEff()-1)" aria-label="Moins">−</button>' +
@@ -6143,12 +6236,7 @@ function blindRound() {
   b.cur = b.order[b.i];
   const len = blindCfg.len;
   let body;
-  if (b.mode === 'write') {
-    body =
-      '<div class="bt-write"><input class="modal-input" id="btInput" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Écris, puis choisis un son…" oninput="blindSuggest(this.value)" onkeydown="if(event.key===\'Enter\')blindValidate()"></div>' +
-      '<div class="bt-sug" id="btSug"></div>';
-    b.choices = null;
-  } else {
+  {
     const others = fisherYatesShuffle(b.pool.filter(s => s.id !== b.cur.id)).slice(0, Math.min(3, b.pool.length - 1));
     b.choices = fisherYatesShuffle([b.cur].concat(others)).map(s => ({ id: s.id, name: cleanName(s.name) }));
     body = b.choices.map((c, k) => '<button class="bt-choice" onclick="blindChoose(' + k + ')">' + escHtml(c.name) + '</button>').join('');
@@ -6163,8 +6251,7 @@ function blindRound() {
     body +
     '<div class="bt-fb" id="btFb"></div>' +
     '<div class="bt-row" id="btFoot"><button class="btn-secondary" onclick="blindReplay()">↻ Réécouter</button>' +
-    (b.mode === 'write' ? '<button class="btn-primary" onclick="blindValidate()">Valider</button>' : '') + '</div>';
-  if (b.mode === 'write') setTimeout(() => { const inp = document.getElementById('btInput'); if (inp) inp.focus(); }, 60);
+    '</div>';
 
   // Son : on lance la lecture tout de suite (dans le geste de l'utilisateur, sinon le téléphone la bloque),
   // en muet, puis on saute à l'extrait et on remet le son. Le chrono démarre à ce moment-là.
@@ -6217,7 +6304,6 @@ function blindTimeUp() {
   const pt = document.getElementById('btPts'); if (pt) pt.textContent = '0 pts';
   const v = document.getElementById('btVis'); if (v) v.classList.add('off');
   const fb = document.getElementById('btFb'); if (fb) fb.innerHTML = '<span style="color:#ff6b6b">Temps écoulé ! Choisis ton son pour continuer</span>';
-  if (b.mode === 'write') { const inp = document.getElementById('btInput'); if (inp && !inp.disabled) inp.focus(); }
 }
 
 function blindReplay() {
@@ -6233,59 +6319,7 @@ function blindChoose(k) {
   blindResolve(b.choices[k].id === b.cur.id, k);
 }
 
-// ── Écriture : propositions façon barre de recherche ──
 function blindSimple(s) { return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
-function blindSuggest(v) {
-  const b = blind, box = document.getElementById('btSug');
-  if (!b || !box || b.answered) return;
-  const inp = document.getElementById('btInput');
-  // si on modifie le texte après avoir choisi un son, le choix est annulé
-  if (b.sel && blindSimple(v) !== blindSimple(cleanName(b.sel.name))) { b.sel = null; if (inp) inp.classList.remove('sel'); }
-  const q = blindSimple(v);
-  if (!q || b.sel) { b.sugList = []; box.innerHTML = ''; return; }
-  const found = [];
-  b.pool.forEach(s => {
-    const t = blindSimple(cleanName(s.name));
-    const idx = t.indexOf(q);
-    if (idx === -1) return;
-    found.push({ s, t, rank: idx === 0 ? 0 : (t[idx - 1] === ' ' ? 1 : 2) });
-  });
-  found.sort((x, y) => x.rank - y.rank || x.t.length - y.t.length);
-  const top = found.slice(0, 6);
-  b.sugList = top.map(x => x.s);
-  box.innerHTML = top.length
-    ? '<div class="bt-src">' + top.map(x => '<div class="bt-src-row" data-id="' + escHtml(String(x.s.id)) + '" onclick="blindPickSug(this)"><span>' + escHtml(cleanName(x.s.name)) + '</span></div>').join('') + '</div>'
-    : '';
-}
-// Cliquer une proposition = choisir ce son (il faut ensuite valider)
-function blindPickSug(el) {
-  const b = blind; if (!b || b.answered) return;
-  const s = b.pool.find(x => String(x.id) === el.dataset.id); if (!s) return;
-  b.sel = s;
-  const inp = document.getElementById('btInput');
-  if (inp) { inp.value = cleanName(s.name); inp.classList.add('sel'); }
-  const box = document.getElementById('btSug'); if (box) box.innerHTML = '';
-  b.sugList = [];
-}
-
-// Valider : rien de choisi = 0
-function blindValidate() {
-  const b = blind; if (!b || b.answered) return;
-  if (b.choices) {
-    if (b.selIdx === null) { blindResolve(false, undefined, false, true); return; }
-    blindResolve(b.choices[b.selIdx].id === b.cur.id, b.selIdx);
-    return;
-  }
-  let chosen = b.sel;
-  if (!chosen) {
-    // titre tapé en entier, identique à un son de la source = ce son est choisi
-    const inp = document.getElementById('btInput');
-    const nv = blindNorm(inp ? inp.value : '');
-    if (nv) chosen = b.pool.find(s => blindNorm(s.name) === nv) || null;
-  }
-  if (!chosen) { blindResolve(false, undefined, false, true); return; }
-  blindResolve(chosen.id === b.cur.id);
-}
 
 function blindResolve(good, k, timeUp, none) {
   const b = blind; if (!b || b.answered) return;
@@ -6310,10 +6344,6 @@ function blindResolve(good, k, timeUp, none) {
       if (b.choices[j].id === b.cur.id) btn.classList.add('ok');
       else if (j === k) btn.classList.add('ko');
     });
-  } else {
-    const inp = document.getElementById('btInput'), sg = document.getElementById('btSug');
-    if (inp) { inp.disabled = true; inp.blur(); }
-    if (sg) sg.innerHTML = '';
   }
   const title = escHtml(cleanName(b.cur.name));
   const fb = document.getElementById('btFb');
@@ -6362,6 +6392,139 @@ function blindEnd() {
   if (!m || !window.MutationObserver) return;
   new MutationObserver(() => { if (!m.classList.contains('show')) { blindStop(); blind = null; } })
     .observe(m, { attributes: true, attributeFilter: ['class'] });
+})();
+
+// ── JEUX : MUSIQUE MYSTÈRE ── (un son caché : 0,1 s, puis 1, 2, 3, 5 et 10 s d'écoute, il faut trouver le titre en 6 essais)
+const mmAudio = new Audio(); mmAudio.preload = 'auto';
+const MM_STEPS = [0.1, 1, 2, 3, 5, 10];
+let mm = null, mmT = null, mmRaf = null, mmUrl = null;
+function mmFmt(x) { return (x < 1 ? '0,1' : x) + ' s'; }
+function mmStop() {
+  clearTimeout(mmT); cancelAnimationFrame(mmRaf);
+  try { mmAudio.pause(); } catch (e) {}
+  const d = document.getElementById('mmDisc'); if (d) d.classList.remove('go');
+  const f = document.getElementById('mmFg'); if (f) f.style.strokeDashoffset = 440;
+  document.querySelectorAll('.mm-seg i').forEach(i => { i.style.width = '0'; });
+}
+function mmRelease() {
+  mmStop();
+  if (mmUrl) { URL.revokeObjectURL(mmUrl); mmUrl = null; }
+  mmAudio.removeAttribute('src'); try { mmAudio.load(); } catch (e) {}
+}
+function mmStats() { try { return Object.assign({ played: 0, wins: 0, streak: 0, bestStreak: 0, bestTries: 0 }, JSON.parse(localStorage.getItem('sv_mm_stats') || '{}')); } catch (e) { return { played: 0, wins: 0, streak: 0, bestStreak: 0, bestTries: 0 }; } }
+function mmSaveResult(win, tries) {
+  const st = mmStats(); st.played++;
+  if (win) { st.wins++; st.streak++; st.bestStreak = Math.max(st.bestStreak, st.streak); if (!st.bestTries || tries < st.bestTries) st.bestTries = tries; } else st.streak = 0;
+  try { localStorage.setItem('sv_mm_stats', JSON.stringify(st)); } catch (e) {}
+  return st;
+}
+function gamesRenderRecords() {
+  const b = document.getElementById('gmBlindRec'), m = document.getElementById('gmMmRec');
+  let bb = 0; try { bb = blindBest('qcm'); } catch (e) {}
+  if (b) b.textContent = bb ? '🏆 Record : ' + bb + ' pts' : 'Pas encore de record';
+  const st = mmStats();
+  if (m) m.textContent = st.wins ? '🏆 Trouvé en ' + st.bestTries + ' essai' + (st.bestTries > 1 ? 's' : '') + ' · ' + st.wins + ' victoire' + (st.wins > 1 ? 's' : '') + (st.bestStreak > 1 ? ' · série max ' + st.bestStreak : '') : 'Pas encore de record';
+}
+function openGames() { gamesRenderRecords(); openModal('modal-games'); }
+let mmSrc = 'all';
+function openMystery() {
+  mmRelease(); mm = null;
+  const el = document.getElementById('mysteryBody');
+  const total = blindPool('all').length;
+  if (total < 2) { el.innerHTML = '<div class="empty"><div class="icon">🕵️</div><p>Il faut au moins 2 musiques<br>pour jouer à Musique mystère.</p></div>'; openModal('modal-mystery'); return; }
+  const pls = playlists.map(p => ({ p, n: blindPool(String(p.id)).length })).filter(x => x.n >= 2);
+  if (mmSrc !== 'all' && !pls.some(x => String(x.p.id) === String(mmSrc))) mmSrc = 'all';
+  const chip = (id, label, n) => '<button class="bt-chip' + (String(mmSrc) === String(id) ? ' on' : '') + '" data-src="' + escHtml(String(id)) + '" onclick="mmPickSrc(this)">' + label + ' <span style="opacity:.6">(' + n + ')</span></button>';
+  el.innerHTML = '<div class="bt-label" style="margin-bottom:10px;">Dans quelle source piocher le son mystère ?</div><div class="bt-chips">' + chip('all', 'Toute la bibliothèque', total) + pls.map(x => chip(x.p.id, escHtml(x.p.name), x.n)).join('') + '</div>' +
+    '<div class="mm-btns" style="grid-template-columns:1fr;margin-top:18px;"><button class="btn-primary" onclick="mmStart()">Lancer</button></div>';
+  openModal('modal-mystery');
+}
+function mmPickSrc(el) { mmSrc = el.dataset.src; openMystery(); }
+function mmStart() {
+  const pool = blindPool(mmSrc);
+  if (pool.length < 2) { toast('Il faut au moins 2 musiques'); return; }
+  try { if (!audio.paused) { svMarkUserPause(); audio.pause(); setPlayIcon(false); } } catch (e) {}
+  mmRelease();
+  const song = pool[Math.floor(Math.random() * pool.length)];
+  mm = { pool, song, step: 0, rows: [], sel: null, over: false, win: false };
+  mmUrl = (song.data instanceof Blob) ? URL.createObjectURL(song.data) : null;
+  mmAudio.src = mmUrl || song.data;
+  mmRender();
+}
+function mmAgain() { mmStart(); }
+function mmRender() {
+  const g = mm, el = document.getElementById('mysteryBody'); if (!g || !el) return;
+  const seg = MM_STEPS.map((d, i) => '<div class="mm-seg' + (i <= g.step ? ' open' : '') + (i === g.step && !g.over ? ' cur' : '') + '">' + (d < 1 ? '0,1' : d) + '<i></i></div>').join('');
+  const slots = MM_STEPS.map((d, i) => { const r = g.rows[i]; return r ? '<div class="mm-slot ' + r.k + '">' + (r.k === 'ok' ? '✓ ' : r.k === 'ko' ? '✗ ' : '⏭ ') + escHtml(r.t) + '</div>' : '<div class="mm-slot"></div>'; }).join('');
+  let h = '<div class="mm-steps">' + seg + '</div>' +
+    '<div class="mm-player"><div class="mm-disc" id="mmDisc"><svg class="mm-ring" viewBox="0 0 150 150" aria-hidden="true"><circle class="bg" cx="75" cy="75" r="70"/><circle class="fg" id="mmFg" cx="75" cy="75" r="70"/></svg><div class="mm-vinyl"></div><button class="mm-play" onclick="mmPlay()" aria-label="Écouter"' + (g.over ? ' disabled' : '') + '>▶</button></div>' +
+    '<div class="mm-hint"><span class="mm-pill">Essai <b>' + (g.step + 1) + ' / 6</b></span><span class="mm-pill g">🎧 <b>' + mmFmt(MM_STEPS[g.step]) + '</b> d’écoute</span></div></div>' +
+    '<div class="mm-slots">' + slots + '</div>';
+  if (g.over) {
+    const sq = MM_STEPS.map((d, i) => { const r = g.rows[i]; return r ? (r.k === 'ok' ? '🟩' : r.k === 'ko' ? '🟥' : '⬛') : '⬜'; }).join('');
+    h += '<div class="mm-end"><div class="mm-cover">' + (g.win ? '🎉' : '😅') + '</div><div class="mm-sq">' + sq + '</div><div class="mm-t">' + escHtml(cleanName(g.song.name)) + '</div><div class="mm-s">' + (g.win ? 'Trouvé en ' + (g.step + 1) + ' essai' + (g.step ? 's' : '') + ' · extrait de ' + mmFmt(MM_STEPS[g.step]) + (g.record ? ' · 🏆 record égalé ou battu' : '') : 'C’était ce titre.') + '</div>' +
+      '<div class="mm-btns"><button class="btn-secondary" onclick="closeModal(\'modal-mystery\');gamesRenderRecords()">Jeux</button><button class="btn-primary" onclick="mmAgain()">Rejouer</button></div></div>';
+  } else {
+    h += '<div class="mm-field"><div class="mm-sug" id="mmSug" style="display:none"></div><input class="modal-input" id="mmInp" type="text" placeholder="Écris, puis choisis un son…" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" oninput="mmSuggest()" onkeydown="if(event.key===\'Enter\')mmValidate()"></div>' +
+      '<div class="mm-btns"><button class="btn-secondary" onclick="mmSkip()">' + (g.step < 5 ? 'Passer · écouter ' + mmFmt(MM_STEPS[g.step + 1]) : 'Abandonner') + '</button><button class="btn-primary" onclick="mmValidate()">Valider</button></div>';
+  }
+  el.innerHTML = h;
+}
+function mmPlay() {
+  const g = mm; if (!g || g.over) return;
+  mmStop();
+  const dur = MM_STEPS[g.step];
+  try { mmAudio.currentTime = 0; mmAudio.muted = false; mmAudio.volume = audio.volume; } catch (e) {}
+  const start = () => {
+    if (mm !== g || g.over) return;
+    const t0 = performance.now(), d = document.getElementById('mmDisc'), f = document.getElementById('mmFg'), sg = document.querySelectorAll('.mm-seg i')[g.step];
+    if (d) d.classList.add('go');
+    (function tick() { const k = Math.min(1, (performance.now() - t0) / (dur * 1000)); if (f) f.style.strokeDashoffset = 440 * (1 - k); if (sg) sg.style.width = (k * 100) + '%'; if (k < 1) mmRaf = requestAnimationFrame(tick); })();
+    mmT = setTimeout(mmStop, dur * 1000);
+  };
+  const pr = mmAudio.play();
+  if (pr && pr.then) pr.then(start).catch(() => {}); else start();
+}
+function mmSuggest() {
+  const g = mm, box = document.getElementById('mmSug'), inp = document.getElementById('mmInp'); if (!g || !box || !inp || g.over) return;
+  const v = blindSimple(inp.value);
+  if (g.sel && blindSimple(cleanName(g.sel.name)) !== v) { g.sel = null; inp.classList.remove('sel'); }
+  if (!v || g.sel) { box.style.display = 'none'; return; }
+  const f = g.pool.map(x => ({ s: x, t: blindSimple(cleanName(x.name)) })).filter(x => x.t.includes(v)).sort((a, b) => a.t.indexOf(v) - b.t.indexOf(v) || a.t.length - b.t.length).slice(0, 5);
+  box.innerHTML = f.map(x => '<div data-id="' + escHtml(String(x.s.id)) + '" onclick="mmPick(this)">' + escHtml(cleanName(x.s.name)) + '</div>').join('');
+  box.style.display = f.length ? 'block' : 'none';
+}
+function mmPick(el) {
+  const g = mm; if (!g) return;
+  const x = g.pool.find(y => String(y.id) === el.dataset.id); if (!x) return;
+  g.sel = x;
+  const inp = document.getElementById('mmInp'); inp.value = cleanName(x.name); inp.classList.add('sel');
+  document.getElementById('mmSug').style.display = 'none';
+}
+function mmValidate() {
+  const g = mm; if (!g || g.over) return;
+  if (!g.sel) { toast('Choisis un son dans la liste'); return; }
+  const t = cleanName(g.sel.name);
+  if (g.sel.id === g.song.id) { g.rows[g.step] = { k: 'ok', t }; mmFinish(true); } else mmNext({ k: 'ko', t });
+}
+function mmSkip() {
+  const g = mm; if (!g || g.over) return;
+  if (g.step >= 5) { g.rows[g.step] = { k: 'skip', t: 'Abandonné' }; mmFinish(false); } else mmNext({ k: 'skip', t: 'Passé' });
+}
+function mmNext(row) {
+  const g = mm; g.rows[g.step] = row;
+  if (g.step >= 5) { mmFinish(false); return; }
+  g.step++; g.sel = null; mmStop(); mmRender();
+  setTimeout(() => { if (mm === g && !g.over) mmPlay(); }, 250);
+}
+function mmFinish(win) {
+  const g = mm; g.over = true; g.win = win; mmStop(); const st = mmSaveResult(win, g.step + 1); g.record = win && st.bestTries === g.step + 1 && st.wins >= 1; mmRender();
+  try { mmAudio.currentTime = 0; mmAudio.play().catch(() => {}); } catch (e) {} // on laisse entendre le son en entier
+}
+(function () {
+  const m = document.getElementById('modal-mystery');
+  if (!m || !window.MutationObserver) return;
+  new MutationObserver(() => { if (!m.classList.contains('show')) { mmRelease(); mm = null; } }).observe(m, { attributes: true, attributeFilter: ['class'] });
 })();
 </script>
 </body>
