@@ -2209,6 +2209,21 @@ header .btn-icon, header .btn-add { box-shadow: none; }
   </div>
 </div>
 
+<!-- MODAL NOUVEAU MOT DE PASSE (lien reçu par mail) -->
+<div class="modal-overlay" id="modal-newpass" style="z-index:230;">
+  <div class="modal-box">
+    <div class="modal-title">🔒 Nouveau mot de passe</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Choisis ton nouveau mot de passe SoundVault.</div>
+    <input class="modal-input" id="newPass1" type="password" placeholder="Nouveau mot de passe (6 caractères min.)" maxlength="60" autocomplete="new-password">
+    <input class="modal-input" id="newPass2" type="password" placeholder="Confirme le nouveau mot de passe" maxlength="60" autocomplete="new-password" onkeydown="if(event.key==='Enter')submitNewPassword()">
+    <div id="newPassMsg" style="display:none;font-size:13px;margin:-4px 0 12px;"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-newpass')">Plus tard</button>
+      <button class="btn-primary" id="newPassBtn" onclick="submitNewPassword()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL COMPTE / SYNCHRO -->
 <div class="modal-overlay" id="modal-account">
   <div class="modal-box">
@@ -2223,6 +2238,7 @@ header .btn-icon, header .btn-add { box-shadow: none; }
       <form id="account-form" autocomplete="on" onsubmit="event.preventDefault(); submitAccountForm(); return false;">
         <input class="modal-input" id="accountEmail" type="email" placeholder="Adresse email" maxlength="100" autocomplete="email">
         <input class="modal-input" id="accountPassword" type="password" placeholder="Mot de passe (6 caractères min.)" maxlength="60" autocomplete="current-password">
+        <div id="account-forgot" style="text-align:right;margin:-4px 0 12px;"><a href="#" onclick="event.preventDefault(); forgotPassword();" style="color:var(--green);font-size:13px;text-decoration:none;">Mot de passe oublié ?</a></div>
         <div id="account-error" style="color:#ff6b6b;font-size:13px;margin:-4px 0 12px;display:none;"></div>
         <div class="modal-actions">
           <button type="button" class="btn-secondary" onclick="closeModal('modal-account')">Annuler</button>
@@ -4760,6 +4776,8 @@ try {
     sb.auth.onAuthStateChange((event, session) => {
       const wasSignedIn = !!currentUser;
       currentUser = session ? session.user : null;
+      // Lien « mot de passe oublié » reçu par mail : on ouvre l'écran pour choisir un nouveau mot de passe
+      if (event === 'PASSWORD_RECOVERY') setTimeout(openNewPasswordModal, 400);
       try { updateAccountUI(); } catch (uiErr) {
         console.warn('updateAccountUI a échoué :', uiErr);
         toast('⚠️ Bug affichage compte : ' + uiErr.message);
@@ -4849,6 +4867,7 @@ function switchAccountTab(tab) {
   document.getElementById('tab-login').classList.toggle('active', tab === 'login');
   document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
   document.getElementById('account-submit-btn').textContent = tab === 'login' ? 'Se connecter' : "S'inscrire";
+  const fg = document.getElementById('account-forgot'); if (fg) fg.style.display = tab === 'login' ? '' : 'none';
   document.getElementById('account-error').style.display = 'none';
   document.getElementById('account-error').style.color = '';
 }
@@ -4880,15 +4899,22 @@ function renderAccInfo() {
       + '<button class="btn-primary" style="width:100%;margin-top:12px;" onclick="closeModal(\'modal-accinfo\'); closeModal(\'modal-prefs\'); openModal(\'modal-account\')">Se connecter</button>';
     return;
   }
+  const legacy = /@soundvault\.local$/i.test(currentUser.email || '');
   el.innerHTML = '<div class="th-label">Adresse mail</div>'
     + '<div class="set-row" style="cursor:default;"><div class="set-ico g1" style="font-size:22px;">✉️</div><div class="set-txt"><strong style="word-break:break-all;">' + escHtml(currentUser.email || '—') + '</strong></div></div>'
     + '<div class="th-label" style="margin-top:14px;">Mot de passe</div>'
-    + '<div class="set-row" style="cursor:default;"><div class="set-ico g2" style="font-size:22px;">🔒</div><div class="set-txt"><strong>••••••••</strong><span>Par sécurité, le mot de passe n\'est jamais enregistré ni affiché. Tu peux le changer ci-dessous.</span></div></div>'
-    + '<input class="modal-input" id="accNewPass" type="password" placeholder="Nouveau mot de passe (6 caractères min.)" maxlength="60" autocomplete="new-password" style="margin-top:10px;">'
-    + '<input class="modal-input" id="accNewPass2" type="password" placeholder="Confirme le nouveau mot de passe" maxlength="60" autocomplete="new-password">'
-    + '<div id="accInfoMsg" style="display:none;font-size:12px;margin-top:8px;"></div>'
-    + '<button class="btn-primary" style="width:100%;margin-top:10px;" onclick="changePassword()">Changer le mot de passe</button>';
+    + '<div class="set-row" style="cursor:default;"><div class="set-ico g2" style="font-size:22px;">🔒</div><div class="set-txt"><strong>••••••••</strong><span>Par sécurité, le mot de passe n\'est jamais enregistré ni affiché.</span></div></div>'
+    + (legacy
+      ? '<div class="pf-note">Ce compte n\'a pas de vraie adresse mail : le changement se fait directement ici.</div>'
+        + '<input class="modal-input" id="accNewPass" type="password" placeholder="Nouveau mot de passe (6 caractères min.)" maxlength="60" autocomplete="new-password" style="margin-top:10px;">'
+        + '<input class="modal-input" id="accNewPass2" type="password" placeholder="Confirme le nouveau mot de passe" maxlength="60" autocomplete="new-password">'
+        + '<div id="accInfoMsg" style="display:none;font-size:12px;margin-top:8px;"></div>'
+        + '<button class="btn-primary" style="width:100%;margin-top:10px;" onclick="changePassword()">Changer le mot de passe</button>'
+      : '<div class="pf-note">Pour changer ton mot de passe, on t\'envoie un mail avec un lien. Il sera envoyé à <strong style="word-break:break-all;">' + escHtml(currentUser.email || '') + '</strong>.</div>'
+        + '<div id="accInfoMsg" style="display:none;font-size:13px;margin-top:8px;"></div>'
+        + '<button class="btn-primary" id="accMailBtn" style="width:100%;margin-top:10px;" onclick="sendPasswordMail(\'' + escHtml(currentUser.email || '') + '\', \'accInfoMsg\', \'accMailBtn\')">📧 Recevoir un mail pour changer mon mot de passe</button>');
 }
+// Anciens comptes créés avec un simple pseudo (adresse en @soundvault.local) : pas de mail possible, on garde le changement direct
 async function changePassword() {
   const p1 = document.getElementById('accNewPass').value;
   const p2 = document.getElementById('accNewPass2').value;
@@ -4907,6 +4933,77 @@ async function changePassword() {
     show('✅ Mot de passe changé', true);
   } catch (e) { show('Échec : ' + (e.message || 'problème de connexion'), false); }
 }
+
+// ── MOT DE PASSE PAR MAIL ──
+// Adresse où le lien du mail ramène : cette page (sans « index.html », sans ?…, sans #…)
+function svAppUrl() { return (location.origin + location.pathname).replace(/index\.html$/i, ''); }
+// Envoie le mail « mot de passe oublié / changement de mot de passe » et affiche le résultat dans l'élément msgId
+async function sendPasswordMail(email, msgId, btnId) {
+  const msg = document.getElementById(msgId), btn = btnId ? document.getElementById(btnId) : null;
+  const show = (t, ok) => { if (!msg) return; msg.textContent = t; msg.style.display = 'block'; msg.style.color = ok ? 'var(--green)' : '#ff6b6b'; };
+  if (!cloudReady) { show('Synchro cloud non configurée.', false); return false; }
+  email = String(email || '').trim().toLowerCase();
+  if (!email.includes('@') || !email.includes('.')) { show('Écris d\'abord ton adresse mail.', false); return false; }
+  if (/@soundvault\.local$/.test(email)) { show('Ce compte n\'a pas de vraie adresse mail : impossible d\'envoyer un mail.', false); return false; }
+  const label = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Envoi…'; }
+  let ok = false;
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: svAppUrl() });
+    if (error) throw error;
+    ok = true;
+    show('📧 Si un compte existe avec cette adresse, un mail vient d\'être envoyé. Regarde aussi dans tes spams.', true);
+  } catch (err) {
+    const m = String(err && err.message || '').toLowerCase();
+    if (m.includes('security purposes') || m.includes('rate limit') || m.includes('too many')) show('Trop de demandes : patiente une minute puis réessaie.', false);
+    else if (m.includes('not authorized')) show('Cette adresse ne peut pas recevoir de mail pour l\'instant (envoi non configuré).', false);
+    else show(translateSupabaseError(err || {}), false);
+  }
+  if (btn) { btn.disabled = false; btn.textContent = label; }
+  return ok;
+}
+// Écran de connexion : « Mot de passe oublié ? »
+function forgotPassword() {
+  const errEl = document.getElementById('account-error');
+  const email = document.getElementById('accountEmail').value.trim();
+  errEl.style.color = ''; errEl.style.display = 'none';
+  if (!email) { errEl.textContent = 'Écris ton adresse mail ci-dessus, puis clique sur « Mot de passe oublié ? ».'; errEl.style.display = 'block'; return; }
+  sendPasswordMail(email, 'account-error', null);
+}
+// Ouverte quand on arrive depuis le lien du mail
+function openNewPasswordModal() {
+  document.getElementById('newPass1').value = ''; document.getElementById('newPass2').value = '';
+  const m = document.getElementById('newPassMsg'); m.style.display = 'none';
+  openModal('modal-newpass');
+}
+async function submitNewPassword() {
+  const p1 = document.getElementById('newPass1').value, p2 = document.getElementById('newPass2').value;
+  const msg = document.getElementById('newPassMsg'), btn = document.getElementById('newPassBtn');
+  const show = (t, ok) => { msg.textContent = t; msg.style.display = 'block'; msg.style.color = ok ? 'var(--green)' : '#ff6b6b'; };
+  if (!cloudReady || !currentUser) { show('Le lien a expiré : redemande un mail.', false); return; }
+  if (p1.length < 6) { show('6 caractères minimum.', false); return; }
+  if (p1 !== p2) { show('Les deux mots de passe ne sont pas identiques.', false); return; }
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const { error } = await sb.auth.updateUser({ password: p1 });
+    if (error) {
+      show(/different|same/i.test(error.message || '') ? 'Le nouveau mot de passe doit être différent de l\'ancien.' : 'Échec : ' + (error.message || 'erreur inconnue'), false);
+    } else {
+      closeModal('modal-newpass');
+      toast('✅ Mot de passe changé, tu es connecté');
+    }
+  } catch (e) { show('Échec : ' + (e.message || 'problème de connexion'), false); }
+  btn.disabled = false; btn.textContent = 'Enregistrer';
+}
+// Lien du mail expiré ou déjà utilisé : on prévient au lieu de ne rien faire
+(function () {
+  try {
+    if (/error_code=otp_expired|error=access_denied/.test(location.hash)) {
+      history.replaceState(null, '', location.pathname + location.search);
+      setTimeout(() => toast('⚠️ Ce lien a expiré ou a déjà été utilisé : redemande un mail'), 800);
+    }
+  } catch (e) {}
+})();
 
 async function submitAccountForm() {
   if (!cloudReady) { toast('⚠️ Synchro cloud non configurée'); return; }
@@ -4967,6 +5064,7 @@ function translateSupabaseError(err) {
   if (m.includes('password') && m.includes('6')) return 'Mot de passe trop faible (6 caractères min.).';
   if (m.includes('invalid') && m.includes('email')) return "Cette adresse email n'est pas valide.";
   if (m.includes('network') || m.includes('fetch')) return 'Pas de connexion internet.';
+  if (m.includes('security purposes') || m.includes('rate limit')) return 'Trop de demandes : patiente une minute puis réessaie.';
   return 'Erreur : ' + (err.message || 'inconnue');
 }
 
@@ -5811,9 +5909,9 @@ if (sb) {
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '2.1';
+const APP_VERSION = '2.3';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Blind test : en 4 choix, un clic sur un son valide directement et on passe tout seul à la question suivante", "Nouveau : le Blind test (Paramètres › Blind test) — devine le son à partir d'un extrait, en 4 choix ou en écrivant, avec chrono et score sur 100", "Nouveau design : navigation en onglets, cartes et fenêtres plus douces, musique en cours mise en valeur", "L'engrenage passe en haut à droite, et « + Nouvelle playlist » est dans l'onglet Playlists", "Correction : les musiques ne s'affichent plus en double et se suppriment correctement", "Nouveau : Info du compte (mail et changement du mot de passe)", "Tes paramètres sont les mêmes sur ton PC et ton téléphone (même compte)", "Synchronisation : tu peux désactiver la synchro automatique (Paramètres)", "Synchro plus rapide : téléchargements et envois en parallèle", "Nouveau : menu Paramètres dans l'engrenage (vitesse de lecture, synchronisation)", "Avec la répétition, passer à la musique suivante ou précédente relance la musique en cours", "Une écoute n'est comptée que si tu as vraiment écouté la moitié de la musique", "Onglet Ajouter entièrement repensé", "Statistiques : la phrase « Stats comptées depuis… » est retirée", "Récaps mensuels entièrement refaits : calendrier du mois, moments forts, meilleur jour, top 5 des sons, podium des playlists", "Nouveau : partage ton récap en image (récap entier ou carte résumé)", "Récap : comparaison avec le mois d’avant, semaine type, moment préféré de la journée et part de ton son du mois", "Récap : passe d’un mois à l’autre avec les flèches"];
+const APP_NOTES = ["Nouveau : « Mot de passe oublié ? » sur l'écran de connexion, et le mot de passe se change par un lien reçu par mail (Info du compte)", "Blind test : la durée de l'extrait est fixée à 10 secondes", "Blind test : quand le temps est écoulé, on peut encore choisir un son (0 pt) et on ne passe à la suite qu'après avoir validé", "Blind test : en 4 choix, un clic sur un son valide directement et on passe tout seul à la question suivante", "Nouveau : le Blind test (Paramètres › Blind test) — devine le son à partir d'un extrait, en 4 choix ou en écrivant, avec chrono et score sur 100", "Nouveau design : navigation en onglets, cartes et fenêtres plus douces, musique en cours mise en valeur", "L'engrenage passe en haut à droite, et « + Nouvelle playlist » est dans l'onglet Playlists", "Correction : les musiques ne s'affichent plus en double et se suppriment correctement", "Nouveau : Info du compte (mail et changement du mot de passe)", "Tes paramètres sont les mêmes sur ton PC et ton téléphone (même compte)", "Synchronisation : tu peux désactiver la synchro automatique (Paramètres)", "Synchro plus rapide : téléchargements et envois en parallèle", "Nouveau : menu Paramètres dans l'engrenage (vitesse de lecture, synchronisation)", "Avec la répétition, passer à la musique suivante ou précédente relance la musique en cours", "Une écoute n'est comptée que si tu as vraiment écouté la moitié de la musique", "Onglet Ajouter entièrement repensé", "Statistiques : la phrase « Stats comptées depuis… » est retirée", "Récaps mensuels entièrement refaits : calendrier du mois, moments forts, meilleur jour, top 5 des sons, podium des playlists", "Nouveau : partage ton récap en image (récap entier ou carte résumé)", "Récap : comparaison avec le mois d’avant, semaine type, moment préféré de la journée et part de ton son du mois", "Récap : passe d’un mois à l’autre avec les flèches"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
@@ -5903,7 +6001,7 @@ setInterval(checkForUpdate, 600000);
 // ── BLIND TEST ──
 const blindAudio = new Audio();
 blindAudio.preload = 'auto';
-let blind = null, blindCfg = { src: 'all', rounds: 10, mode: 'qcm', len: 10, dd: false }, blindTick = null, blindUrl = null;
+let blind = null, blindCfg = { src: 'all', rounds: 10, mode: 'qcm', len: 10, dd: false } /* durée fixe : 10 s */, blindTick = null, blindUrl = null;
 
 function blindPool(src) {
   const ids = src === 'all' ? songs.map(s => s.id) : ((playlists.find(p => String(p.id) === String(src)) || {}).songs || []);
@@ -5992,10 +6090,9 @@ function blindRenderSetup() {
     (plCounts.length ? '<div class="bt-pick-sep">Playlists</div>' : '') +
     plCounts.map(x => opt(x.p, x.p.name, x.n, x.n >= 2)).join('');
   const max = blindRoundsMax(), eff = blindRoundsEff();
-  const lens = [1, 3, 5, 10, 20];
   const best = blindBest(blindCfg.mode);
   el.innerHTML =
-    '<div class="bt-sub">Un extrait démarre à un endroit au hasard : trouve le bon titre le plus vite possible.</div>' +
+    '<div class="bt-sub">Un extrait de 10 secondes démarre à un endroit au hasard : trouve le bon titre le plus vite possible.</div>' +
     '<div class="bt-label">Source</div>' +
     '<div class="bt-dd' + (blindCfg.dd ? ' open' : '') + '">' +
       '<button class="bt-pick-btn" onclick="blindToggleDd()">' + tile(cur.p) +
@@ -6014,8 +6111,6 @@ function blindRenderSetup() {
       '<button onclick="blindSetRounds(blindRoundsEff()+1)" aria-label="Plus">+</button>' +
       '<button class="bt-chip" style="width:auto;height:46px;font-size:14px;padding:0 14px;" onclick="blindSetRounds(' + max + ')">Max</button>' +
     '</div>' +
-    '<div class="bt-label">Durée de l\'extrait</div>' +
-    '<div class="bt-chips">' + lens.map(v => '<button class="bt-chip' + (blindCfg.len === v ? ' on' : '') + '" onclick="blindSet(\'len\',' + v + ')">' + v + ' s</button>').join('') + '</div>' +
     (best ? '<div class="bt-sub" style="margin-top:16px;">🏆 Meilleur score : <strong>' + best + ' / 100</strong></div>' : '') +
     '<div class="bt-row" style="margin-top:18px;"><button class="btn-primary" id="blindGo" onclick="blindStart()">' + blindStartLabel() + '</button></div>';
   const pl = document.getElementById('btPickList'), on = pl && pl.querySelector('.bt-opt.on');
@@ -6042,7 +6137,7 @@ function blindPts(elapsed, len) {
 function blindRound() {
   blindStop();
   const b = blind; if (!b) return;
-  b.answered = false; b.t0 = null; b.sugList = []; b.sel = null; b.selIdx = null;
+  b.answered = false; b.late = false; b.t0 = null; b.sugList = []; b.sel = null; b.selIdx = null;
   b.tok = (b.tok || 0) + 1;
   const token = b.tok;
   b.cur = b.order[b.i];
@@ -6101,19 +6196,32 @@ function blindRound() {
 
   // Chrono : il descend de la durée choisie jusqu'à 0 ; à 0 le temps est écoulé
   blindTick = setInterval(() => {
-    if (!blind || b.answered) return;
+    if (!blind || b.answered || b.late) return;
     const elapsed = b.t0 === null ? 0 : (performance.now() - b.t0) / 1000;
     const remaining = Math.max(0, len - elapsed);
     const bar = document.getElementById('btBar'); if (bar) bar.style.width = (remaining / len * 100) + '%';
     const ch = document.getElementById('btChrono');
     if (ch) { ch.textContent = remaining.toFixed(1); ch.classList.toggle('low', remaining <= len * 0.3); }
     const pt = document.getElementById('btPts'); if (pt) pt.textContent = blindPts(Math.min(elapsed, len), len) + ' pts';
-    if (b.t0 !== null && remaining <= 0) blindResolve(false, undefined, true);
+    if (b.t0 !== null && remaining <= 0) blindTimeUp();
   }, 50);
 }
 
+// Fin du chrono : l'extrait s'arrête, mais on peut encore choisir un son (0 pt) ; on passe à la suite seulement après validation
+function blindTimeUp() {
+  const b = blind; if (!b || b.answered || b.late) return;
+  b.late = true;
+  try { blindAudio.pause(); } catch (e) {}
+  const ch = document.getElementById('btChrono'); if (ch) { ch.textContent = '0.0'; ch.classList.add('low'); }
+  const bar = document.getElementById('btBar'); if (bar) bar.style.width = '0%';
+  const pt = document.getElementById('btPts'); if (pt) pt.textContent = '0 pts';
+  const v = document.getElementById('btVis'); if (v) v.classList.add('off');
+  const fb = document.getElementById('btFb'); if (fb) fb.innerHTML = '<span style="color:#ff6b6b">Temps écoulé ! Choisis ton son pour continuer</span>';
+  if (b.mode === 'write') { const inp = document.getElementById('btInput'); if (inp && !inp.disabled) inp.focus(); }
+}
+
 function blindReplay() {
-  const b = blind; if (!b || b.answered) return;
+  const b = blind; if (!b || b.answered || b.late) return;
   try { blindAudio.currentTime = b.start || 0; } catch (e) {}
   blindAudio.play().catch(() => {});
 }
@@ -6185,16 +6293,17 @@ function blindResolve(good, k, timeUp, none) {
   const len = blindCfg.len;
   const elapsed = b.t0 === null ? 0 : (performance.now() - b.t0) / 1000;
   const remaining = Math.max(0, len - elapsed);
+  const late = !!(timeUp || b.late);   // validé après la fin du chrono : 0 pt
   // Score de la question : 0 à 100, plus on valide vite plus c'est haut
   let pts = 0;
-  if (good && !timeUp) {
-    pts = blindPts(Math.min(elapsed, len), len);
+  if (good) {
+    pts = late ? 0 : blindPts(Math.min(elapsed, len), len);
     b.score += pts; b.streak++; b.ok++;
   } else b.streak = 0;
   const ch = document.getElementById('btChrono');
-  if (ch && timeUp) { ch.textContent = '0.0'; ch.classList.add('low'); }
-  const pt = document.getElementById('btPts'); if (pt) pt.textContent = good && !timeUp ? '+' + pts + ' / 100' : '0 / 100';
-  const bar = document.getElementById('btBar'); if (bar && timeUp) bar.style.width = '0%';
+  if (ch && late) { ch.textContent = '0.0'; ch.classList.add('low'); }
+  const pt = document.getElementById('btPts'); if (pt) pt.textContent = good && !late ? '+' + pts + ' / 100' : '0 / 100';
+  const bar = document.getElementById('btBar'); if (bar && late) bar.style.width = '0%';
   if (b.choices) {
     document.querySelectorAll('#blindBody .bt-choice').forEach((btn, j) => {
       btn.disabled = true; btn.classList.remove('sel');
@@ -6208,9 +6317,9 @@ function blindResolve(good, k, timeUp, none) {
   }
   const title = escHtml(cleanName(b.cur.name));
   const fb = document.getElementById('btFb');
-  if (fb) fb.innerHTML = good && !timeUp
-    ? '<span style="color:var(--green)">Bonne réponse ! +' + pts + '</span>' + (b.choices ? '' : '<br><span style="color:var(--muted);font-weight:500;">« ' + title + ' »</span>')
-    : '<span style="color:#ff6b6b">' + (timeUp ? 'Temps écoulé ! c\'était' : none ? 'Aucun son choisi… c\'était' : 'Raté… c\'était') + ' « ' + title + ' »</span>';
+  if (fb) fb.innerHTML = good
+    ? '<span style="color:var(--green)">' + (late ? 'Bonne réponse, mais trop tard ! +0' : 'Bonne réponse ! +' + pts) + '</span>' + (b.choices ? '' : '<br><span style="color:var(--muted);font-weight:500;">« ' + title + ' »</span>')
+    : '<span style="color:#ff6b6b">' + (late ? 'Temps écoulé ! c\'était' : none ? 'Aucun son choisi… c\'était' : 'Raté… c\'était') + ' « ' + title + ' »</span>';
   blindAudio.muted = false;
   if (blindAudio.paused) blindAudio.play().catch(() => {});
   const v = document.getElementById('btVis'); if (v) v.classList.remove('off');
