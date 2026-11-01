@@ -1881,6 +1881,39 @@ header .btn-icon, header .btn-add { box-shadow: none; }
 .mm-sq{font-size:20px;letter-spacing:3px;margin-bottom:6px}.mm-t{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin:6px 0 4px}.mm-s{font-size:13px;color:var(--muted);margin-bottom:12px}
 @media (prefers-reduced-motion:reduce){.mm-disc.go .mm-vinyl,.mm-disc.go .mm-play,.mm-slot{animation:none}}
 
+/* ── MUSIQUE MYSTÈRE v2.6 ── */
+.mm-steps{grid-template-columns:1fr 1fr 1fr 2fr 5fr;margin:2px 0 22px}
+.mm-seg{height:34px;font-size:12px}
+.mm-seg.open{box-shadow:0 0 14px rgba(var(--green-rgb),.25)}
+.mm-seg.ko{background:rgba(255,90,90,.18);color:var(--text)}
+.mm-disc{width:200px;height:200px}.mm-vinyl{width:158px;height:158px}
+.mm-vinyl::after{content:"";position:absolute;inset:44px;border-radius:50%;background:conic-gradient(var(--accent),var(--green),var(--accent));opacity:.9}
+.mm-play{width:62px;height:62px;font-size:22px}
+.mm-help{font-size:12.5px;color:var(--muted)}
+.mm-slot{height:42px;gap:10px;border-radius:12px}
+.mm-slot em{font-style:normal;font-size:11.5px;font-weight:700;color:var(--muted);min-width:34px;padding:3px 0;text-align:center;border-radius:8px;background:rgba(255,255,255,.06)}
+.mm-slot span{overflow:hidden;text-overflow:ellipsis}
+.mm-slot.now{border:1px solid rgba(var(--green-rgb),.55);background:rgba(var(--green-rgb),.08);color:var(--muted)}
+.mm-end.win .mm-cover{box-shadow:0 14px 40px rgba(var(--green-rgb),.5)}
+.mm-badge{display:inline-block;margin:0 0 10px;padding:5px 12px;border-radius:99px;font-size:12.5px;font-weight:700;background:rgba(255,200,80,.16);color:#ffd166}
+.mm-mini{display:flex;gap:10px;justify-content:center;margin:0 0 4px;font-size:13px;color:var(--muted)}
+.mm-mini span{background:var(--bg3);padding:6px 12px;border-radius:99px}.mm-mini b{color:var(--text)}
+.mm-rules{display:grid;gap:8px}
+.mm-rules div{display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:14px;padding:11px 12px;font-size:13.5px}
+.mm-rules b{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;color:#052e14;background:linear-gradient(145deg,var(--green-hi),var(--green))}
+/* ── RECORDS (menu Jeux) ── */
+.gm-recs{margin-top:18px}
+.gm-h{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin:0 2px 10px}
+.gm-card{border-radius:18px;padding:14px;margin-bottom:10px;background:linear-gradient(135deg,rgba(var(--green-rgb),.16),var(--bg3));border:1px solid rgba(255,255,255,.07)}
+.gm-card.v{background:linear-gradient(135deg,rgba(167,139,250,.18),var(--bg3))}
+.gm-ct{font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:10px}
+.gm-big{font-family:'Syne',sans-serif;font-size:34px;font-weight:800;line-height:1}
+.gm-big small{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;color:var(--muted);margin-left:6px}
+.gm-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.gm-tile{background:rgba(0,0,0,.22);border-radius:12px;padding:10px 6px;text-align:center}
+.gm-tile b{display:block;font-family:'Syne',sans-serif;font-size:20px}
+.gm-tile span{font-size:11px;color:var(--muted)}
+.gm-empty{font-size:13px;color:var(--muted)}
 /* ── BLIND TEST ── */
 .bt-top{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600}
 .bt-bar{height:6px;border-radius:99px;background:var(--bg4);overflow:hidden;margin-bottom:16px}
@@ -2481,10 +2514,21 @@ header .btn-icon, header .btn-add { box-shadow: none; }
     <div class="sheet-grip"></div>
     <div class="modal-title sheet-title">🎮 Jeux</div>
     <div class="sheet-scroll">
-      <div class="set-row" onclick="openBlindTest()"><div class="set-ico g2" style="font-size:22px;">🎧</div><div class="set-txt"><strong>Blind test</strong><span>Devine le son à partir d'un extrait de 10 secondes, en 4 choix</span><span class="gm-rec" id="gmBlindRec"></span></div><div class="set-chev">›</div></div>
-      <div class="set-row" onclick="openMystery()"><div class="set-ico g4" style="font-size:22px;">🕵️</div><div class="set-txt"><strong>Musique mystère</strong><span>0,1 s d'écoute, puis 1, 2, 3, 5 et 10 s : trouve le titre en 6 essais</span><span class="gm-rec" id="gmMmRec"></span></div><div class="set-chev">›</div></div>
+      <div class="set-row" onclick="openBlindTest()"><div class="set-ico g2" style="font-size:22px;">🎧</div><div class="set-txt"><strong>Blind test</strong><span>Devine le son à partir d'un extrait de 10 secondes, en 4 choix</span></div><div class="set-chev">›</div></div>
+      <div class="set-row" onclick="openMystery()"><div class="set-ico g4" style="font-size:22px;">🕵️</div><div class="set-txt"><strong>Musique mystère</strong><span>1, 2, 3, 5 puis 10 s d'écoute : trouve le titre en 5 essais</span></div><div class="set-chev">›</div></div>
+      <div class="set-row" onclick="openRecords()"><div class="set-ico g3" style="font-size:22px;">🏆</div><div class="set-txt"><strong>Records</strong><span>Tes meilleurs scores et ta série, jeu par jeu</span></div><div class="set-chev">›</div></div>
     </div>
     <div class="modal-actions"><button class="btn-primary" onclick="closeModal('modal-games')">Fermer</button></div>
+  </div>
+</div>
+
+<!-- MODAL RECORDS -->
+<div class="modal-overlay" id="modal-records" style="z-index:214;">
+  <div class="modal-box sheet">
+    <div class="sheet-grip"></div>
+    <div class="modal-title sheet-title">🏆 Records</div>
+    <div class="sheet-scroll" id="recordsBody"></div>
+    <div class="modal-actions"><button class="btn-primary" onclick="closeModal('modal-records')">Fermer</button></div>
   </div>
 </div>
 
@@ -4978,7 +5022,12 @@ function renderAccInfo() {
         + '<button class="btn-primary" style="width:100%;margin-top:10px;" onclick="changePassword()">Changer le mot de passe</button>'
       : '<div class="pf-note">Pour changer ton mot de passe, on t\'envoie un mail avec un lien. Il sera envoyé à <strong style="word-break:break-all;">' + escHtml(currentUser.email || '') + '</strong>.</div>'
         + '<div id="accInfoMsg" style="display:none;font-size:13px;margin-top:8px;"></div>'
-        + '<button class="btn-primary" id="accMailBtn" style="width:100%;margin-top:10px;" onclick="sendPasswordMail(\'' + escHtml(currentUser.email || '') + '\', \'accInfoMsg\', \'accMailBtn\')">📧 Recevoir un mail pour changer mon mot de passe</button>');
+        + '<button class="btn-primary" id="accMailBtn" style="width:100%;margin-top:10px;" onclick="sendPasswordMail(\'' + escHtml(currentUser.email || '') + '\', \'accInfoMsg\', \'accMailBtn\')">📧 Recevoir un mail pour changer mon mot de passe</button>'
+        + '<div class="th-label" style="margin-top:18px;">Changer d\'adresse mail</div>'
+        + '<div class="pf-note">Un mail de confirmation sera envoyé à ta nouvelle adresse.</div>'
+        + '<input class="modal-input" id="accNewMail" type="email" placeholder="Nouvelle adresse mail" maxlength="100" autocomplete="email" style="margin-top:10px;">'
+        + '<div id="accMailMsg" style="display:none;font-size:12px;margin-top:8px;"></div>'
+        + '<button class="btn-primary" id="accAddMailBtn" style="width:100%;margin-top:10px;" onclick="addMail()">✉️ Changer mon adresse mail</button>');
 }
 // Anciens comptes créés avec un simple pseudo (adresse en @soundvault.local) : pas de mail possible, on garde le changement direct
 async function changePassword() {
@@ -5020,7 +5069,7 @@ async function addMail() {
   try {
     const { error } = await sb.auth.updateUser({ email }, { emailRedirectTo: svAppUrl() });
     if (error) throw error;
-    show('📧 Un mail de confirmation vient d\'être envoyé à ' + email + '. Clique sur le lien pour valider ton adresse.', true);
+    show('📧 Un mail de confirmation vient d\'être envoyé à ' + email + '. Clique sur le lien pour valider. Si rien n\'arrive, regarde aussi ta boîte mail actuelle : Supabase peut demander de confirmer depuis les deux.', true);
   } catch (err) {
     const m = String(err && err.message || '').toLowerCase();
     if (m.includes('security purposes') || m.includes('rate limit')) show('Trop de demandes : patiente une minute puis réessaie.', false);
@@ -5734,6 +5783,7 @@ ${topS.slice(1).map((x, i) => `<div class="st-row rc-row"><div><span class="st-r
   }
   if (pls.length) h += `<div class="st-h" style="margin-top:16px">🎶 Tes ${pls.length > 1 ? pls.length + ' playlists' : 'playlist'} du mois</div>
 <div class="rc-pod">${podOrder.map(o => `<div class="${o[2]}" style="height:${o[3]}px"><i>${o[1]}</i><b>${svEsc(pls[o[0]][0])}</b><span>${fmtDur(pls[o[0]][1])}</span></div>`).join('')}</div>`;
+  h += rcGamesHtml(R.key);
   return h + `<button class="btn-secondary rc-share" onclick="openShare('full')">📤 Partager mon récap</button>`;
 }
 function rcReveal(box, scroller) {
@@ -5989,10 +6039,81 @@ async function svSyncPull(force) {
     const mine = 'stats:' + SV_DEVICE_ID;
     svOtherStats = rows.filter(r => r.key.startsWith('stats:') && r.key !== mine && r.data && (r.data.resetTs || 0) >= (svStats.resetTs || 0)).map(r => r.data);
     if (!byKey[mine] || svStatsDirty) svPushStats();
+    // Records des jeux : ceux des autres appareils
+    svOtherGames = rows.filter(r => r.key.startsWith('games:') && r.key !== 'games:' + SV_DEVICE_ID && r.data).map(r => r.data);
+    if (!byKey['games:' + SV_DEVICE_ID] && svGamesHasData()) svPushGames();
+    if (document.getElementById('modal-records').classList.contains('show')) gamesRenderRecords();
     if (document.getElementById('modal-stats').classList.contains('show')) renderStats();
     svRefreshRecapDots();
   } catch (e) { console.warn('Synchro thème/stats échouée :', e); }
   finally { svPullBusy = false; }
+}
+
+// ── RECORDS ET STATS DES JEUX : enregistrés sur l'appareil puis synchronisés avec le compte (ligne « games:<appareil> ») ──
+// Records = le meilleur de tous les appareils ; parties / victoires = additionnées ; série = celle du dernier appareil utilisé.
+function svGamesEmpty() { return { ts: 0, mm: { played: 0, wins: 0, streak: 0, bestStreak: 0, bestTries: 0 }, bb: { played: 0, best: 0 }, months: {} }; }
+let svGames = (function () {
+  const g = svGamesEmpty();
+  try {
+    const raw = JSON.parse(localStorage.getItem('sv_games') || 'null');
+    if (raw) { Object.assign(g.mm, raw.mm || {}); Object.assign(g.bb, raw.bb || {}); g.months = raw.months || {}; g.ts = raw.ts || 0; }
+    else { // première fois : on reprend les records déjà enregistrés sur cet appareil
+      const o = JSON.parse(localStorage.getItem('sv_mm_stats') || 'null'); if (o) Object.assign(g.mm, o);
+      g.bb.best = parseInt(localStorage.getItem('sv_blind_best2') || '0', 10) || 0;
+    }
+  } catch (e) {}
+  return g;
+})();
+let svOtherGames = [], svGamesPushTimer = null;
+function svGamesSave() {
+  svGames.ts = Date.now();
+  try { localStorage.setItem('sv_games', JSON.stringify(svGames)); } catch (e) {}
+  clearTimeout(svGamesPushTimer); svGamesPushTimer = setTimeout(svPushGames, 1500);
+}
+function svPushGames() { return svCloudUpsert('games:' + SV_DEVICE_ID, svGames); }
+function svGamesHasData() { return svGames.mm.played > 0 || svGames.bb.played > 0 || svGames.bb.best > 0; }
+function svGamesMerged() {
+  const out = svGamesEmpty(); let latest = null;
+  [svGames, ...svOtherGames].forEach(g => {
+    if (!g) return;
+    const m = g.mm || {}, b = g.bb || {};
+    out.mm.played += m.played || 0; out.mm.wins += m.wins || 0;
+    out.mm.bestStreak = Math.max(out.mm.bestStreak, m.bestStreak || 0);
+    if (m.bestTries && (!out.mm.bestTries || m.bestTries < out.mm.bestTries)) out.mm.bestTries = m.bestTries;
+    out.bb.played += b.played || 0; out.bb.best = Math.max(out.bb.best, b.best || 0);
+    if (!latest || (g.ts || 0) > (latest.ts || 0)) latest = g;
+    for (const k in (g.months || {})) {
+      const x = g.months[k] || {}, d = out.months[k] || (out.months[k] = { mp: 0, mw: 0, bp: 0, bbest: 0 });
+      d.mp += x.mp || 0; d.mw += x.mw || 0; d.bp += x.bp || 0; d.bbest = Math.max(d.bbest, x.bbest || 0);
+    }
+  });
+  out.mm.streak = latest ? ((latest.mm || {}).streak || 0) : 0;
+  out.mm.bestStreak = Math.max(out.mm.bestStreak, out.mm.streak);
+  return out;
+}
+function svGameMo() {
+  const d = new Date(), k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  return svGames.months[k] || (svGames.months[k] = { mp: 0, mw: 0, bp: 0, bbest: 0 });
+}
+function svLogMystery(win, tries) {
+  const m = svGames.mm, mo = svGameMo(); m.played++; mo.mp++;
+  if (win) { m.wins++; mo.mw++; m.streak++; m.bestStreak = Math.max(m.bestStreak, m.streak); if (!m.bestTries || tries < m.bestTries) m.bestTries = tries; } else m.streak = 0;
+  svGamesSave();
+}
+function svLogBlind(avg) {
+  svGames.bb.played++; svGames.bb.best = Math.max(svGames.bb.best, avg);
+  const mo = svGameMo(); mo.bp++; mo.bbest = Math.max(mo.bbest, avg);
+  svGamesSave();
+}
+// Section « Jeux » du récap d'un mois
+function rcGamesHtml(key) {
+  const x = svGamesMerged().months[key]; if (!x || (x.mp + x.bp) <= 0) return '';
+  const c = (v, l) => '<div class="st-card"><b>' + v + '</b><span>' + l + '</span></div>';
+  return '<div class="st-h" style="margin-top:16px">🎮 Tes jeux du mois</div><div class="st-grid">' +
+    c(x.mp + x.bp, 'parties jouées') +
+    (x.mp ? c(x.mw + ' / ' + x.mp, 'Musique mystère trouvées') : '') +
+    (x.bp ? c(x.bp, 'blind test' + (x.bp > 1 ? 's' : '') + ' joué' + (x.bp > 1 ? 's' : '')) : '') +
+    (x.bbest ? c(x.bbest + ' pts', 'meilleur score au blind test') : '') + '</div>';
 }
 if (sb) {
   sb.auth.onAuthStateChange((ev, session) => { if (session && (ev === 'SIGNED_IN' || ev === 'INITIAL_SESSION')) setTimeout(() => svSyncPull(true), 800); });
@@ -6005,9 +6126,9 @@ if (sb) {
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '2.5';
+const APP_VERSION = '2.8';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Musique mystère : tu choisis la source (toute la bibliothèque ou une playlist)", "Jeux : tes records s'affichent directement dans le menu Jeux", "Connexion : un œil pour afficher ou masquer le mot de passe", "Comptes : une adresse mail est obligatoire à l'inscription, et les anciens comptes peuvent ajouter la leur dans Info du compte", "Le rond vert du récap mensuel apparaît même si l'appli reste ouverte pendant le changement de mois", "Fiabilité : la version de la synchro est fixée pour éviter les pannes surprises"];
+const APP_NOTES = ["Jeux : un bouton « Records » ouvre tous tes records, jeu par jeu, avec un bouton pour rejouer à Musique mystère"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
@@ -6374,8 +6495,9 @@ function blindEnd() {
   const b = blind; blindStop();
   const n = b.order.length;
   const avg = Math.round(b.score / n);   // score final sur 100
-  const prev = blindBest(b.mode);
+  const prev = Math.max(blindBest(b.mode), svGamesMerged().bb.best);
   const record = avg > prev;
+  svLogBlind(avg);
   if (record) { try { localStorage.setItem(blindBestKey(b.mode), String(avg)); } catch (e) {} }
   const emoji = avg >= 90 ? '🏆' : avg >= 60 ? '🔥' : avg >= 30 ? '👍' : '😅';
   document.getElementById('blindBody').innerHTML =
@@ -6394,11 +6516,12 @@ function blindEnd() {
     .observe(m, { attributes: true, attributeFilter: ['class'] });
 })();
 
-// ── JEUX : MUSIQUE MYSTÈRE ── (un son caché : 0,1 s, puis 1, 2, 3, 5 et 10 s d'écoute, il faut trouver le titre en 6 essais)
+// ── JEUX : MUSIQUE MYSTÈRE ── (un son caché : 1, 2, 3, 5 puis 10 s d'écoute, il faut trouver le titre en 5 essais)
 const mmAudio = new Audio(); mmAudio.preload = 'auto';
-const MM_STEPS = [0.1, 1, 2, 3, 5, 10];
+const MM_STEPS = [1, 2, 3, 5, 10]; // 5 essais : l'extrait de 0,1 s a été retiré
+const MM_RULES = '<div class="mm-rules"><div><b>1</b><span>Écoute un court extrait, d\'abord 1 seconde</span></div><div><b>2</b><span>Écris un titre et choisis-le dans la liste</span></div><div><b>3</b><span>Raté ou passé ? Tu entends plus de son, jusqu\'à 10 secondes</span></div></div>';
 let mm = null, mmT = null, mmRaf = null, mmUrl = null;
-function mmFmt(x) { return (x < 1 ? '0,1' : x) + ' s'; }
+function mmFmt(x) { return x + ' s'; }
 function mmStop() {
   clearTimeout(mmT); cancelAnimationFrame(mmRaf);
   try { mmAudio.pause(); } catch (e) {}
@@ -6411,21 +6534,28 @@ function mmRelease() {
   if (mmUrl) { URL.revokeObjectURL(mmUrl); mmUrl = null; }
   mmAudio.removeAttribute('src'); try { mmAudio.load(); } catch (e) {}
 }
-function mmStats() { try { return Object.assign({ played: 0, wins: 0, streak: 0, bestStreak: 0, bestTries: 0 }, JSON.parse(localStorage.getItem('sv_mm_stats') || '{}')); } catch (e) { return { played: 0, wins: 0, streak: 0, bestStreak: 0, bestTries: 0 }; } }
-function mmSaveResult(win, tries) {
-  const st = mmStats(); st.played++;
-  if (win) { st.wins++; st.streak++; st.bestStreak = Math.max(st.bestStreak, st.streak); if (!st.bestTries || tries < st.bestTries) st.bestTries = tries; } else st.streak = 0;
-  try { localStorage.setItem('sv_mm_stats', JSON.stringify(st)); } catch (e) {}
-  return st;
-}
+function mmStats() { return svGamesMerged().mm; }
+function mmSaveResult(win, tries) { svLogMystery(win, tries); return svGamesMerged().mm; }
 function gamesRenderRecords() {
-  const b = document.getElementById('gmBlindRec'), m = document.getElementById('gmMmRec');
-  let bb = 0; try { bb = blindBest('qcm'); } catch (e) {}
-  if (b) b.textContent = bb ? '🏆 Record : ' + bb + ' pts' : 'Pas encore de record';
+  const el = document.getElementById('recordsBody'); if (!el) return;
+  let bb = 0; try { bb = Math.max(blindBest('qcm'), svGamesMerged().bb.best); } catch (e) {}
   const st = mmStats();
-  if (m) m.textContent = st.wins ? '🏆 Trouvé en ' + st.bestTries + ' essai' + (st.bestTries > 1 ? 's' : '') + ' · ' + st.wins + ' victoire' + (st.wins > 1 ? 's' : '') + (st.bestStreak > 1 ? ' · série max ' + st.bestStreak : '') : 'Pas encore de record';
+  const rate = st.played ? Math.round(100 * st.wins / st.played) + ' %' : '–';
+  el.innerHTML = '<div class="gm-h">🏆 Records</div>' +
+    '<div class="gm-card"><div class="gm-ct">🎧 Blind test · meilleur score</div>' + (bb ? '<div class="gm-big">' + bb + '<small>pts</small></div>' : '<div class="gm-empty">Pas encore de partie : lance un blind test pour établir ton record.</div>') + '</div>' +
+    '<div class="gm-card v"><div class="gm-ct">🕵️ Musique mystère</div>' + (st.played
+      ? '<div class="gm-tiles"><div class="gm-tile"><b>' + (st.bestTries ? st.bestTries + ' essai' + (st.bestTries > 1 ? 's' : '') : '–') + '</b><span>meilleur résultat</span></div><div class="gm-tile"><b>' + st.wins + ' / ' + st.played + '</b><span>victoires · ' + rate + '</span></div><div class="gm-tile"><b>🔥 ' + st.streak + '</b><span>série · max ' + st.bestStreak + '</span></div></div>'
+      : '<div class="gm-empty">Pas encore de partie : trouve ton premier son mystère.</div>') +
+    '<button class="btn-primary" style="width:100%;margin-top:12px;" onclick="recReplayMystery()">▶ ' + (st.played ? 'Rejouer' : 'Jouer') + ' à Musique mystère</button></div>';
 }
-function openGames() { gamesRenderRecords(); openModal('modal-games'); }
+function openGames() { openModal('modal-games'); }
+function openRecords() { gamesRenderRecords(); openModal('modal-records'); }
+// Bouton « Rejouer » de la fenêtre Records : relance directement une partie de Musique mystère avec la dernière source choisie
+function recReplayMystery() {
+  closeModal('modal-records');
+  if (blindPool(mmSrc).length < 2) { openMystery(); return; }
+  openModal('modal-mystery'); mmStart();
+}
 let mmSrc = 'all';
 function openMystery() {
   mmRelease(); mm = null;
@@ -6435,7 +6565,7 @@ function openMystery() {
   const pls = playlists.map(p => ({ p, n: blindPool(String(p.id)).length })).filter(x => x.n >= 2);
   if (mmSrc !== 'all' && !pls.some(x => String(x.p.id) === String(mmSrc))) mmSrc = 'all';
   const chip = (id, label, n) => '<button class="bt-chip' + (String(mmSrc) === String(id) ? ' on' : '') + '" data-src="' + escHtml(String(id)) + '" onclick="mmPickSrc(this)">' + label + ' <span style="opacity:.6">(' + n + ')</span></button>';
-  el.innerHTML = '<div class="bt-label" style="margin-bottom:10px;">Dans quelle source piocher le son mystère ?</div><div class="bt-chips">' + chip('all', 'Toute la bibliothèque', total) + pls.map(x => chip(x.p.id, escHtml(x.p.name), x.n)).join('') + '</div>' +
+  el.innerHTML = MM_RULES + '<div class="bt-label" style="margin:16px 0 10px;">Dans quelle source piocher le son mystère ?</div><div class="bt-chips">' + chip('all', 'Toute la bibliothèque', total) + pls.map(x => chip(x.p.id, escHtml(x.p.name), x.n)).join('') + '</div>' +
     '<div class="mm-btns" style="grid-template-columns:1fr;margin-top:18px;"><button class="btn-primary" onclick="mmStart()">Lancer</button></div>';
   openModal('modal-mystery');
 }
@@ -6454,19 +6584,28 @@ function mmStart() {
 function mmAgain() { mmStart(); }
 function mmRender() {
   const g = mm, el = document.getElementById('mysteryBody'); if (!g || !el) return;
-  const seg = MM_STEPS.map((d, i) => '<div class="mm-seg' + (i <= g.step ? ' open' : '') + (i === g.step && !g.over ? ' cur' : '') + '">' + (d < 1 ? '0,1' : d) + '<i></i></div>').join('');
-  const slots = MM_STEPS.map((d, i) => { const r = g.rows[i]; return r ? '<div class="mm-slot ' + r.k + '">' + (r.k === 'ok' ? '✓ ' : r.k === 'ko' ? '✗ ' : '⏭ ') + escHtml(r.t) + '</div>' : '<div class="mm-slot"></div>'; }).join('');
+  const N = MM_STEPS.length;
+  const seg = MM_STEPS.map((d, i) => '<div class="mm-seg' + (i <= g.step ? ' open' : '') + (i === g.step && !g.over ? ' cur' : '') + (g.rows[i] && g.rows[i].k === 'ko' ? ' ko' : '') + '">' + d + ' s<i></i></div>').join('');
+  const slots = MM_STEPS.map((d, i) => {
+    const r = g.rows[i], now = !r && i === g.step && !g.over;
+    const txt = r ? (r.k === 'ok' ? '✓ ' : r.k === 'ko' ? '✗ ' : '⏭ ') + escHtml(r.t) : (now ? 'À toi de deviner…' : '');
+    return '<div class="mm-slot' + (r ? ' ' + r.k : now ? ' now' : '') + '"><em>' + d + ' s</em><span>' + txt + '</span></div>';
+  }).join('');
   let h = '<div class="mm-steps">' + seg + '</div>' +
     '<div class="mm-player"><div class="mm-disc" id="mmDisc"><svg class="mm-ring" viewBox="0 0 150 150" aria-hidden="true"><circle class="bg" cx="75" cy="75" r="70"/><circle class="fg" id="mmFg" cx="75" cy="75" r="70"/></svg><div class="mm-vinyl"></div><button class="mm-play" onclick="mmPlay()" aria-label="Écouter"' + (g.over ? ' disabled' : '') + '>▶</button></div>' +
-    '<div class="mm-hint"><span class="mm-pill">Essai <b>' + (g.step + 1) + ' / 6</b></span><span class="mm-pill g">🎧 <b>' + mmFmt(MM_STEPS[g.step]) + '</b> d’écoute</span></div></div>' +
+    '<div class="mm-hint"><span class="mm-pill">Essai <b>' + (g.step + 1) + ' / ' + N + '</b></span><span class="mm-pill g">🎧 <b>' + mmFmt(MM_STEPS[g.step]) + '</b> d’écoute</span></div>' +
+    (g.step === 0 && !g.over && !g.rows.length ? '<div class="mm-help">Appuie sur ▶ pour écouter l’extrait</div>' : '') + '</div>' +
     '<div class="mm-slots">' + slots + '</div>';
   if (g.over) {
     const sq = MM_STEPS.map((d, i) => { const r = g.rows[i]; return r ? (r.k === 'ok' ? '🟩' : r.k === 'ko' ? '🟥' : '⬛') : '⬜'; }).join('');
-    h += '<div class="mm-end"><div class="mm-cover">' + (g.win ? '🎉' : '😅') + '</div><div class="mm-sq">' + sq + '</div><div class="mm-t">' + escHtml(cleanName(g.song.name)) + '</div><div class="mm-s">' + (g.win ? 'Trouvé en ' + (g.step + 1) + ' essai' + (g.step ? 's' : '') + ' · extrait de ' + mmFmt(MM_STEPS[g.step]) + (g.record ? ' · 🏆 record égalé ou battu' : '') : 'C’était ce titre.') + '</div>' +
+    const st = mmStats();
+    h += '<div class="mm-end' + (g.win ? ' win' : '') + '"><div class="mm-cover">' + (g.win ? '🎉' : '😅') + '</div><div class="mm-sq">' + sq + '</div><div class="mm-t">' + escHtml(cleanName(g.song.name)) + '</div><div class="mm-s">' + (g.win ? 'Trouvé en ' + (g.step + 1) + ' essai' + (g.step ? 's' : '') + ' avec ' + mmFmt(MM_STEPS[g.step]) + ' d’écoute' : 'C’était ce titre, pas de chance !') + '</div>' +
+      (g.record ? '<div class="mm-badge">🏆 Record égalé ou battu</div>' : '') +
+      '<div class="mm-mini"><span>🔥 Série <b>' + st.streak + '</b></span><span>✅ <b>' + st.wins + '</b> / ' + st.played + ' parties</span></div>' +
       '<div class="mm-btns"><button class="btn-secondary" onclick="closeModal(\'modal-mystery\');gamesRenderRecords()">Jeux</button><button class="btn-primary" onclick="mmAgain()">Rejouer</button></div></div>';
   } else {
     h += '<div class="mm-field"><div class="mm-sug" id="mmSug" style="display:none"></div><input class="modal-input" id="mmInp" type="text" placeholder="Écris, puis choisis un son…" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" oninput="mmSuggest()" onkeydown="if(event.key===\'Enter\')mmValidate()"></div>' +
-      '<div class="mm-btns"><button class="btn-secondary" onclick="mmSkip()">' + (g.step < 5 ? 'Passer · écouter ' + mmFmt(MM_STEPS[g.step + 1]) : 'Abandonner') + '</button><button class="btn-primary" onclick="mmValidate()">Valider</button></div>';
+      '<div class="mm-btns"><button class="btn-secondary" onclick="mmSkip()">' + (g.step < N - 1 ? 'Passer · écouter ' + mmFmt(MM_STEPS[g.step + 1]) : 'Abandonner') + '</button><button class="btn-primary" onclick="mmValidate()">Valider</button></div>';
   }
   el.innerHTML = h;
 }
@@ -6509,11 +6648,11 @@ function mmValidate() {
 }
 function mmSkip() {
   const g = mm; if (!g || g.over) return;
-  if (g.step >= 5) { g.rows[g.step] = { k: 'skip', t: 'Abandonné' }; mmFinish(false); } else mmNext({ k: 'skip', t: 'Passé' });
+  if (g.step >= MM_STEPS.length - 1) { g.rows[g.step] = { k: 'skip', t: 'Abandonné' }; mmFinish(false); } else mmNext({ k: 'skip', t: 'Passé' });
 }
 function mmNext(row) {
   const g = mm; g.rows[g.step] = row;
-  if (g.step >= 5) { mmFinish(false); return; }
+  if (g.step >= MM_STEPS.length - 1) { mmFinish(false); return; }
   g.step++; g.sel = null; mmStop(); mmRender();
   setTimeout(() => { if (mm === g && !g.over) mmPlay(); }, 250);
 }
