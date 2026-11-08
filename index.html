@@ -3965,13 +3965,15 @@ const SVG_PLAY_SM  = '<svg viewBox="0 0 24 24" width="15" height="15" fill="curr
 const SVG_PAUSE_SM = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><rect x="6" y="5" width="4.5" height="14" rx="1.5"/><rect x="13.5" y="5" width="4.5" height="14" rx="1.5"/></svg>';
 
 // ── PARAMÈTRES (enregistrés sur cet appareil) ──
-const SV_PREFS_DEF = { speed: 1, syncAuto: true, dlAuto: (navigator.maxTouchPoints || 0) > 0 };
+const SV_PREFS_DEF = { speed: 1, syncAuto: true, dlAuto: true };
 let svPrefs = Object.assign({}, SV_PREFS_DEF);
 try { Object.assign(svPrefs, JSON.parse(localStorage.getItem('sv_prefs') || '{}') || {}); } catch (e) {}
 function savePrefs() { try { localStorage.setItem('sv_prefs', JSON.stringify(svPrefs)); } catch (e) {} }
+// 2.9 : le téléchargement automatique est activé partout (avant : seulement sur appareil tactile). Remis à « activé » une seule fois.
+try { if (!localStorage.getItem('sv_dl_mig29')) { svPrefs.dlAuto = true; localStorage.setItem('sv_dl_mig29', '1'); savePrefs(); } } catch (e) {}
 // Réglages identiques sur tous tes appareils (même compte) : stockés dans le cloud avec les réglages par musique.
-// Les plus récents l'emportent. (Le téléchargement automatique reste propre à chaque appareil : PC ≠ téléphone.)
-const SV_SYNC_PREFS = ['speed', 'syncAuto'];
+// Les plus récents l'emportent.
+const SV_SYNC_PREFS = ['speed', 'syncAuto', 'dlAuto'];
 let svPrefsT = parseInt(localStorage.getItem('sv_prefs_t') || '0', 10) || 0;
 let svCloudPrefsSeen = null;
 function svPrefsPayload() {
@@ -3987,6 +3989,7 @@ function svMergePrefsFromCloud(cloudFx) {
   let changed = false;
   if (typeof c.speed === 'number' && c.speed >= 0.25 && c.speed <= 4 && c.speed !== svPrefs.speed) { svPrefs.speed = c.speed; changed = true; }
   if (typeof c.syncAuto === 'boolean' && c.syncAuto !== svPrefs.syncAuto) { svPrefs.syncAuto = c.syncAuto; changed = true; }
+  if (typeof c.dlAuto === 'boolean' && c.dlAuto !== svPrefs.dlAuto) { svPrefs.dlAuto = c.dlAuto; changed = true; }
   svPrefsT = c.t;
   try { localStorage.setItem('sv_prefs_t', String(svPrefsT)); } catch (e) {}
   savePrefs(); applyPrefs();
@@ -4043,7 +4046,7 @@ function setPref(k, v) {
     scheduleFxPush(); // envoyé au cloud : les autres appareils auront le même réglage
   }
 }
-function togglePref(k) { setPref(k, !svPrefs[k]); }
+function togglePref(k) { setPref(k, !svPrefs[k]); if (k === 'dlAuto' && svPrefs.dlAuto && currentUser) syncFromCloud({ silent: true }); /* réglage activé : on récupère tout de suite les musiques manquantes */ }
 function renderPrefs() {
   const sw = (k, ico, g, title, sub) => `<div class="set-row" onclick="togglePref('${k}')"><div class="set-ico ${g}" style="font-size:22px;">${ico}</div><div class="set-txt"><strong>${title}</strong><span>${sub}</span></div><div class="pf-sw ${svPrefs[k] ? 'on' : ''}"></div></div>`;
   const speeds = [0.75, 1, 1.25, 1.5, 2];
@@ -4053,6 +4056,7 @@ function renderPrefs() {
   h += `<div class="set-row pf-static"><div class="set-ico g2" style="font-size:22px;">⏩</div><div class="set-txt"><strong>Vitesse de lecture</strong><span>Accélère ou ralentit toutes les musiques</span><div class="pf-chips">${speeds.map(v => `<div class="pf-chip ${svPrefs.speed === v ? 'on' : ''}" onclick="setPref('speed', ${v})">${String(v).replace('.', ',')}×</div>`).join('')}</div></div></div>`;
   h += '<div class="th-label" style="margin-top:14px;">Synchronisation</div>';
   h += sw('syncAuto', '🔄', 'g4', 'Synchro automatique', 'Vérifie le cloud à l\'ouverture et quand tu reviens sur l\'appli. Désactivée : seulement quand tu appuies sur « Resynchroniser »');
+  h += sw('dlAuto', '⬇️', 'g4', 'Télécharger les musiques du cloud', 'À chaque synchro, télécharge sur cet appareil les musiques de ton compte qui y manquent. Désactivé : seulement quand tu appuies sur « Resynchroniser »');
   h += '<div class="th-label" style="margin-top:14px;">Compte</div>';
   h += '<div class="set-row" onclick="openAccInfo()"><div class="set-ico g4" style="font-size:22px;">👤</div><div class="set-txt"><strong>Info du compte</strong><span>Mail et mot de passe</span></div><div class="set-chev">›</div></div>';
   h += '<div class="pf-note">Ces paramètres sont les mêmes sur tous tes appareils connectés au même compte.</div>';
@@ -6126,9 +6130,9 @@ if (sb) {
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '2.8';
+const APP_VERSION = '2.9';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Jeux : un bouton « Records » ouvre tous tes records, jeu par jeu, avec un bouton pour rejouer à Musique mystère"];
+const APP_NOTES = ["Nouveau réglage « Télécharger les musiques du cloud » (Paramètres › Synchronisation), activé par défaut sur tous les appareils, PC compris, et identique sur tous tes appareils : toutes tes musiques sont donc disponibles, y compris dans les jeux"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
