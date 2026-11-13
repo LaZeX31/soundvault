@@ -950,11 +950,13 @@ body:not(.queue-open) header {
   border: none;
   color: var(--muted);
   cursor: pointer;
-  padding: 6px;
+  padding: 10px 12px;
+  margin: -6px -4px;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 18px;
   transition: all 0.2s;
   line-height: 1;
+  touch-action: manipulation;
 }
 .btn-dots:hover { color: var(--text); background: rgba(255,255,255,0.08); }
 .song-menu-item {
@@ -3332,7 +3334,15 @@ function toggleSongMenu(e, sid, pid) {
   if (!menu) return;
   const isOpen = menu.style.display === 'block';
   closeSongMenus();
-  if (!isOpen) menu.style.display = 'block';
+  if (isOpen) return;
+  menu.style.display = 'block'; menu.style.top = 'auto'; menu.style.bottom = 'calc(100% + 4px)';
+  // le menu s'ouvre vers le haut ; s'il n'y a pas la place (haut de l'écran), on l'ouvre vers le bas, au-dessus du lecteur
+  const mh = menu.offsetHeight + 8, r = menu.parentElement.getBoundingClientRect();
+  const pl = document.getElementById('player');
+  const bottomLimit = pl && pl.classList.contains('visible') ? pl.getBoundingClientRect().top : window.innerHeight;
+  const roomAbove = r.top - 60, roomBelow = bottomLimit - r.bottom;
+  if (roomAbove < mh && roomBelow > roomAbove) { menu.style.bottom = 'auto'; menu.style.top = 'calc(100% + 4px)'; }
+  if (Math.max(roomAbove, roomBelow) < mh) menu.parentElement.scrollIntoView({ block: 'center', behavior: 'smooth' });
 }
 function closeSongMenus() { document.querySelectorAll('.song-menu').forEach(m => m.style.display = 'none'); }
 
@@ -3353,6 +3363,7 @@ function confirmRenameSong() {
   const s = songs.find(x => x.id === renamingSongId);
   if (!s) return;
   s.name = name;
+  svSetPendingRename(s.id, name);
   safePut('songs', s, name);
   closeModal('modal-rename-song');
   toast('✏️ Musique renommée');
@@ -3893,10 +3904,10 @@ function updateMediaPosition() {
 (function initMediaSessionHandlers() {
   if (!('mediaSession' in navigator)) return;
   const set = (name, fn) => { try { navigator.mediaSession.setActionHandler(name, fn); } catch (e) {} };
-  set('play',          () => { fxResume(); audio.play(); });
+  set('play',          () => { if (svRemoteMode()) { svTakeOver(); return; } fxResume(); audio.play(); });
   set('pause',         () => { svMarkUserPause(); audio.pause(); });
-  set('previoustrack', () => prevSong());
-  set('nexttrack',     () => nextSong());
+  set('previoustrack', () => { if (svRemoteMode()) return; prevSong(); });
+  set('nexttrack',     () => { if (svRemoteMode()) return; nextSong(); });
   set('seekbackward',  d => { audio.currentTime = Math.max(0, audio.currentTime - ((d && d.seekOffset) || 10)); });
   set('seekforward',   d => { audio.currentTime = Math.min(audio.duration || 1e9, audio.currentTime + ((d && d.seekOffset) || 10)); });
   set('seekto',        d => { if (d && typeof d.seekTime === 'number') { audio.currentTime = d.seekTime; updateMediaPosition(); } });
@@ -5310,10 +5321,29 @@ function logoutAccount() {
 }
 
 // Met à jour juste le nom d'une musique côté cloud (pas de ré-upload de l'audio)
+// Renommages en attente d'envoi au cloud : tant qu'un nom n'est pas confirmé dans le cloud, la synchro ne doit pas le remettre à l'ancien
+function svPendingRenames() { try { return JSON.parse(localStorage.getItem('sv_pending_renames') || '{}') || {}; } catch (e) { return {}; } }
+function svSetPendingRename(id, name) { try { const m = svPendingRenames(); if (name == null) delete m[id]; else m[id] = name; localStorage.setItem('sv_pending_renames', JSON.stringify(m)); } catch (e) {} }
 async function pushSongMetaToCloud(song) {
   if (!cloudReady || !currentUser) return;
-  const { error } = await sb.from('songs').update({ name: song.name }).eq('id', song.id).eq('user_id', currentUser.id);
+  const name = song.name;
+  let { data, error } = await sb.from('songs').update({ name, updated_at: new Date().toISOString() }).eq('id', song.id).eq('user_id', currentUser.id).select('id');
+  if (!error && (!data || !data.length)) {
+    // aucune ligne modifiée (ligne absente ou droits) : on tente un upsert
+    ({ error } = await sb.from('songs').upsert({ id: song.id, user_id: currentUser.id, name, updated_at: new Date().toISOString() }).select('id'));
+  }
   if (error) { console.warn('Maj nom cloud échouée :', error); throw error; }
+  if (svPendingRenames()[song.id] === name) svSetPendingRename(song.id, null);
+}
+async function svFlushPendingRenames() {
+  if (!cloudReady || !currentUser) return;
+  const m = svPendingRenames();
+  for (const id of Object.keys(m)) {
+    const sg = songs.find(x => x.id === id);
+    if (!sg) { svSetPendingRename(id, null); continue; }
+    sg.name = m[id];
+    try { await pushSongMetaToCloud(sg); } catch (e) {}
+  }
 }
 
 // Pousse une musique vers le cloud (appelé après un ajout local)
@@ -5379,6 +5409,7 @@ let syncInProgress = false;
 async function syncFromCloud(opts) {
   const silent = !!(opts && opts.silent);
   if (!cloudReady || !currentUser) return;
+  try { await svFlushPendingRenames(); } catch (e) {}
   if (syncInProgress) { if (!silent) toast('⏳ Synchro déjà en cours...'); return; }
   syncInProgress = true;
   // Silencieux (retour sur l'appli) : ni icône qui tourne, ni texte. Visible à l'ouverture et au clic sur « Resynchroniser ».
@@ -5412,7 +5443,10 @@ async function syncFromCloud(opts) {
     for (const cs of (cloudSongs || [])) {
       const existing = localById.get(cs.id);
       if (existing) {
-        if (existing.name !== cs.name) {
+        const pend = svPendingRenames()[cs.id];
+        if (pend != null && pend !== cs.name) { existing.name = pend; pushSongMetaToCloud(existing).catch(() => {}); }
+        else if (pend != null) svSetPendingRename(cs.id, null);
+        else if (existing.name !== cs.name) {
           existing.name = cs.name;
           store('songs', 'readwrite').put(existing);
           renamed++;
@@ -6360,9 +6394,9 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '3.3';
+const APP_VERSION = '3.4';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Recherche : plus besoin de mettre les accents pour trouver une musique (« etre » trouve « Être »)","Reprise entre appareils : quand tu ouvres l'appli, le lecteur affiche la musique de ton autre appareil (« En écoute sur ton PC » ou « Dernière écoute sur ton PC ») en pause, à l'endroit où elle en est ou où tu t'es arrêté","Appuie sur lecture : elle reprend ici au même endroit et l'autre appareil se met en pause","Plus de télécommande : on ne peut plus mettre pause ou changer de musique sur l'autre appareil depuis celui-ci"];
+const APP_NOTES = ["Recherche : plus besoin de mettre les accents pour trouver une musique (« etre » trouve « Être »)","Renommer une musique : le nouveau nom reste maintenant même après une synchro (avant, il pouvait revenir à l’ancien)","Menu ⋯ : zone de clic plus grande, et il s’ouvre vers le bas quand il n’y a pas la place en haut","Bouton lecture de l’écran verrouillé ou des écouteurs : reprend bien la musique de l’autre appareil quand elle est affichée dans le lecteur"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
