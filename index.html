@@ -649,14 +649,23 @@ main { padding: 16px 20px; position: relative; z-index: 1; }
 
 /* ── TOAST ── */
 
-/* ── LECTURE EN DIRECT ENTRE APPAREILS ── */
-.sv-live { position: fixed; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 950; display: none; align-items: center; gap: 10px; max-width: calc(100vw - 24px); padding: 8px 8px 8px 14px; border-radius: 999px; background: color-mix(in srgb, var(--bg) 88%, var(--text) 12%); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); box-shadow: 0 6px 24px rgba(0,0,0,.35); font-size: 13px; color: var(--text); }
-.sv-live.show { display: flex; }
-.sv-live .sv-live-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sv-live .sv-live-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--accent); animation: svLivePulse 1.4s ease-in-out infinite; }
-.sv-live.paused .sv-live-dot { animation: none; opacity: .4; }
-.sv-live button { flex: none; border: 0; border-radius: 999px; padding: 6px 12px; font: inherit; font-weight: 600; cursor: pointer; background: var(--accent); color: #fff; }
-@keyframes svLivePulse { 50% { opacity: .3; } }
+
+/* ── LECTEUR EN MODE « À DISTANCE » (musique d'un autre appareil) ── */
+.sv-remote-badge { display: none; align-items: center; gap: 8px; margin: 0 0 10px; padding: 5px 12px 5px 10px; width: fit-content; max-width: 100%; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: .2px; color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+.sv-remote-badge span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.player.remote .sv-remote-badge { display: flex; animation: svRemoteIn .45s cubic-bezier(.34,1.56,.64,1); }
+.player.remote { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 16%, rgba(22,22,32,.96)), rgba(10,10,16,.98)) !important; border-top-color: color-mix(in srgb, var(--accent) 55%, transparent) !important; box-shadow: 0 -10px 40px color-mix(in srgb, var(--accent) 22%, transparent); }
+.player.remote .player-art { background: color-mix(in srgb, var(--accent) 22%, var(--bg3)) !important; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 50%, transparent), 0 6px 22px color-mix(in srgb, var(--accent) 35%, transparent); }
+.player.remote .progress-fill { background: var(--accent) !important; }
+.player.remote .progress-bar { pointer-events: none; }
+.player.remote #btnShuffle, .player.remote #btnRepeat { opacity: .25; pointer-events: none; }
+.sv-eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+.sv-eq i { display: block; width: 3px; border-radius: 2px; background: currentColor; height: 100%; transform-origin: bottom; animation: svEq 1s ease-in-out infinite; }
+.sv-eq i:nth-child(2) { animation-delay: -.35s; } .sv-eq i:nth-child(3) { animation-delay: -.7s; }
+.sv-eq.off i { animation: none; transform: scaleY(.3); opacity: .6; }
+.player-art .sv-eq { height: 22px; gap: 3px; } .player-art .sv-eq i { width: 4px; }
+@keyframes svEq { 0%,100% { transform: scaleY(.25); } 50% { transform: scaleY(1); } }
+@keyframes svRemoteIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .toast {
   position: fixed;
   top: 80px;
@@ -2171,6 +2180,7 @@ header .btn-icon, header .btn-add { box-shadow: none; }
 
 <!-- PLAYER -->
 <div class="player" id="player">
+  <div class="sv-remote-badge" id="svRemoteBadge"><span class="sv-eq" id="svBadgeEq"><i></i><i></i><i></i></span><span id="svRemoteName"></span></div>
   <div class="player-track">
     <div class="player-art cover-1" id="player-art">🎵</div>
     <div class="player-info">
@@ -2669,7 +2679,6 @@ header .btn-icon, header .btn-add { box-shadow: none; }
 
 <div class="sh-ov" id="shareModal" onclick="if(event.target===this)closeShare()"><div class="sh-box"><h4>📤 Partager mon récap</h4><div class="sh-tabs"><button id="tabFull" class="on" onclick="openShare('full')">Récap entier</button><button id="tabSum" onclick="openShare('sum')">Carte résumé</button></div><div class="sh-scroll"><img id="shareImg" alt="Récap à partager"></div><div class="sh-hint" id="shareHint">Choisis l’image à envoyer.</div><div class="sh-act"><button class="no" onclick="closeShare()">Fermer</button><button class="go" onclick="sendShare()">Envoyer l’image</button></div></div></div>
 
-<div class="sv-live" id="svLive"><span class="sv-live-dot"></span><span class="sv-live-txt" id="svLiveTxt"></span><button id="svLiveBtn" onclick="svLiveRemoteToggle()">Pause</button></div>
 <div class="toast" id="toast"></div>
 <audio id="audioEl"></audio>
 
@@ -3909,11 +3918,13 @@ function setVolume(val) {
 }
 
 function togglePlay() {
+  if (svRemoteMode()) { svLiveCmd(svLiveRemote.playing ? 'pause' : 'play'); return; }
   if (audio.paused) { fxResume(); audio.play(); setPlayIcon(true); }
   else { svMarkUserPause(); audio.pause(); setPlayIcon(false); }
 }
 
 function nextSong() {
+  if (svRemoteMode()) { svLiveCmd('next'); return; }
   if (restartIfRepeat()) return;
     if (manualQueue && manualQueue.length) { playSong(manualQueue.shift(), currentPlaylistId); return; }
   const list = getQueue();
@@ -3939,6 +3950,7 @@ function queueLeftSong() {
 }
 
 function prevSong() {
+  if (svRemoteMode()) { svLiveCmd('prev'); return; }
   if (restartIfRepeat()) return;
   if (audio.currentTime > 3) { audio.currentTime = 0; return; }
   if (playHistory.length >= 2) {
@@ -6233,9 +6245,11 @@ if (sb) {
 }
 
 // ── LECTURE EN DIRECT ENTRE APPAREILS (Supabase Realtime « broadcast », rien à configurer) ──
-// Chaque appareil dit en direct ce qu'il joue. Quand une musique démarre sur un appareil, l'autre se met en pause.
+// Chaque appareil dit en direct ce qu'il joue. Quand une musique démarre sur un appareil, l'autre se met en pause
+// et son lecteur du bas affiche la musique de l'autre appareil, avec ses boutons pour la commander.
 const SV_DEV_NAME = /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent) ? 'ton téléphone' : 'ton PC';
-let svLiveCh = null, svLiveUid = null, svLiveReady = false, svLiveTimer = null, svLiveRemote = null, svLiveHideT = null;
+let svLiveCh = null, svLiveUid = null, svLiveReady = false, svLiveTimer = null, svLiveRemote = null, svLiveHideT = null, svRemoteForced = false;
+const svRemoteMode = () => !!svLiveRemote && audio.paused;
 function svLiveAuth() {
   if (!cloudReady || !sb) return;
   if (!currentUser) { if (svLiveCh) { try { sb.removeChannel(svLiveCh); } catch (e) {} svLiveCh = null; svLiveUid = null; svLiveReady = false; svLiveShow(null); } return; }
@@ -6250,48 +6264,82 @@ function svLiveAuth() {
 }
 function svLiveState() {
   const s = currentSongId ? songs.find(x => x.id === currentSongId) : null;
-  return { dev: SV_DEVICE_ID, name: SV_DEV_NAME, playing: !!s && !audio.paused, title: s ? cleanName(s.name) : '', pl: (document.getElementById('player-playlist') || {}).textContent || '', ts: Date.now() };
+  return { dev: SV_DEVICE_ID, name: SV_DEV_NAME, playing: !!s && !audio.paused, title: s ? cleanName(s.name) : '', pl: (document.getElementById('player-playlist') || {}).textContent || '', pos: audio.currentTime || 0, dur: audio.duration || 0 };
 }
-function svLiveSend() {
+function svLiveSend(extra) {
   if (!svLiveReady || !svLiveCh) return;
-  const st = svLiveState();
-  if (!st.title) return;
+  const st = Object.assign(svLiveState(), extra || {});
+  if (!st.title && !st.gone) return;
   try { svLiveCh.send({ type: 'broadcast', event: 'state', payload: st }); } catch (e) {}
 }
 function svLiveSendSoon() { clearTimeout(svLiveTimer); svLiveTimer = setTimeout(svLiveSend, 250); }
+function svLiveCmd(action) {
+  if (!svLiveCh || !svLiveRemote) return;
+  try { svLiveCh.send({ type: 'broadcast', event: 'cmd', payload: { to: svLiveRemote.dev, action } }); } catch (e) {}
+  if (action === 'play' || action === 'pause') { svLiveRemote.playing = action === 'play'; svLiveRemote.at = Date.now(); svRemoteIcon(); }
+}
+function svRemoteIcon() { const b = document.getElementById('btnPlay'); if (b && svLiveRemote) { b.classList.toggle('playing', !!svLiveRemote.playing); b.setAttribute('aria-label', svLiveRemote.playing ? 'Pause' : 'Lecture'); } const eq = document.getElementById('svBadgeEq'); if (eq) eq.classList.toggle('off', !(svLiveRemote && svLiveRemote.playing)); }
+function svRemoteProgress() {
+  if (!svLiveRemote) return;
+  const r = svLiveRemote, pos = Math.min(r.dur || 1e9, r.pos + (r.playing ? (Date.now() - r.at) / 1000 : 0));
+  document.getElementById('progressFill').style.width = (r.dur ? (pos / r.dur) * 100 : 0) + '%';
+  document.getElementById('timeNow').textContent = fmt(pos);
+  document.getElementById('timeTotal').textContent = r.dur ? fmt(r.dur) : '0:00';
+}
 function svLiveShow(st) {
-  svLiveRemote = st; clearTimeout(svLiveHideT);
-  const box = document.getElementById('svLive'); if (!box) return;
-  if (!st || !st.title) { box.classList.remove('show'); return; }
-  box.classList.add('show'); box.classList.toggle('paused', !st.playing);
-  document.getElementById('svLiveTxt').textContent = (st.playing ? 'En écoute sur ' : 'En pause sur ') + st.name + ' : ' + st.title;
-  document.getElementById('svLiveBtn').textContent = st.playing ? 'Pause' : 'Lecture';
-  if (!st.playing) svLiveHideT = setTimeout(() => svLiveShow(null), 60000);
+  const pl = document.getElementById('player'); if (!pl) return;
+  clearTimeout(svLiveHideT);
+  if (st && st.title) {
+    const was = !!svLiveRemote;
+    svLiveRemote = Object.assign({}, st, { at: Date.now() });
+    if (!was) { svRemoteForced = !pl.classList.contains('visible'); pl.classList.add('visible'); pl.classList.add('remote'); document.getElementById('player-art').innerHTML = '<span class="sv-eq"><i></i><i></i><i></i></span>'; }
+    document.getElementById('svRemoteName').textContent = (st.playing ? 'En écoute sur ' : 'En pause sur ') + st.name;
+    document.getElementById('player-title').textContent = st.title;
+    document.getElementById('player-playlist').textContent = st.pl || '—';
+    svRemoteIcon(); svRemoteProgress();
+    if (!st.playing) svLiveHideT = setTimeout(() => svLiveShow(null), 600000);
+    return;
+  }
+  if (!svLiveRemote) return;
+  svLiveRemote = null; pl.classList.remove('remote');
+  if (svRemoteForced) pl.classList.remove('visible');
+  document.getElementById('player-art').textContent = '🎵';
+  const s = currentSongId ? songs.find(x => x.id === currentSongId) : null;
+  document.getElementById('player-title').textContent = s ? cleanName(s.name) : 'Aucune musique';
+  document.getElementById('player-playlist').textContent = s ? (currentPlaylistId ? (playlists.find(p => p.id === currentPlaylistId)?.name || '—') : 'Toutes les musiques') : '—';
+  const d = audio.duration || 0;
+  document.getElementById('progressFill').style.width = (d ? (audio.currentTime / d) * 100 : 0) + '%';
+  document.getElementById('timeNow').textContent = fmt(audio.currentTime || 0);
+  document.getElementById('timeTotal').textContent = fmt(d);
+  setPlayIcon(!audio.paused);
 }
 function svLiveOnState(st) {
   if (!st || st.dev === SV_DEVICE_ID) return;
+  if (st.gone) { svLiveShow(null); return; }
   // Un autre appareil vient de lancer une musique : on met celui-ci en pause (sans reprise automatique)
-  if (st.playing && !audio.paused) { svMarkUserPause(); svResumeStop(); audio.pause(); setPlayIcon(false); toast('⏸ Pause : la musique joue sur ' + st.name); }
-  svLiveShow(audio.paused ? st : null);
+  if (st.playing && !audio.paused) { svMarkUserPause(); svResumeStop(); audio.pause(); toast('⏸ Pause : la musique joue sur ' + st.name); }
+  if (audio.paused || audio.ended) svLiveShow(st); else svLiveShow(null);
 }
 function svLiveOnCmd(c) {
   if (!c || c.to !== SV_DEVICE_ID) return;
-  if (c.action === 'pause' && !audio.paused) { svMarkUserPause(); svResumeStop(); audio.pause(); setPlayIcon(false); }
+  if (c.action === 'pause' && !audio.paused) { svMarkUserPause(); svResumeStop(); audio.pause(); }
   else if (c.action === 'play' && audio.paused && audio.src) { try { fxResume(); const p = audio.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
-}
-function svLiveRemoteToggle() {
-  if (!svLiveCh || !svLiveRemote) return;
-  svLiveCh.send({ type: 'broadcast', event: 'cmd', payload: { to: svLiveRemote.dev, action: svLiveRemote.playing ? 'pause' : 'play' } });
+  else if (c.action === 'next') nextSong();
+  else if (c.action === 'prev') prevSong();
 }
 audio.addEventListener('play', () => { svLiveShow(null); svLiveSendSoon(); });
 audio.addEventListener('pause', svLiveSendSoon);
 audio.addEventListener('loadedmetadata', svLiveSendSoon);
+audio.addEventListener('seeked', svLiveSendSoon);
+setInterval(() => { if (svRemoteMode()) { svRemoteProgress(); svRemoteIcon(); } }, 500);
+setInterval(() => { if (!audio.paused) svLiveSend(); }, 5000);
+window.addEventListener('pagehide', () => svLiveSend({ gone: true, playing: false }));
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '3.1';
+const APP_VERSION = '3.2';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Lecture en direct : si tu écoutes sur ton PC, ton téléphone affiche en temps réel la musique en cours (et inversement), avec un bouton pour la mettre en pause ou en lecture à distance","Une seule musique à la fois : quand tu lances une musique sur un appareil, l'autre se met automatiquement en pause (sans reprise automatique)"];
+const APP_NOTES = ["Lecteur en direct : la bannière du haut est supprimée. Quand la musique joue sur un autre appareil, ton lecteur du bas affiche cette musique (titre, playlist, progression) avec un badge « En écoute sur ton PC / ton téléphone »","Tu peux la commander à distance depuis le lecteur : lecture/pause, précédent, suivant"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
