@@ -658,7 +658,7 @@ main { padding: 16px 20px; position: relative; z-index: 1; }
 .player.remote .player-art { background: color-mix(in srgb, var(--accent) 22%, var(--bg3)) !important; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 50%, transparent), 0 6px 22px color-mix(in srgb, var(--accent) 35%, transparent); }
 .player.remote .progress-fill { background: var(--accent) !important; }
 .player.remote .progress-bar { pointer-events: none; }
-.player.remote #btnShuffle, .player.remote #btnRepeat { opacity: .25; pointer-events: none; }
+.player.remote #btnShuffle, .player.remote #btnRepeat, .player.remote .ctrl-btn.skip { opacity: .25; pointer-events: none; }
 .sv-eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
 .sv-eq i { display: block; width: 3px; border-radius: 2px; background: currentColor; height: 100%; transform-origin: bottom; animation: svEq 1s ease-in-out infinite; }
 .sv-eq i:nth-child(2) { animation-delay: -.35s; } .sv-eq i:nth-child(3) { animation-delay: -.7s; }
@@ -3020,7 +3020,7 @@ function filterHome(query) {
   const resultsEl = document.getElementById('home-search-results');
   const titleEl   = document.getElementById('pl-section-title');
   const plEl      = document.getElementById('playlists-list');
-  const q = query.trim().toLowerCase();
+  const q = svNorm(query);
   if (!q) {
     resultsEl.style.display = 'none';
     titleEl.style.display = '';
@@ -3031,7 +3031,7 @@ function filterHome(query) {
   titleEl.style.display = 'none';
   plEl.style.display = 'none';
   resultsEl.style.display = 'block';
-  const filtered = songs.filter(s => cleanName(s.name).toLowerCase().includes(q));
+  const filtered = songs.filter(s => svNorm(cleanName(s.name)).includes(q));
   if (!filtered.length) {
     resultsEl.innerHTML = `<div class="empty"><div class="icon">🔍</div><p>Aucun résultat pour "<strong>${escHtml(query)}</strong>"</p></div>`;
     return;
@@ -3541,12 +3541,12 @@ function bulkDelete() {
 }
 
 function filterDetail(query) {
-  const q = query.trim().toLowerCase();
+  const q = svNorm(query);
   const wraps = document.querySelectorAll('#detail-list .swipe-wrap');
   let anyVisible = false;
   wraps.forEach(w => {
     const s = songs.find(x => x.id === w.dataset.sid);
-    const match = !q || (s && cleanName(s.name).toLowerCase().includes(q));
+    const match = !q || (s && svNorm(cleanName(s.name)).includes(q));
     w.style.display = match ? '' : 'none';
     if (match) anyVisible = true;
   });
@@ -3565,11 +3565,11 @@ function filterDetail(query) {
 }
 
 function filterSongs(query) {
-  const q = query.trim().toLowerCase();
+  const q = svNorm(query);
   const el = document.getElementById('songs-list');
   if (!songs.length) return;
   if (!q) { renderSongs(); return; }
-  const filtered = sortByAddedDate(songs.filter(s => cleanName(s.name).toLowerCase().includes(q)));
+  const filtered = sortByAddedDate(songs.filter(s => svNorm(cleanName(s.name)).includes(q)));
   if (!filtered.length) {
     el.innerHTML = `<div class="empty"><div class="icon">🔍</div><p>Aucun résultat pour "<strong>${escHtml(query)}</strong>"</p></div>`;
     return;
@@ -3618,11 +3618,11 @@ function renderUploadSongs() {
 
 // Filtre la liste "Musiques importées" de l'onglet Ajouter selon la recherche
 function filterUploadSongs(query) {
-  const q = query.trim().toLowerCase();
+  const q = svNorm(query);
   if (!songs.length) return;
   if (!q) { renderUploadSongs(); return; }
   const el = document.getElementById('upload-songs-list');
-  const filtered = songs.filter(s => cleanName(s.name).toLowerCase().includes(q));
+  const filtered = songs.filter(s => svNorm(cleanName(s.name)).includes(q));
   if (!filtered.length) {
     el.innerHTML = `<div class="empty"><div class="icon">🔍</div><p>Aucun résultat pour "<strong>${escHtml(query)}</strong>"</p></div>`;
     return;
@@ -3671,6 +3671,8 @@ function deleteSong(id) {
   });
 }
 
+// Recherche : on ignore les accents, les majuscules et les apostrophes (« etre » trouve « Être »)
+function svNorm(str) { return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/œ/gi, 'oe').replace(/æ/gi, 'ae').replace(/['’`´]/g, '').toLowerCase().trim(); }
 function cleanName(name) { return name.replace(/\.(mp3|wav|ogg|m4a|flac|aac)$/i, '').replace(/_/g,' ').replace(/-/g,' '); }
 function escHtml(str)    { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -3918,13 +3920,12 @@ function setVolume(val) {
 }
 
 function togglePlay() {
-  if (svRemoteMode()) { svLiveCmd(svLiveRemote.playing ? 'pause' : 'play'); return; }
+  if (svRemoteMode()) { svTakeOver(); return; }
   if (audio.paused) { fxResume(); audio.play(); setPlayIcon(true); }
   else { svMarkUserPause(); audio.pause(); setPlayIcon(false); }
 }
 
 function nextSong() {
-  if (svRemoteMode()) { svLiveCmd('next'); return; }
   if (restartIfRepeat()) return;
     if (manualQueue && manualQueue.length) { playSong(manualQueue.shift(), currentPlaylistId); return; }
   const list = getQueue();
@@ -3950,7 +3951,6 @@ function queueLeftSong() {
 }
 
 function prevSong() {
-  if (svRemoteMode()) { svLiveCmd('prev'); return; }
   if (restartIfRepeat()) return;
   if (audio.currentTime > 3) { audio.currentTime = 0; return; }
   if (playHistory.length >= 2) {
@@ -4356,7 +4356,7 @@ function fxEmptyHTML(q) {
 }
 function fxFilteredSongs(inputId) {
   const q = (document.getElementById(inputId).value || '').trim();
-  const list = sortByAddedDate(songs).filter(s => !q || cleanName(s.name).toLowerCase().includes(q.toLowerCase()));
+  const list = sortByAddedDate(songs).filter(s => !q || svNorm(cleanName(s.name)).includes(svNorm(q)));
   // Le son en cours d'écoute passe toujours en premier de la liste
   const cur = list.findIndex(s => s.id === currentSongId);
   if (cur > 0) list.unshift(list.splice(cur, 1)[0]);
@@ -6244,12 +6244,15 @@ if (sb) {
   setInterval(() => svSyncPull(), 120000);
 }
 
-// ── LECTURE EN DIRECT ENTRE APPAREILS (Supabase Realtime « broadcast », rien à configurer) ──
-// Chaque appareil dit en direct ce qu'il joue. Quand une musique démarre sur un appareil, l'autre se met en pause
-// et son lecteur du bas affiche la musique de l'autre appareil, avec ses boutons pour la commander.
+// ── REPRISE ENTRE APPAREILS (Supabase Realtime « broadcast » + ligne « nowplaying » dans user_sync) ──
+// Le lecteur du bas affiche, en pause, la musique de l'autre appareil (en direct ou là où il s'est arrêté).
+// Si tu appuies sur lecture, elle reprend ici au même endroit et l'autre appareil se met en pause. Pas de télécommande.
 const SV_DEV_NAME = /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent) ? 'ton téléphone' : 'ton PC';
-let svLiveCh = null, svLiveUid = null, svLiveReady = false, svLiveTimer = null, svLiveRemote = null, svLiveHideT = null, svRemoteForced = false;
+let svLiveCh = null, svLiveUid = null, svLiveReady = false, svLiveTimer = null, svPersistTimer = null, svLiveRemote = null, svRemoteForced = false;
 const svRemoteMode = () => !!svLiveRemote && audio.paused;
+function svActGet() { try { return parseInt(localStorage.getItem('sv_live_act') || '0', 10) || 0; } catch (e) { return 0; } }
+function svActTouch() { try { localStorage.setItem('sv_live_act', String(Date.now())); } catch (e) {} }
+const svActNow = () => audio.paused ? svActGet() : Date.now();   // dernière activité de CET appareil
 function svLiveAuth() {
   if (!cloudReady || !sb) return;
   if (!currentUser) { if (svLiveCh) { try { sb.removeChannel(svLiveCh); } catch (e) {} svLiveCh = null; svLiveUid = null; svLiveReady = false; svLiveShow(null); } return; }
@@ -6259,45 +6262,59 @@ function svLiveAuth() {
   svLiveCh = sb.channel('sv-live:' + currentUser.id, { config: { broadcast: { self: false } } })
     .on('broadcast', { event: 'state' }, m => svLiveOnState(m.payload))
     .on('broadcast', { event: 'hello' }, () => svLiveSend())
-    .on('broadcast', { event: 'cmd' }, m => svLiveOnCmd(m.payload))
-    .subscribe(st => { if (st === 'SUBSCRIBED') { svLiveReady = true; svLiveCh.send({ type: 'broadcast', event: 'hello', payload: { dev: SV_DEVICE_ID } }); svLiveSend(); } });
+    .subscribe(st => {
+      if (st !== 'SUBSCRIBED') return;
+      svLiveReady = true;
+      svLiveCh.send({ type: 'broadcast', event: 'hello', payload: { dev: SV_DEVICE_ID } });
+      svLiveSend();
+      svLiveLoadLast();
+    });
 }
-function svLiveState() {
+function svLiveState(extra) {
   const s = currentSongId ? songs.find(x => x.id === currentSongId) : null;
-  return { dev: SV_DEVICE_ID, name: SV_DEV_NAME, playing: !!s && !audio.paused, title: s ? cleanName(s.name) : '', pl: (document.getElementById('player-playlist') || {}).textContent || '', pos: audio.currentTime || 0, dur: audio.duration || 0 };
+  return Object.assign({ dev: SV_DEVICE_ID, name: SV_DEV_NAME, sid: currentSongId, pid: currentPlaylistId || null, playing: !!s && !audio.paused, title: s ? cleanName(s.name) : '', pl: (document.getElementById('player-playlist') || {}).textContent || '', pos: audio.currentTime || 0, dur: audio.duration || 0, act: svActNow() }, extra || {});
 }
 function svLiveSend(extra) {
   if (!svLiveReady || !svLiveCh) return;
-  const st = Object.assign(svLiveState(), extra || {});
-  if (!st.title && !st.gone) return;
+  const st = svLiveState(extra);
+  if (!st.title) return;
   try { svLiveCh.send({ type: 'broadcast', event: 'state', payload: st }); } catch (e) {}
 }
 function svLiveSendSoon() { clearTimeout(svLiveTimer); svLiveTimer = setTimeout(svLiveSend, 250); }
-function svLiveCmd(action) {
-  if (!svLiveCh || !svLiveRemote) return;
-  try { svLiveCh.send({ type: 'broadcast', event: 'cmd', payload: { to: svLiveRemote.dev, action } }); } catch (e) {}
-  if (action === 'play' || action === 'pause') { svLiveRemote.playing = action === 'play'; svLiveRemote.at = Date.now(); svRemoteIcon(); }
+// Sauvegarde dans le cloud : sert à retrouver la musique là où tu t'es arrêté même si l'autre appareil est fermé
+function svLivePersist(extra) {
+  if (!cloudReady || !currentUser) return;
+  const st = svLiveState(extra);
+  if (!st.title || (svRemoteMode() && !extra)) return;
+  svCloudUpsert('nowplaying', st);
 }
-function svRemoteIcon() { const b = document.getElementById('btnPlay'); if (b && svLiveRemote) { b.classList.toggle('playing', !!svLiveRemote.playing); b.setAttribute('aria-label', svLiveRemote.playing ? 'Pause' : 'Lecture'); } const eq = document.getElementById('svBadgeEq'); if (eq) eq.classList.toggle('off', !(svLiveRemote && svLiveRemote.playing)); }
+function svLivePersistSoon() { clearTimeout(svPersistTimer); svPersistTimer = setTimeout(svLivePersist, 1500); }
+async function svLiveLoadLast() {
+  try {
+    const { data } = await sb.from('user_sync').select('data').eq('user_id', currentUser.id).eq('key', 'nowplaying').maybeSingle();
+    const st = data && data.data;
+    if (st && st.dev !== SV_DEVICE_ID && st.title && audio.paused && st.act > svActGet()) svLiveShow(st);
+  } catch (e) {}
+}
+function svRemoteIcon() { const b = document.getElementById('btnPlay'); if (b) { b.classList.remove('playing'); b.setAttribute('aria-label', 'Lecture'); } const eq = document.getElementById('svBadgeEq'); if (eq) eq.classList.toggle('off', !(svLiveRemote && svLiveRemote.live)); }
 function svRemoteProgress() {
   if (!svLiveRemote) return;
-  const r = svLiveRemote, pos = Math.min(r.dur || 1e9, r.pos + (r.playing ? (Date.now() - r.at) / 1000 : 0));
+  const r = svLiveRemote, pos = Math.min(r.dur || 1e9, r.pos + (r.live ? (Date.now() - r.at) / 1000 : 0));
   document.getElementById('progressFill').style.width = (r.dur ? (pos / r.dur) * 100 : 0) + '%';
   document.getElementById('timeNow').textContent = fmt(pos);
   document.getElementById('timeTotal').textContent = r.dur ? fmt(r.dur) : '0:00';
 }
 function svLiveShow(st) {
   const pl = document.getElementById('player'); if (!pl) return;
-  clearTimeout(svLiveHideT);
   if (st && st.title) {
     const was = !!svLiveRemote;
-    svLiveRemote = Object.assign({}, st, { at: Date.now() });
+    const live = !!st.playing && (Date.now() - (st.act || 0) < 45000);
+    svLiveRemote = Object.assign({}, st, { at: Date.now(), live });
     if (!was) { svRemoteForced = !pl.classList.contains('visible'); pl.classList.add('visible'); pl.classList.add('remote'); document.getElementById('player-art').innerHTML = '<span class="sv-eq"><i></i><i></i><i></i></span>'; }
-    document.getElementById('svRemoteName').textContent = (st.playing ? 'En écoute sur ' : 'En pause sur ') + st.name;
+    document.getElementById('svRemoteName').textContent = (live ? 'En écoute sur ' : 'Dernière écoute sur ') + st.name;
     document.getElementById('player-title').textContent = st.title;
     document.getElementById('player-playlist').textContent = st.pl || '—';
     svRemoteIcon(); svRemoteProgress();
-    if (!st.playing) svLiveHideT = setTimeout(() => svLiveShow(null), 600000);
     return;
   }
   if (!svLiveRemote) return;
@@ -6314,32 +6331,38 @@ function svLiveShow(st) {
   setPlayIcon(!audio.paused);
 }
 function svLiveOnState(st) {
-  if (!st || st.dev === SV_DEVICE_ID) return;
-  if (st.gone) { svLiveShow(null); return; }
-  // Un autre appareil vient de lancer une musique : on met celui-ci en pause (sans reprise automatique)
+  if (!st || st.dev === SV_DEVICE_ID || !st.title) return;
+  // Un autre appareil vient de lancer une musique : on met celui-ci en pause (sans reprise automatique) et on affiche la sienne
   if (st.playing && !audio.paused) { svMarkUserPause(); svResumeStop(); audio.pause(); toast('⏸ Pause : la musique joue sur ' + st.name); }
-  if (audio.paused || audio.ended) svLiveShow(st); else svLiveShow(null);
+  if (audio.paused && (st.playing || st.act > svActGet())) svLiveShow(st);
 }
-function svLiveOnCmd(c) {
-  if (!c || c.to !== SV_DEVICE_ID) return;
-  if (c.action === 'pause' && !audio.paused) { svMarkUserPause(); svResumeStop(); audio.pause(); }
-  else if (c.action === 'play' && audio.paused && audio.src) { try { fxResume(); const p = audio.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
-  else if (c.action === 'next') nextSong();
-  else if (c.action === 'prev') prevSong();
+// Lecture ici : on reprend la musique de l'autre appareil au même endroit
+function svTakeOver() {
+  const r = svLiveRemote; if (!r) return;
+  const s = songs.find(x => x.id === r.sid);
+  if (!s) { toast('⚠️ Cette musique n\'est pas encore sur cet appareil'); return; }
+  const pos = r.pos + (r.live ? (Date.now() - r.at) / 1000 : 0);
+  const pid = r.pid && playlists.some(p => p.id === r.pid) ? r.pid : null;
+  svLiveShow(null);
+  audio.addEventListener('loadedmetadata', () => { if (pos > 1 && (!audio.duration || pos < audio.duration - 1)) audio.currentTime = pos; }, { once: true });
+  playSong(s.id, pid);
 }
-audio.addEventListener('play', () => { svLiveShow(null); svLiveSendSoon(); });
-audio.addEventListener('pause', svLiveSendSoon);
-audio.addEventListener('loadedmetadata', svLiveSendSoon);
-audio.addEventListener('seeked', svLiveSendSoon);
-setInterval(() => { if (svRemoteMode()) { svRemoteProgress(); svRemoteIcon(); } }, 500);
+audio.addEventListener('play', () => { svActTouch(); svLiveShow(null); svLiveSendSoon(); svLivePersistSoon(); });
+audio.addEventListener('pause', () => { svActTouch(); svLiveSendSoon(); svLivePersistSoon(); });
+audio.addEventListener('loadedmetadata', () => { svLiveSendSoon(); svLivePersistSoon(); });
+audio.addEventListener('seeked', () => { svLiveSendSoon(); svLivePersistSoon(); });
+setInterval(() => { if (svRemoteMode()) svRemoteProgress(); }, 500);
 setInterval(() => { if (!audio.paused) svLiveSend(); }, 5000);
-window.addEventListener('pagehide', () => svLiveSend({ gone: true, playing: false }));
+setInterval(() => { if (!audio.paused) svLivePersist(); }, 10000);
+const svLiveLeave = () => { if (svRemoteMode()) return; svActTouch(); svLiveSend({ playing: false, act: Date.now() }); svLivePersist({ playing: false, act: Date.now() }); };
+window.addEventListener('pagehide', svLiveLeave);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && audio.paused) svLivePersist(); });
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '3.2';
+const APP_VERSION = '3.3';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Lecteur en direct : la bannière du haut est supprimée. Quand la musique joue sur un autre appareil, ton lecteur du bas affiche cette musique (titre, playlist, progression) avec un badge « En écoute sur ton PC / ton téléphone »","Tu peux la commander à distance depuis le lecteur : lecture/pause, précédent, suivant"];
+const APP_NOTES = ["Recherche : plus besoin de mettre les accents pour trouver une musique (« etre » trouve « Être »)","Reprise entre appareils : quand tu ouvres l'appli, le lecteur affiche la musique de ton autre appareil (« En écoute sur ton PC » ou « Dernière écoute sur ton PC ») en pause, à l'endroit où elle en est ou où tu t'es arrêté","Appuie sur lecture : elle reprend ici au même endroit et l'autre appareil se met en pause","Plus de télécommande : on ne peut plus mettre pause ou changer de musique sur l'autre appareil depuis celui-ci"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
