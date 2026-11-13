@@ -648,6 +648,15 @@ main { padding: 16px 20px; position: relative; z-index: 1; }
 .pl-option.checked .pl-check { background: var(--green); border-color: var(--green); color: white; }
 
 /* ── TOAST ── */
+
+/* ── LECTURE EN DIRECT ENTRE APPAREILS ── */
+.sv-live { position: fixed; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 950; display: none; align-items: center; gap: 10px; max-width: calc(100vw - 24px); padding: 8px 8px 8px 14px; border-radius: 999px; background: color-mix(in srgb, var(--bg) 88%, var(--text) 12%); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); box-shadow: 0 6px 24px rgba(0,0,0,.35); font-size: 13px; color: var(--text); }
+.sv-live.show { display: flex; }
+.sv-live .sv-live-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-live .sv-live-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--accent); animation: svLivePulse 1.4s ease-in-out infinite; }
+.sv-live.paused .sv-live-dot { animation: none; opacity: .4; }
+.sv-live button { flex: none; border: 0; border-radius: 999px; padding: 6px 12px; font: inherit; font-weight: 600; cursor: pointer; background: var(--accent); color: #fff; }
+@keyframes svLivePulse { 50% { opacity: .3; } }
 .toast {
   position: fixed;
   top: 80px;
@@ -2660,6 +2669,7 @@ header .btn-icon, header .btn-add { box-shadow: none; }
 
 <div class="sh-ov" id="shareModal" onclick="if(event.target===this)closeShare()"><div class="sh-box"><h4>📤 Partager mon récap</h4><div class="sh-tabs"><button id="tabFull" class="on" onclick="openShare('full')">Récap entier</button><button id="tabSum" onclick="openShare('sum')">Carte résumé</button></div><div class="sh-scroll"><img id="shareImg" alt="Récap à partager"></div><div class="sh-hint" id="shareHint">Choisis l’image à envoyer.</div><div class="sh-act"><button class="no" onclick="closeShare()">Fermer</button><button class="go" onclick="sendShare()">Envoyer l’image</button></div></div></div>
 
+<div class="sv-live" id="svLive"><span class="sv-live-dot"></span><span class="sv-live-txt" id="svLiveTxt"></span><button id="svLiveBtn" onclick="svLiveRemoteToggle()">Pause</button></div>
 <div class="toast" id="toast"></div>
 <audio id="audioEl"></audio>
 
@@ -4951,6 +4961,7 @@ try {
       currentUser = session ? session.user : null;
       // Lien « mot de passe oublié » reçu par mail : on ouvre l'écran pour choisir un nouveau mot de passe
       if (event === 'PASSWORD_RECOVERY') setTimeout(openNewPasswordModal, 400);
+      try { svLiveAuth(); } catch (e) {}
       try { updateAccountUI(); } catch (uiErr) {
         console.warn('updateAccountUI a échoué :', uiErr);
         toast('⚠️ Bug affichage compte : ' + uiErr.message);
@@ -6221,11 +6232,66 @@ if (sb) {
   setInterval(() => svSyncPull(), 120000);
 }
 
+// ── LECTURE EN DIRECT ENTRE APPAREILS (Supabase Realtime « broadcast », rien à configurer) ──
+// Chaque appareil dit en direct ce qu'il joue. Quand une musique démarre sur un appareil, l'autre se met en pause.
+const SV_DEV_NAME = /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent) ? 'ton téléphone' : 'ton PC';
+let svLiveCh = null, svLiveUid = null, svLiveReady = false, svLiveTimer = null, svLiveRemote = null, svLiveHideT = null;
+function svLiveAuth() {
+  if (!cloudReady || !sb) return;
+  if (!currentUser) { if (svLiveCh) { try { sb.removeChannel(svLiveCh); } catch (e) {} svLiveCh = null; svLiveUid = null; svLiveReady = false; svLiveShow(null); } return; }
+  if (svLiveCh && svLiveUid === currentUser.id) return;
+  if (svLiveCh) { try { sb.removeChannel(svLiveCh); } catch (e) {} }
+  svLiveUid = currentUser.id; svLiveReady = false;
+  svLiveCh = sb.channel('sv-live:' + currentUser.id, { config: { broadcast: { self: false } } })
+    .on('broadcast', { event: 'state' }, m => svLiveOnState(m.payload))
+    .on('broadcast', { event: 'hello' }, () => svLiveSend())
+    .on('broadcast', { event: 'cmd' }, m => svLiveOnCmd(m.payload))
+    .subscribe(st => { if (st === 'SUBSCRIBED') { svLiveReady = true; svLiveCh.send({ type: 'broadcast', event: 'hello', payload: { dev: SV_DEVICE_ID } }); svLiveSend(); } });
+}
+function svLiveState() {
+  const s = currentSongId ? songs.find(x => x.id === currentSongId) : null;
+  return { dev: SV_DEVICE_ID, name: SV_DEV_NAME, playing: !!s && !audio.paused, title: s ? cleanName(s.name) : '', pl: (document.getElementById('player-playlist') || {}).textContent || '', ts: Date.now() };
+}
+function svLiveSend() {
+  if (!svLiveReady || !svLiveCh) return;
+  const st = svLiveState();
+  if (!st.title) return;
+  try { svLiveCh.send({ type: 'broadcast', event: 'state', payload: st }); } catch (e) {}
+}
+function svLiveSendSoon() { clearTimeout(svLiveTimer); svLiveTimer = setTimeout(svLiveSend, 250); }
+function svLiveShow(st) {
+  svLiveRemote = st; clearTimeout(svLiveHideT);
+  const box = document.getElementById('svLive'); if (!box) return;
+  if (!st || !st.title) { box.classList.remove('show'); return; }
+  box.classList.add('show'); box.classList.toggle('paused', !st.playing);
+  document.getElementById('svLiveTxt').textContent = (st.playing ? 'En écoute sur ' : 'En pause sur ') + st.name + ' : ' + st.title;
+  document.getElementById('svLiveBtn').textContent = st.playing ? 'Pause' : 'Lecture';
+  if (!st.playing) svLiveHideT = setTimeout(() => svLiveShow(null), 60000);
+}
+function svLiveOnState(st) {
+  if (!st || st.dev === SV_DEVICE_ID) return;
+  // Un autre appareil vient de lancer une musique : on met celui-ci en pause (sans reprise automatique)
+  if (st.playing && !audio.paused) { svMarkUserPause(); svResumeStop(); audio.pause(); setPlayIcon(false); toast('⏸ Pause : la musique joue sur ' + st.name); }
+  svLiveShow(audio.paused ? st : null);
+}
+function svLiveOnCmd(c) {
+  if (!c || c.to !== SV_DEVICE_ID) return;
+  if (c.action === 'pause' && !audio.paused) { svMarkUserPause(); svResumeStop(); audio.pause(); setPlayIcon(false); }
+  else if (c.action === 'play' && audio.paused && audio.src) { try { fxResume(); const p = audio.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
+}
+function svLiveRemoteToggle() {
+  if (!svLiveCh || !svLiveRemote) return;
+  svLiveCh.send({ type: 'broadcast', event: 'cmd', payload: { to: svLiveRemote.dev, action: svLiveRemote.playing ? 'pause' : 'play' } });
+}
+audio.addEventListener('play', () => { svLiveShow(null); svLiveSendSoon(); });
+audio.addEventListener('pause', svLiveSendSoon);
+audio.addEventListener('loadedmetadata', svLiveSendSoon);
+
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '3.0';
+const APP_VERSION = '3.1';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Reprise automatique : quand le téléphone coupe la musique (appel, notification, autre appli), elle repart toute seule. Réglage dans Paramètres › Lecture", "Synchro plus rapide : les requêtes partent en même temps, plus de téléchargements et d'envois en parallèle", "Records refaits : un onglet par jeu, chiffres clés, records par source (bibliothèque ou playlist), 5 dernières parties", "Blind test : message « Nouveau record » aussi pour chaque source, meilleure série de bonnes réponses", "Musique mystère : en fin de partie, le bouton Rejouer reste visible sans descendre (et il est retiré de la fenêtre Records)"];
+const APP_NOTES = ["Lecture en direct : si tu écoutes sur ton PC, ton téléphone affiche en temps réel la musique en cours (et inversement), avec un bouton pour la mettre en pause ou en lecture à distance","Une seule musique à la fois : quand tu lances une musique sur un appareil, l'autre se met automatiquement en pause (sans reprise automatique)"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
