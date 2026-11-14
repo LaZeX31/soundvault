@@ -2,6 +2,8 @@
   "version": "3.6",
   "date": "2026-11-14",
   "nouveautes": [
+    "Playlists : la dernière écoutée passe toujours en premier, et la synchro ne remet plus l'ordre à zéro",
+    "Carte Windows : l'icône ▶/⏸ est corrigée et le volume est toujours affiché",
     "Appli Windows : une carte « en cours de lecture » s'affiche en haut à gauche quand tu changes de musique ou mets pause avec un raccourci (nécessite la dernière version du .exe)",
     "Téléphone : la notification de l'écran verrouillé ne disparaît plus quand tu changes de musique",
     "Volume sur PC : tu peux taper le nombre à côté du curseur pour régler le volume précisément",
