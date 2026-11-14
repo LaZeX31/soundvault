@@ -1,7 +1,10 @@
 {
-  "version": "3.5",
+  "version": "3.6",
   "date": "2026-11-14",
   "nouveautes": [
+    "Appli Windows : une carte « en cours de lecture » s'affiche en haut à gauche quand tu changes de musique ou mets pause avec un raccourci (nécessite la dernière version du .exe)",
+    "Téléphone : la notification de l'écran verrouillé ne disparaît plus quand tu changes de musique",
+    "Volume sur PC : tu peux taper le nombre à côté du curseur pour régler le volume précisément",
     "Onglet Musiques : le menu ⋯ est de retour sur chaque musique, pour la renommer, l'ajouter à la file ou à une playlist",
     "Volume sur PC : un nombre de 0 à 100 s'affiche à côté du curseur",
     "Couper des musiques : le temps de la musique s'affiche pendant l'écoute de l'extrait",

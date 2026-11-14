@@ -1097,7 +1097,8 @@ body:not(.queue-open) header {
   margin-left: 4px;
 }
 .volume-icon { font-size: 14px; opacity: 0.7; }
-.volume-num { font-size: 12px; min-width: 24px; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.volume-num { font-size: 12px; width: 44px; text-align: center; color: var(--text, inherit); background: var(--bg3, transparent); border: 1px solid var(--border, rgba(128,128,128,.35)); border-radius: 8px; padding: 3px 2px; font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield; font-family: inherit; }
+.volume-num::-webkit-outer-spin-button, .volume-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .volume-slider {
   -webkit-appearance: none;
   appearance: none;
@@ -2211,7 +2212,7 @@ header .btn-icon, header .btn-add { box-shadow: none; }
     <div class="volume-wrap">
       <span class="volume-icon">🔊</span>
       <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="100" oninput="setVolume(this.value)">
-      <span class="volume-num" id="volumeNum">100</span>
+      <input type="number" class="volume-num" id="volumeNum" min="0" max="100" step="1" value="100" inputmode="numeric" aria-label="Volume (0 à 100)" onfocus="this.select()" onchange="setVolumeFromNumber(this.value)" onkeydown="if(event.key==='Enter')this.blur()">
     </div>
   </div>
   <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px;">
@@ -2754,7 +2755,7 @@ function restoreState() {
       audio.volume = s.volume;
       const sl = document.getElementById('volumeSlider');
       if (sl) sl.value = Math.round(s.volume * 100);
-      const vn = document.getElementById('volumeNum'); if (vn) vn.textContent = Math.round(s.volume * 100);
+      const vn = document.getElementById('volumeNum'); if (vn) vn.value = Math.round(s.volume * 100);
       const ic = document.querySelector('.volume-icon');
       if (ic) ic.textContent = s.volume === 0 ? '🔇' : s.volume < 0.5 ? '🔉' : '🔊';
     }
@@ -3856,6 +3857,7 @@ function playSong(sid, pid) {
   document.getElementById('player-art').className = 'player-art ' + cover;
   document.getElementById('player-title').textContent = cleanName(s.name);
   document.getElementById('player-playlist').textContent = pid ? (playlists.find(p=>p.id===pid)?.name || '—') : 'Toutes les musiques';
+  updateMediaSession(s, true); // titre + état « lecture » AVANT de changer la source : la notif ne disparaît plus
   loadAudioSrc(s.data);
   currentCuts = normalizeCuts(getFx(sid).cuts, 0);
   updateProgressCuts();
@@ -3900,7 +3902,7 @@ function makeArtwork(idx) {
   } catch (e) { artCache[idx] = ''; }
   return artCache[idx];
 }
-function updateMediaSession(s) {
+function updateMediaSession(s, forcePlaying) {
   if (!('mediaSession' in navigator) || !s) return;
   const idx = parseInt(s.id) % COVERS.length;
   const art = makeArtwork(idx);
@@ -3912,7 +3914,7 @@ function updateMediaSession(s) {
       artwork: art ? [{ src: art, sizes: '512x512', type: 'image/png' }] : []
     });
   } catch (e) {}
-  navigator.mediaSession.playbackState = audio.paused ? 'paused' : 'playing';
+  navigator.mediaSession.playbackState = (forcePlaying || !audio.paused) ? 'playing' : 'paused';
   updateMediaPosition();
 }
 // Réapplique le titre du son en cours (utile quand le navigateur ignore les infos données avant le début réel de la lecture)
@@ -3947,6 +3949,10 @@ function updateMediaPosition() {
   audio.addEventListener('pause', () => { navigator.mediaSession.playbackState = 'paused'; });
   audio.addEventListener('loadedmetadata', () => { updateMediaPosition(); refreshMediaSession(); });
   audio.addEventListener('seeked', updateMediaPosition);
+  // Pendant le chargement d'un nouveau son, on garde l'état « lecture » pour que la notif reste affichée
+  ['emptied', 'loadstart', 'waiting'].forEach(ev => audio.addEventListener(ev, () => {
+    if (!audio.paused || audio.autoplay) navigator.mediaSession.playbackState = 'playing';
+  }));
   // Le 1er son lancé après l'ouverture de l'appli : le téléphone ne prenait en compte le titre qu'au 2e.
   // On le redonne dès que la lecture démarre vraiment (et une 2e fois juste après, pour iOS).
   audio.addEventListener('playing', () => { refreshMediaSession(); setTimeout(refreshMediaSession, 400); });
@@ -3955,9 +3961,10 @@ function updateMediaPosition() {
 function playSongDirect(sid)        { playSong(sid, null); }
 function playSongKeepPlaylist(sid)  { playSong(sid, currentPlaylistId); }
 
+function setVolumeFromNumber(v){ let n=parseInt(v,10); if(!isFinite(n)) n=Math.round(audio.volume*100); n=Math.max(0,Math.min(100,n)); const sl=document.getElementById('volumeSlider'); if(sl) sl.value=n; setVolume(n); }
 function setVolume(val) {
   audio.volume = val / 100;
-  const vn = document.getElementById('volumeNum'); if (vn) vn.textContent = Math.round(val);
+  const vn = document.getElementById('volumeNum'); if (vn) vn.value = Math.round(val);
   const ic = document.querySelector('.volume-icon');
   if (ic) ic.textContent = val == 0 ? '🔇' : val < 50 ? '🔉' : '🔊';
   saveState();
@@ -6431,9 +6438,9 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 
 // ── DÉTECTION D'UNE NOUVELLE VERSION ──
 // ⚠️ À chaque nouveau fichier livré, ce numéro change : c'est lui que l'appli compare.
-const APP_VERSION = '3.5';
+const APP_VERSION = '3.6';
 // Nouveautés de CETTE version (affichées dans la fenêtre de mise à jour de l'ancienne version). Garder sur UNE seule ligne.
-const APP_NOTES = ["Onglet Musiques : le menu ⋯ est de retour sur chaque musique (pour pouvoir la renommer, l’ajouter à la file ou à une playlist)","Volume sur PC : un nombre de 0 à 100 s’affiche à côté du curseur","Couper des musiques : le temps de la musique s’affiche pendant l’écoute de l’extrait","Appli Windows : nouveaux Paramètres › Raccourcis, des touches qui contrôlent SoundVault même en arrière-plan (lecture, suivant, précédent, volume)"];
+const APP_NOTES = ["Appli Windows : une carte « en cours de lecture » s'affiche en haut à gauche quand tu changes de musique ou mets pause avec un raccourci (nécessite la dernière version du .exe)", "Téléphone : la notification de l'écran verrouillé ne disparaît plus quand tu changes de musique", "Volume sur PC : tu peux taper le nombre à côté du curseur pour régler le volume précisément", "Onglet Musiques : le menu ⋯ est de retour sur chaque musique (pour pouvoir la renommer, l’ajouter à la file ou à une playlist)","Volume sur PC : un nombre de 0 à 100 s’affiche à côté du curseur","Couper des musiques : le temps de la musique s’affiche pendant l’écoute de l’extrait","Appli Windows : nouveaux Paramètres › Raccourcis, des touches qui contrôlent SoundVault même en arrière-plan (lecture, suivant, précédent, volume)"];
 let updateAvailable = false, lastUpdateCheck = 0, updateInfo = null;
 document.querySelectorAll('.app-ver-text').forEach(el => { el.textContent = APP_VERSION; });
 function refreshUpdateBadge() {
@@ -7115,6 +7122,19 @@ function mmFinish(win) {
       const sl = document.getElementById('volumeSlider'); if (sl) sl.value = v;
       setVolume(v);
     }
+    // Carte "en cours de lecture" en haut à droite de l'écran (si la fenêtre n'est pas au premier plan)
+    setTimeout(() => {
+      try {
+        const cur = songs.find(x => x.id === currentSongId);
+        if (!cur || !D.showOverlay) return;
+        D.showOverlay({
+          title: cleanName(cur.name),
+          artist: currentPlaylistId ? (playlists.find(p => p.id === currentPlaylistId)?.name || 'SoundVault') : 'SoundVault',
+          playing: !audio.paused,
+          volume: (a === 'volumeUp' || a === 'volumeDown') ? Math.round(audio.volume * 100) : undefined
+        });
+      } catch (e) {}
+    }, 150);
   });
 
   D.getShortcuts().then(r => { if (r) { info = r; window.svDesktopApply(); } });
