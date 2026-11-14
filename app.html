@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SoundVault pour Windows</title>
+<meta name="description" content="SoundVault en vraie appli Windows, avec des raccourcis clavier qui marchent même en arrière-plan.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #e8e7f1;
+    --ink: #1d1b4b;
+    --muted: #5d5b86;
+    --line: #c9c7de;
+    --vinyl: #12102a;
+    --groove: #1c1942;
+    --label: #f2c230;
+    --card: #f4f3fa;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.55;
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+
+  header { display: flex; justify-content: space-between; align-items: center; padding: 22px 0; }
+  .brand { font-weight: 800; font-size: 1.15rem; letter-spacing: -0.01em; text-decoration: none; }
+  header nav a { font-size: 0.95rem; color: var(--muted); text-decoration: none; }
+  header nav a:hover { color: var(--ink); text-decoration: underline; }
+
+  .hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; align-items: center; padding: 40px 0 72px; }
+  h1 { font-size: clamp(2.4rem, 6vw, 4.2rem); line-height: 1.02; letter-spacing: -0.035em; margin: 0 0 20px; font-weight: 800; }
+  .lead { font-size: 1.15rem; color: var(--muted); max-width: 46ch; margin: 0 0 32px; }
+  .btn {
+    display: inline-block; background: var(--ink); color: #fff; text-decoration: none;
+    padding: 16px 28px; border-radius: 999px; font-weight: 600; font-size: 1.05rem;
+    transition: background .15s, color .15s;
+  }
+  .btn:hover { background: var(--label); color: var(--ink); }
+  .small { margin: 14px 0 0; font-size: 0.9rem; color: var(--muted); }
+
+  .disc-wrap { display: grid; place-items: center; }
+  .disc {
+    position: relative; width: min(100%, 380px); aspect-ratio: 1; border-radius: 50%;
+    background: repeating-radial-gradient(circle at center, var(--vinyl) 0 3px, var(--groove) 3px 4px);
+    box-shadow: 0 24px 50px -18px rgba(18, 16, 42, .55);
+    display: grid; place-items: center; overflow: hidden;
+  }
+  .disc::before {
+    content: ""; position: absolute; inset: 0; border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 0 18%, rgba(255,255,255,.14) 24%, transparent 30%, transparent 68%, rgba(255,255,255,.10) 74%, transparent 80%);
+    animation: spin 18s linear infinite;
+  }
+  .label {
+    position: relative; width: 38%; aspect-ratio: 1; border-radius: 50%; background: var(--label);
+    display: grid; place-content: center; text-align: center; color: var(--ink);
+  }
+  .label::after { content: ""; position: absolute; width: 7%; aspect-ratio: 1; border-radius: 50%; background: var(--vinyl); left: 50%; top: 14%; transform: translateX(-50%); }
+  .label b { font-size: clamp(1.3rem, 4.2vw, 2rem); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+  .label span { font-size: 0.78rem; font-weight: 600; margin-top: 4px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .disc::before { animation: none; } html { scroll-behavior: auto; } }
+
+  section { padding: 0 0 64px; }
+  h2 { font-size: 1.7rem; letter-spacing: -0.02em; margin: 0 0 22px; font-weight: 800; }
+
+  ol.steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; counter-reset: s; }
+  ol.steps li { counter-increment: s; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px 20px 70px; position: relative; }
+  ol.steps li::before { content: counter(s); position: absolute; left: 22px; top: 18px; width: 32px; height: 32px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 800; }
+  ol.steps h3 { margin: 0 0 4px; font-size: 1.1rem; }
+  ol.steps p { margin: 0; color: var(--muted); }
+
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  th, td { text-align: left; padding: 13px 20px; border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: 0; }
+  th { font-weight: 600; color: var(--muted); font-size: 0.9rem; }
+  kbd { font: inherit; font-weight: 600; background: #fff; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 7px; padding: 2px 8px; margin-right: 4px; white-space: nowrap; }
+  .table-scroll { overflow-x: auto; }
+
+
+  dl.feat { display: grid; grid-template-columns: 1fr 1fr; gap: 0 40px; margin: 0; }
+  dl.feat div { border-top: 2px solid var(--ink); padding: 14px 0 24px; }
+  dl.feat dt { font-weight: 800; font-size: 1.1rem; margin-bottom: 4px; }
+  dl.feat dd { margin: 0; color: var(--muted); }
+
+  .news { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px 26px; }
+  .news h3 { margin: 0 0 4px; font-size: 1.15rem; }
+  .news .when { margin: 0 0 12px; color: var(--muted); font-size: 0.92rem; }
+  .news ul { margin: 0; padding-left: 20px; }
+  .news li { margin: 4px 0; }
+
+  .phone { background: var(--ink); color: #fff; border-radius: 14px; padding: 22px 26px; }
+  .phone a { color: var(--label); font-weight: 600; }
+  .phone p { margin: 0; }
+
+  footer { border-top: 1px solid var(--line); padding: 26px 0 40px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 780px) {
+    .hero { grid-template-columns: 1fr; gap: 36px; padding-top: 16px; }
+    .disc-wrap { order: -1; }
+    .disc { width: min(70%, 280px); }
+    dl.feat { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="./">SoundVault</a>
+    <nav><a href="./">Ouvrir dans le navigateur</a></nav>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div>
+        <h1>SoundVault sur ton PC</h1>
+        <p class="lead">Ta musique dans une vraie appli Windows, avec des raccourcis clavier qui marchent même quand tu es dans un jeu ou une autre fenêtre.</p>
+        <a class="btn" id="dl" href="#">Télécharger pour Windows</a>
+        <p class="small">Gratuit, pour Windows 10 et 11. Ton compte et tes musiques se retrouvent tout seuls. L'appli se met à jour à chaque lancement.</p>
+      </div>
+      <div class="disc-wrap" aria-hidden="true">
+        <div class="disc"><div class="label"><b id="ver">v3</b><span>SoundVault</span></div></div>
+      </div>
+    </div>
+
+    <section>
+      <h2>Installer en 3 étapes</h2>
+      <ol class="steps">
+        <li><h3>Télécharge et lance l'installateur</h3><p>Si Windows affiche « Windows a protégé votre ordinateur », clique sur « Informations complémentaires » puis « Exécuter quand même ».</p></li>
+        <li><h3>Crée ou connecte-toi à un compte</h3><p>Avec ton compte, tes musiques, tes playlists et tes réglages se synchronisent comme sur ton téléphone.</p></li>
+        <li><h3>Profite de tes sons</h3><p>Écoute ta musique, puis règle tes raccourcis dans Paramètres › Raccourcis. Ils marchent même quand SoundVault est en arrière-plan.</p></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Ce que tu retrouves</h2>
+      <dl class="feat">
+        <div><dt>Reprise entre appareils</dt><dd>Lance une musique sur ton PC, reprends-la sur ton téléphone au même endroit.</dd></div>
+        <div><dt>Synchro de ton compte</dt><dd>Tes musiques importées, tes playlists et tes réglages sont les mêmes partout.</dd></div>
+        <div><dt>Blind test et Musique mystère</dt><dd>Deux jeux avec tes propres sons, et des records qui suivent ton compte.</dd></div>
+        <div><dt>Récap du mois</dt><dd>Le 1er de chaque mois, retrouve ton temps d'écoute, ton meilleur jour et tes playlists préférées.</dd></div>
+      </dl>
+    </section>
+
+    <section>
+      <h2>Raccourcis par défaut</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Action</th><th>Touches</th></tr></thead>
+          <tbody>
+            <tr><td>Lecture / pause</td><td><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Espace</kbd></td></tr>
+            <tr><td>Musique suivante</td><td><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>→</kbd></td></tr>
+            <tr><td>Musique précédente</td><td><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>←</kbd></td></tr>
+            <tr><td>Volume +</td><td><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>↑</kbd></td></tr>
+            <tr><td>Volume −</td><td><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>↓</kbd></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="news-section" hidden>
+      <h2>Dernières nouveautés</h2>
+      <div class="news">
+        <h3 id="news-title"></h3>
+        <p class="when" id="news-date"></p>
+        <ul id="news-list"></ul>
+      </div>
+    </section>
+
+    <section>
+      <div class="phone">
+        <p><strong>Tu es sur ton téléphone ?</strong> Pas besoin d'installer quoi que ce soit : <a href="./">ouvre SoundVault directement</a>. Le .exe est réservé à Windows.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>SoundVault n'est affilié à aucun service de musique.</footer>
+</div>
+
+<script>
+  // À modifier si le dépôt change de nom.
+  var DOWNLOAD_URL = "https://github.com/lazex31/sounvault/releases/latest/download/SoundVault-Setup.exe";
+  document.getElementById("dl").href = DOWNLOAD_URL;
+
+  fetch("version.json", { cache: "no-store" })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d || !d.version) return;
+      document.getElementById("ver").textContent = "v" + d.version;
+      document.getElementById("news-title").textContent = "Version " + d.version;
+      if (d.date) {
+        var dt = new Date(d.date + "T12:00:00");
+        document.getElementById("news-date").textContent = "Sortie le " + dt.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+      }
+      var ul = document.getElementById("news-list");
+      (d.nouveautes || []).forEach(function (t) {
+        var li = document.createElement("li");
+        li.textContent = t;
+        ul.appendChild(li);
+      });
+      document.getElementById("news-section").hidden = false;
+    })
+    .catch(function () {});
+</script>
+</body>
+</html>

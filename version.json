@@ -1,0 +1,10 @@
+{
+  "version": "3.5",
+  "date": "2026-11-14",
+  "nouveautes": [
+    "Onglet Musiques : le menu ⋯ est de retour sur chaque musique, pour la renommer, l'ajouter à la file ou à une playlist",
+    "Volume sur PC : un nombre de 0 à 100 s'affiche à côté du curseur",
+    "Couper des musiques : le temps de la musique s'affiche pendant l'écoute de l'extrait",
+    "Appli Windows : Paramètres › Raccourcis, des touches qui contrôlent SoundVault même en arrière-plan"
+  ]
+}
